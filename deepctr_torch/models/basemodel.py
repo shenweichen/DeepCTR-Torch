@@ -45,7 +45,8 @@ class Linear(nn.Module):
             nn.init.normal_(tensor.weight, mean=0, std=init_std)
 
         if len(self.dense_feature_columns) > 0:
-            self.weight = nn.Parameter(torch.Tensor(len(self.dense_feature_columns), 1))
+            self.weight = nn.Parameter(torch.Tensor(len(self.dense_feature_columns), 1)).to(
+            device)
             torch.nn.init.normal_(self.weight, mean=0, std=init_std)
 
     def forward(self, X):
@@ -150,8 +151,8 @@ class BaseModel(nn.Module):
             y, val_y = (slice_arrays(y, 0, split_at), slice_arrays(y, split_at))
 
         else:
-            val_x = None,
-            val_y = None
+            val_x = []
+            val_y = []
 
         train_tensor_data = Data.TensorDataset(
             torch.from_numpy(np.hstack(list(map(lambda x: np.expand_dims(x, axis=1), x)))),
@@ -211,7 +212,7 @@ class BaseModel(nn.Module):
                 for name, result in train_result.items():
                     eval_str += " - " + name + ": {0: .4f}".format(np.sum(result) / steps_per_epoch)
 
-                if val_x is not None and val_y is not None:
+                if len(val_x) and len(val_y):
                     eval_result = self.evaluate(val_x, val_y, batch_size)
 
                     for name, result in eval_result.items():
