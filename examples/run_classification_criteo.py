@@ -53,7 +53,7 @@ if __name__ == "__main__":
         print('cuda ready...')
         device = 'cuda:0'
 
-    model = WDL(linear_feature_columns, dnn_feature_columns, task='binary',
+    model = DeepFM(linear_feature_columns, dnn_feature_columns, task='binary',
                 l2_reg_embedding=1e-5,l2_reg_linear=1e-5,l2_reg_dnn=0,device=device)
 
     model.compile("adagrad","binary_crossentropy",metrics=["binary_crossentropy","auc"],)

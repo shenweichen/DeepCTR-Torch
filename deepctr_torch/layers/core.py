@@ -1,14 +1,11 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch
-
-
-
-
 
 
 class DNN(nn.Module):
-    def __init__(self, inputs_dim, hidden_units, activation=F.relu, l2_reg=0, dropout_rate=0, use_bn=False, init_std=0.0001,seed=1024):
+    def __init__(self, inputs_dim, hidden_units, activation=F.relu, l2_reg=0, dropout_rate=0, use_bn=False,
+                 init_std=0.0001, seed=1024):
         super(DNN, self).__init__()
         self.activation = activation
         self.dropout_rate = dropout_rate
@@ -20,7 +17,7 @@ class DNN(nn.Module):
         self.linears = nn.ModuleList(
             [nn.Linear(hidden_units[i], hidden_units[i + 1]) for i in range(len(hidden_units) - 1)])
         for tensor in self.linears:
-            nn.init.normal_(tensor.weight,mean=0,std=init_std)
+            nn.init.normal_(tensor.weight, mean=0, std=init_std)
 
     def forward(self, inputs):
         deep_input = inputs
@@ -36,7 +33,6 @@ class DNN(nn.Module):
             fc = self.dropout(fc)
             deep_input = fc
         return deep_input
-
 
 
 class PredictionLayer(nn.Module):
@@ -58,7 +54,7 @@ class PredictionLayer(nn.Module):
 
     def forward(self, X):
         output = X
-        if self.use_bias :
+        if self.use_bias:
             output += self.global_bias
         if self.task == "binary":
             output = torch.sigmoid(output)

@@ -1,13 +1,22 @@
+# -*- coding:utf-8 -*-
+"""
+
+Author:
+    Weichen Shen,wcshen1994@163.com
+
+"""
 from __future__ import print_function
-import numpy as np
-from tqdm import tqdm
+
 import time
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data as Data
 from sklearn.metrics import log_loss, roc_auc_score
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from ..inputs import build_input_features, SparseFeat, DenseFeat
 from ..layers import PredictionLayer
@@ -150,7 +159,7 @@ class BaseModel(nn.Module):
 
         train_loader = DataLoader(dataset=train_tensor_data, shuffle=shuffle, batch_size=batch_size)
 
-        print(self.device,end="\n")
+        print(self.device, end="\n")
         model = self.train()
         loss_func = self.loss_func
         optim = self.optim
@@ -200,8 +209,7 @@ class BaseModel(nn.Module):
                 eval_str = "{0}s - loss: {1: .4f}".format(epoch_time, total_loss_epoch / sample_num)
 
                 for name, result in train_result.items():
-                    eval_str += " - " + name + ": {0: .4f}".format(np.sum(result)/steps_per_epoch)
-
+                    eval_str += " - " + name + ": {0: .4f}".format(np.sum(result) / steps_per_epoch)
 
                 if val_x is not None and val_y is not None:
                     eval_result = self.evaluate(val_x, val_y, batch_size)
@@ -276,7 +284,7 @@ class BaseModel(nn.Module):
             return len(sparse_feature_columns) * embedding_size + sum(map(lambda x: x.dimension, dense_feature_columns))
 
     def add_regularization_loss(self, weight_list, weight_decay, p=2):
-        reg_loss = torch.zeros((1,),device=self.device)
+        reg_loss = torch.zeros((1,), device=self.device)
         for w in weight_list:
             l2_reg = torch.norm(w, p=p, )
             reg_loss = reg_loss + l2_reg
