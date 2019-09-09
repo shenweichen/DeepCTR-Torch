@@ -25,10 +25,15 @@ class DeepFM(BaseModel):
                                      task=task, device=device)
 
         self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, embedding_size, ), dnn_hidden_units,
-                       activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, init_std=init_std)
+                       activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout,use_bn=dnn_use_bn, init_std=init_std)
         self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False)
-        # self.add_regularization_loss(chain(self.dnn.parameters(), self.dnn_linear.parameters()), l2_reg_dnn)
-        self.fm = FM()
+
+        self.add_regularization_loss(self.dnn.weight, l2_reg_dnn)
+        self.add_regularization_loss(self.dnn_linear.weight,l2_reg_dnn)
+
+        if use_fm:
+            self.fm = FM()
+        self.use_fm = use_fm
         self.to(device)
 
     def forward(self, X):
@@ -37,16 +42,15 @@ class DeepFM(BaseModel):
                                                                                   self.embedding_dict)
         linear_logit = self.linear_model(X)
 
-        if len(sparse_embedding_list) > 0:
-            fm_input = torch.cat(sparse_embedding_list, dim=1)
-            fm_out = self.fm(fm_input)
-        else:
-            fm_out = 0
         dnn_input = combined_dnn_input(sparse_embedding_list, dense_value_list)
 
         dnn_output = self.dnn(dnn_input)
         dnn_logit = self.dnn_linear(dnn_output)
-        logit = linear_logit + dnn_logit + fm_out
+        logit = linear_logit + dnn_logit
+
+        if self.use_fm:
+            fm_input = torch.cat(sparse_embedding_list, dim=1)
+            logit += self.fm(fm_input)
         y_pred = self.out(logit)
 
         return y_pred
