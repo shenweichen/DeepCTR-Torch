@@ -15,6 +15,22 @@ class WDL(BaseModel):
                  l2_reg_linear=1e-5,
                  l2_reg_embedding=1e-5, l2_reg_dnn=0, init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation=F.relu,
                  dnn_use_bn=False,task='binary', device='cpu'):
+        """Instantiates the Wide&Deep Learning architecture.
+        :param linear_feature_columns: An iterable containing all the features used by linear part of the model.
+        :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
+        :param embedding_size: positive integer,sparse feature embedding_size
+        :param dnn_hidden_units: list,list of positive integer or empty list, the layer number and units in each layer of DNN
+        :param l2_reg_linear: float. L2 regularizer strength applied to wide part
+        :param l2_reg_embedding: float. L2 regularizer strength applied to embedding vector
+        :param l2_reg_dnn: float. L2 regularizer strength applied to DNN
+        :param init_std: float,to use as the initialize std of embedding vector
+        :param seed: integer ,to use as random seed.
+        :param dnn_dropout: float in [0,1), the probability we will drop out a given DNN coordinate.
+        :param dnn_activation: Activation function to use in DNN
+        :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
+        :param device:
+        :return: A PyTorch model instance.
+        """
         super(WDL, self).__init__(linear_feature_columns, dnn_feature_columns, embedding_size=embedding_size,
                                   dnn_hidden_units=dnn_hidden_units,
                                   l2_reg_linear=l2_reg_linear,

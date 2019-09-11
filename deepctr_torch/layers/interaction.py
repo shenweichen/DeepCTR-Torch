@@ -57,7 +57,7 @@ class AFMLayer(nn.Module):
         self.seed = seed
         embedding_size = in_feature
 
-        self.attention_W = nn.Parameter(torch.Tensor(embedding_size, self.attention_factor)).to_
+        self.attention_W = nn.Parameter(torch.Tensor(embedding_size, self.attention_factor))
 
         self.attention_b = nn.Parameter(torch.Tensor(self.attention_factor))
 
