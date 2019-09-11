@@ -243,11 +243,14 @@ class BaseModel(nn.Module):
                 pred_ans.append(y_pred)
         return np.concatenate(pred_ans)
 
-    def input_from_feature_columns(self, X, feature_columns, embedding_dict):
+    def input_from_feature_columns(self, X, feature_columns, embedding_dict,support_dense=True):
         sparse_feature_columns = list(
             filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
         dense_feature_columns = list(
             filter(lambda x: isinstance(x, DenseFeat), feature_columns)) if len(feature_columns) else []
+
+        if not support_dense and len(dense_feature_columns) > 0:
+            raise ValueError("DenseFeat is not supported in dnn_feature_columns")
 
         sparse_embedding_list = [embedding_dict[feat.embedding_name](
             X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()) for
