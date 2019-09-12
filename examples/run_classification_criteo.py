@@ -2,12 +2,13 @@ import pandas as pd
 from sklearn.metrics import log_loss, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
-
+import sys
+sys.path.append('/home/zhangwutong/DeepCTR-PyTorch')
 from deepctr_torch.models import *
 from deepctr_torch.inputs import  SparseFeat, DenseFeat,get_fixlen_feature_names
 import torch
 
-
+import pdb
 
 if __name__ == "__main__":
     data = pd.read_csv('./criteo_sample.txt')
@@ -47,14 +48,16 @@ if __name__ == "__main__":
 
     # 4.Define Model,train,predict and evaluate
 
-    device = 'cpu'
+    device = 'gpu'
     use_cuda = True
     if use_cuda and torch.cuda.is_available():
         print('cuda ready...')
         device = 'cuda:0'
 
-    model = DeepFM(linear_feature_columns, dnn_feature_columns, task='binary',
-                l2_reg_embedding=1e-5,l2_reg_linear=1e-5,device=device)
+#     model = DeepFM(linear_feature_columns, dnn_feature_columns, task='binary',
+#                 l2_reg_embedding=1e-5,l2_reg_linear=1e-5,l2_reg_dnn=0,device=device)
+    model = xDeepFM(linear_feature_columns, dnn_feature_columns, task='binary',
+                l2_reg_embedding=1e-5,l2_reg_linear=1e-5,l2_reg_dnn=0,device=device)
 
     model.compile("adagrad","binary_crossentropy",metrics=["binary_crossentropy","auc"],)
     model.fit(train_model_input, train[target].values,batch_size=256,epochs=10,validation_split=0.2,verbose=2)

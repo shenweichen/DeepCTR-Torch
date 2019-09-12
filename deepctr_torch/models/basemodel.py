@@ -127,7 +127,6 @@ class BaseModel(nn.Module):
             validation_data=None,
             shuffle=True, ):
         if validation_data:
-
             if len(validation_data) == 2:
                 val_x, val_y = validation_data
                 val_sample_weight = None
