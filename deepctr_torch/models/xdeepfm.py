@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
 from ..layers import DNN, CIN
