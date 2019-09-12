@@ -36,7 +36,7 @@ def check_version(version):
                 if latest_version > version:
                     logging.warning(
                         '\nDeepCTR-PyTorch version {0} detected. Your version is {1}.\nUse `pip install -U deepctr-torch` to upgrade.'.format(
-                            latest_version, version))#Changelog: https://github.com/shenweichen/DeepCTR/releases/tag/v{0}
+                            latest_version, version))#Changelog: https://github.com/shenweichen/DeepCTR-PyTorch/releases/tag/v{0}
         except Exception as e:
             print(e)
             return
