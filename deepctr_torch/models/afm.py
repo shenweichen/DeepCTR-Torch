@@ -41,7 +41,7 @@ class AFM(BaseModel):
         if use_attention:
             self.fm = AFMLayer(embedding_size, attention_factor, l2_reg_att, afm_dropout,
                                seed, device)
-            self.add_regularization_loss(self.fm.weight, l2_reg_att)
+            self.add_regularization_loss(self.fm.attention_W, l2_reg_att)
         else:
             self.fm = FM()
 

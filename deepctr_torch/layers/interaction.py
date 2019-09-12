@@ -67,7 +67,7 @@ class CIN(nn.Module):
                 self.field_nums.append(size // 2)
             else:
                 self.field_nums.append(size)
-                
+
 #         for tensor in self.conv1ds:
 #             nn.init.normal_(tensor.weight, mean=0, std=init_std)
             
@@ -144,8 +144,6 @@ class AFMLayer(nn.Module):
         self.projection_h = nn.Parameter(torch.Tensor(self.attention_factor, 1))
 
         self.projection_p = nn.Parameter(torch.Tensor(embedding_size, 1))
-
-        self.weight = self.attention_W
 
         for tensor in [self.attention_W, self.projection_h, self.projection_p]:
             nn.init.xavier_normal_(tensor, )
