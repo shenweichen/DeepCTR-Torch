@@ -43,7 +43,8 @@ class CIN(nn.Module):
         - **seed** : A Python integer to use as random seed.
       References
         - [Lian J, Zhou X, Zhang F, et al. xDeepFM: Combining Explicit and Implicit Feature Interactions for Recommender Systems[J]. arXiv preprint arXiv:1803.05170, 2018.] (https://arxiv.org/pdf/1803.05170.pdf)
-    """
+    """   
+    
 
     def __init__(self, field_nums, layer_size=(128, 128), activation=F.relu, split_half=True, l2_reg=1e-5, seed=1024, ):
         super(CIN, self).__init__()
