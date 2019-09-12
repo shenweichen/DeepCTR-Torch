@@ -6,7 +6,6 @@ from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
 from ..layers import DNN, CIN
 
-
 class xDeepFM(BaseModel):
     """Instantiates the xDeepFM architecture.
     :param linear_feature_columns: An iterable containing all the features used by linear part of the model.
@@ -50,15 +49,18 @@ class xDeepFM(BaseModel):
         self.cin_layer_size = cin_layer_size
         self.field_num = len(self.embedding_dict)
         if cin_split_half == True:
-            self.featuremap_num = sum(cin_layer_size[:-1]) // 2 + cin_layer_size[-1]
+            self.featuremap_num = sum(
+                cin_layer_size[:-1]) // 2 + cin_layer_size[-1]
         else:
             self.featuremap_num = sum(cin_layer_size)
-        self.cin = CIN(self.field_num, cin_layer_size, cin_activation, cin_split_half, l2_reg_cin, seed)
+        self.cin = CIN(self.field_num, cin_layer_size,
+                       cin_activation, cin_split_half, l2_reg_cin, seed)
         self.cin_linear = nn.Linear(self.featuremap_num, 1, bias=False)
 
         self.add_regularization_loss(self.dnn.weight, l2_reg_dnn)
         self.add_regularization_loss(self.dnn_linear.weight, l2_reg_dnn)
-        self.add_regularization_loss(filter(lambda x: 'weight' in x[0], self.cin.named_parameters()), l2_reg_cin)
+        self.add_regularization_loss(
+            filter(lambda x: 'weight' in x[0], self.cin.named_parameters()), l2_reg_cin)
 
         self.to(device)
 

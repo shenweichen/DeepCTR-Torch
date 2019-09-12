@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class FM(nn.Module):
     """Factorization Machine models pairwise (order-2) feature interactions
      without linear term and bias.
@@ -27,7 +28,8 @@ class FM(nn.Module):
         cross_term = 0.5 * torch.sum(cross_term, dim=2, keepdim=False)
 
         return cross_term
-    
+
+
 class CIN(nn.Module):
     """Compressed Interaction Network used in xDeepFM.
       Input shape
@@ -42,23 +44,25 @@ class CIN(nn.Module):
       References
         - [Lian J, Zhou X, Zhang F, et al. xDeepFM: Combining Explicit and Implicit Feature Interactions for Recommender Systems[J]. arXiv preprint arXiv:1803.05170, 2018.] (https://arxiv.org/pdf/1803.05170.pdf)
     """
+
     def __init__(self, field_nums, layer_size=(128, 128), activation=F.relu, split_half=True, l2_reg=1e-5, seed=1024, ):
         super(CIN, self).__init__()
         if len(layer_size) == 0:
             raise ValueError(
                 "layer_size must be a list(tuple) of length greater than 1")
-            
+
         self.layer_size = layer_size
         self.field_nums = [field_nums]
         self.split_half = split_half
         self.activation = activation
         self.l2_reg = l2_reg
         self.seed = seed
-        
+
         self.conv1ds = nn.ModuleList()
         for i, size in enumerate(self.layer_size):
-            self.conv1ds.append(nn.Conv1d(self.field_nums[-1] * self.field_nums[0], size, 1))
-            
+            self.conv1ds.append(
+                nn.Conv1d(self.field_nums[-1] * self.field_nums[0], size, 1))
+
             if self.split_half:
                 if i != len(self.layer_size) - 1 and size % 2 > 0:
                     raise ValueError(
@@ -70,7 +74,7 @@ class CIN(nn.Module):
 
 #         for tensor in self.conv1ds:
 #             nn.init.normal_(tensor.weight, mean=0, std=init_std)
-            
+
     def forward(self, inputs):
         if len(inputs.shape) != 3:
             raise ValueError(
@@ -79,17 +83,18 @@ class CIN(nn.Module):
         dim = inputs.shape[-1]
         hidden_nn_layers = [inputs]
         final_result = []
-        
+
         for i, size in enumerate(self.layer_size):
             #x^(k-1) * x^0
-            x = torch.einsum('bhd,bmd->bhmd', hidden_nn_layers[-1], hidden_nn_layers[0])
+            x = torch.einsum(
+                'bhd,bmd->bhmd', hidden_nn_layers[-1], hidden_nn_layers[0])
             # x.shape = (batch_size , hi * m, dim)
-            x = x.reshape(batch_size, hidden_nn_layers[-1].shape[1] * hidden_nn_layers[0].shape[1], dim)
+            x = x.reshape(
+                batch_size, hidden_nn_layers[-1].shape[1] * hidden_nn_layers[0].shape[1], dim)
             # x.shape = (batch_size , hi, dim)
             x = self.conv1ds[i](x)
             curr_out = self.activation(x)
 
-            
             if self.split_half:
                 if i != len(self.layer_size) - 1:
                     next_hidden, direct_connect = torch.split(
@@ -137,11 +142,13 @@ class AFMLayer(nn.Module):
         self.seed = seed
         embedding_size = in_feature
 
-        self.attention_W = nn.Parameter(torch.Tensor(embedding_size, self.attention_factor))
+        self.attention_W = nn.Parameter(torch.Tensor(
+            embedding_size, self.attention_factor))
 
         self.attention_b = nn.Parameter(torch.Tensor(self.attention_factor))
 
-        self.projection_h = nn.Parameter(torch.Tensor(self.attention_factor, 1))
+        self.projection_h = nn.Parameter(
+            torch.Tensor(self.attention_factor, 1))
 
         self.projection_p = nn.Parameter(torch.Tensor(embedding_size, 1))
 
@@ -176,5 +183,6 @@ class AFMLayer(nn.Module):
 
         attention_output = self.dropout(attention_output)  # training
 
-        afm_out = torch.tensordot(attention_output, self.projection_p, dims=([-1], [0]))
+        afm_out = torch.tensordot(
+            attention_output, self.projection_p, dims=([-1], [0]))
         return afm_out
