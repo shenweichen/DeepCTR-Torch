@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 import sys
 sys.path.append('/home/zhangwutong/DeepCTR-PyTorch')
-from deepctr_torch.models import WDL,DeepFM,xDeepFM
+from deepctr_torch.models import *
 from deepctr_torch.inputs import  SparseFeat, DenseFeat,get_fixlen_feature_names
 import torch
 
@@ -63,7 +63,6 @@ if __name__ == "__main__":
     model.fit(train_model_input, train[target].values,batch_size=256,epochs=10,validation_split=0.2,verbose=2)
 
     pred_ans = model.predict(test_model_input,256)
-    #print(pred_ans)
     print("")
     print("test LogLoss", round(log_loss(test[target].values, pred_ans), 4))
     print("test AUC", round(roc_auc_score(test[target].values, pred_ans), 4))
