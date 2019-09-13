@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
 from ..layers import DNN, CIN
@@ -28,7 +29,7 @@ class xDeepFM(BaseModel):
     """
 
     def __init__(self, linear_feature_columns, dnn_feature_columns, embedding_size=8, dnn_hidden_units=(256, 256),
-                 cin_layer_size=(128, 128,), cin_split_half=True, cin_activation=F.relu, l2_reg_linear=0.00001,
+                 cin_layer_size=(256, 128,), cin_split_half=True, cin_activation=F.relu, l2_reg_linear=0.00001,
                  l2_reg_embedding=0.00001, l2_reg_dnn=0, l2_reg_cin=0, init_std=0.0001, seed=1024, dnn_dropout=0,
                  dnn_activation=F.relu, dnn_use_bn=False, task='binary', device='cpu'):
 
@@ -42,21 +43,22 @@ class xDeepFM(BaseModel):
         self.dnn_hidden_units = dnn_hidden_units
         self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, embedding_size, ), dnn_hidden_units,
                        activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
-                       init_std=init_std)
-        self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False)
+                       init_std=init_std,device=device)
+        self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False).to(device)
 
         self.cin_layer_size = cin_layer_size
-        self.field_num = len(self.embedding_dict)
+        field_num = len(self.embedding_dict)
         if cin_split_half == True:
             self.featuremap_num = sum(
                 cin_layer_size[:-1]) // 2 + cin_layer_size[-1]
         else:
             self.featuremap_num = sum(cin_layer_size)
-        self.cin = CIN(self.field_num, cin_layer_size,
-                       cin_activation, cin_split_half, l2_reg_cin, seed)
-        self.cin_linear = nn.Linear(self.featuremap_num, 1, bias=False)
+        self.cin = CIN(field_num, cin_layer_size,
+                       cin_activation, cin_split_half, l2_reg_cin, seed,device=device)
+        self.cin_linear = nn.Linear(self.featuremap_num, 1, bias=False).to(device)
 
-        self.add_regularization_loss(self.dnn.weight, l2_reg_dnn)
+        self.add_regularization_loss(
+            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
         self.add_regularization_loss(self.dnn_linear.weight, l2_reg_dnn)
         self.add_regularization_loss(
             filter(lambda x: 'weight' in x[0], self.cin.named_parameters()), l2_reg_cin)
@@ -73,7 +75,7 @@ class xDeepFM(BaseModel):
         cin_input = torch.cat(sparse_embedding_list, dim=1)
         cin_output = self.cin(cin_input)
         cin_logit = self.cin_linear(cin_output)
-        #         pdb.set_trace()
+
         dnn_input = combined_dnn_input(sparse_embedding_list, dense_value_list)
         dnn_output = self.dnn(dnn_input)
         dnn_logit = self.dnn_linear(dnn_output)
@@ -83,7 +85,7 @@ class xDeepFM(BaseModel):
         elif len(self.dnn_hidden_units) == 0 and len(self.cin_layer_size) > 0:  # linear + CIN
             final_logit = linear_logit + cin_logit
         elif len(self.dnn_hidden_units) > 0 and len(self.cin_layer_size) == 0:  # linear +　Deep
-            final_logit = linear_logit + deep_logit
+            final_logit = linear_logit + dnn_logit
         elif len(self.dnn_hidden_units) > 0 and len(self.cin_layer_size) > 0:  # linear + CIN + Deep
             final_logit = linear_logit + dnn_logit + cin_logit
         else:
