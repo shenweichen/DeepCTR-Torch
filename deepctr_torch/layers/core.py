@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 class DNN(nn.Module):
     def __init__(self, inputs_dim, hidden_units, activation=F.relu, l2_reg=0, dropout_rate=0, use_bn=False,
-                 init_std=0.0001, seed=1024):
+                 init_std=0.0001, seed=1024,device='cpu'):
         super(DNN, self).__init__()
         self.activation = activation
         self.dropout_rate = dropout_rate
@@ -20,14 +20,16 @@ class DNN(nn.Module):
         #     (hidden_units[i+1],))) for i in range(len(hidden_units)-1)])
         self.linears = nn.ModuleList(
             [nn.Linear(hidden_units[i], hidden_units[i + 1]) for i in range(len(hidden_units) - 1)])
-        for tensor in self.linears:
-            nn.init.normal_(tensor.weight, mean=0, std=init_std)
+
+
         if self.use_bn:
             self.bn = nn.ModuleList(
                 [nn.BatchNorm1d(hidden_units[i+1]) for i in range(len(hidden_units)-1)])
         for name,tensor in self.linears.named_parameters():
             if 'weight' in name:
                 nn.init.normal_(tensor, mean=0, std=init_std)
+
+        self.to(device)
 
     def forward(self, inputs):
         deep_input = inputs
