@@ -14,21 +14,29 @@ class DNN(nn.Module):
         self.l2_reg = l2_reg
         self.use_bn = use_bn
         hidden_units = [inputs_dim] + list(hidden_units)
-        self.weight = nn.ParameterList([nn.Parameter(torch.Tensor(
-            hidden_units[i+1], hidden_units[i])) for i in range(len(hidden_units)-1)])
-        self.bias = nn.ParameterList([nn.Parameter(torch.zeros(
-            (hidden_units[i+1],))) for i in range(len(hidden_units)-1)])
+        # self.weight = nn.ParameterList([nn.Parameter(torch.Tensor(
+        #     hidden_units[i+1], hidden_units[i])) for i in range(len(hidden_units)-1)])
+        # self.bias = nn.ParameterList([nn.Parameter(torch.zeros(
+        #     (hidden_units[i+1],))) for i in range(len(hidden_units)-1)])
+        self.linears = nn.ModuleList(
+            [nn.Linear(hidden_units[i], hidden_units[i + 1]) for i in range(len(hidden_units) - 1)])
+        for tensor in self.linears:
+            nn.init.normal_(tensor.weight, mean=0, std=init_std)
         if self.use_bn:
             self.bn = nn.ModuleList(
                 [nn.BatchNorm1d(hidden_units[i+1]) for i in range(len(hidden_units)-1)])
-        for tensor in self.weight:
-            nn.init.normal_(tensor, mean=0, std=init_std)
+        for name,tensor in self.linears.named_parameters():
+            if 'weight' in name:
+                nn.init.normal_(tensor, mean=0, std=init_std)
 
     def forward(self, inputs):
         deep_input = inputs
 
-        for i in range(len(self.weight)):
-            fc = F.linear(deep_input, self.weight[i], self.bias[i])
+        for i in range(len(self.linears)):
+            # fc = F.linear(deep_input, self.weight[i], self.bias[i])
+
+            #for i in range(len(self.linears)):
+            fc = self.linears[i](deep_input)
 
             if self.use_bn:
                 fc = self.bn[i](fc)

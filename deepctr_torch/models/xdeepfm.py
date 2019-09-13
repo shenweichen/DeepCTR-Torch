@@ -57,7 +57,8 @@ class xDeepFM(BaseModel):
                        cin_activation, cin_split_half, l2_reg_cin, seed)
         self.cin_linear = nn.Linear(self.featuremap_num, 1, bias=False)
 
-        self.add_regularization_loss(self.dnn.weight, l2_reg_dnn)
+        self.add_regularization_loss(
+            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
         self.add_regularization_loss(self.dnn_linear.weight, l2_reg_dnn)
         self.add_regularization_loss(
             filter(lambda x: 'weight' in x[0], self.cin.named_parameters()), l2_reg_cin)
