@@ -66,7 +66,8 @@ class AutoInt(BaseModel):
         self.int_layers = nn.ModuleList([InteractingLayer(embedding_size if i == 0 else att_embedding_size*att_head_num,
                                                           att_embedding_size, att_head_num, att_res, device=device) for i in range(att_layer_num)])
 
-        self.add_regularization_loss(self.dnn.weight, l2_reg_dnn)
+        self.add_regularization_loss(
+            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
         self.add_regularization_loss(self.dnn_linear.weight, l2_reg_dnn)
 
         self.to(device)
