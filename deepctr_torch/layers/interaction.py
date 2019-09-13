@@ -227,7 +227,7 @@ class InteractingLayer(nn.Module):
             self.W_Res = nn.Parameter(torch.Tensor(
                 embedding_size, self.att_embedding_size * self.head_num))
         for tensor in self.parameters():
-            nn.init.normal(tensor)
+            nn.init.normal_(tensor)
 
         self.to(device)
 

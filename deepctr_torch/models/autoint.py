@@ -67,6 +67,7 @@ class AutoInt(BaseModel):
                                                           att_embedding_size, att_head_num, att_res, device=device) for i in range(att_layer_num)])
 
         self.add_regularization_loss(self.dnn.weight, l2_reg_dnn)
+        self.add_regularization_loss(self.dnn_linear.weight, l2_reg_dnn)
 
         self.to(device)
 
