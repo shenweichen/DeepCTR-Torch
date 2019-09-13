@@ -203,7 +203,7 @@ class InteractingLayer(nn.Module):
             - [Song W, Shi C, Xiao Z, et al. AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks[J]. arXiv preprint arXiv:1810.11921, 2018.](https://arxiv.org/abs/1810.11921)
     """
 
-    def __init__(self, in_feature, att_embedding_size=8, head_num=2, use_res=True, seed=1024):
+    def __init__(self, in_feature, att_embedding_size=8, head_num=2, use_res=True, seed=1024, device='cpu'):
         super(InteractingLayer, self).__init__()
         if head_num <= 0:
             raise ValueError('head_num must be a int > 0')
@@ -229,6 +229,8 @@ class InteractingLayer(nn.Module):
         for tensor in self.parameters():
             nn.init.normal(tensor)
 
+        self.to(device)
+
     def forward(self, inputs):
 
         if len(inputs.shape) != 3:
@@ -242,12 +244,16 @@ class InteractingLayer(nn.Module):
 
         # head_num None F D
 
-        querys = torch.stack(torch.split(querys, self.att_embedding_size, dim=2))
+        querys = torch.stack(torch.split(
+            querys, self.att_embedding_size, dim=2))
         keys = torch.stack(torch.split(keys, self.att_embedding_size, dim=2))
-        values = torch.stack(torch.split(values, self.att_embedding_size, dim=2))
-        inner_product = torch.einsum('bnik,bnjk->bnij', querys, keys)  # head_num None F F
+        values = torch.stack(torch.split(
+            values, self.att_embedding_size, dim=2))
+        inner_product = torch.einsum(
+            'bnik,bnjk->bnij', querys, keys)  # head_num None F F
 
-        self.normalized_att_scores = F.softmax(inner_product, dim=1)  # head_num None F F
+        self.normalized_att_scores = F.softmax(
+            inner_product, dim=1)  # head_num None F F
         result = torch.matmul(self.normalized_att_scores,
                               values)  # head_num None F D
 

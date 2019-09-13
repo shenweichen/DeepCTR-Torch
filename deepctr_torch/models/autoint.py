@@ -24,6 +24,7 @@ class AutoInt(BaseModel):
     :param init_std: float,to use as the initialize std of embedding vector
     :param seed: integer ,to use as random seed.
     :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
+    :param device: 
     :return: A PyTorch model instance.
     """
 
@@ -46,7 +47,8 @@ class AutoInt(BaseModel):
         field_num = len(self.embedding_dict)
 
         if len(dnn_hidden_units) and att_layer_num > 0:
-            dnn_linear_in_feature = dnn_hidden_units[-1] + field_num * att_embedding_size * att_head_num
+            dnn_linear_in_feature = dnn_hidden_units[-1] + \
+                field_num * att_embedding_size * att_head_num
         elif len(dnn_hidden_units) > 0:
             dnn_linear_in_feature = dnn_hidden_units[-1]
         elif att_layer_num > 0:
@@ -61,8 +63,8 @@ class AutoInt(BaseModel):
         self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, embedding_size, ), dnn_hidden_units,
                        activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
                        init_std=init_std)
-        self.int_layers = nn.ModuleList([InteractingLayer(embedding_size if i ==0 else att_embedding_size*att_head_num,
-            att_embedding_size, att_head_num, att_res) for i in range(att_layer_num)])
+        self.int_layers = nn.ModuleList([InteractingLayer(embedding_size if i == 0 else att_embedding_size*att_head_num,
+                                                          att_embedding_size, att_head_num, att_res, device=device) for i in range(att_layer_num)])
 
         self.add_regularization_loss(self.dnn.weight, l2_reg_dnn)
 
@@ -78,7 +80,7 @@ class AutoInt(BaseModel):
         for layer in self.int_layers:
             att_input = layer(att_input)
 
-        att_output = torch.flatten(att_input,start_dim=1)
+        att_output = torch.flatten(att_input, start_dim=1)
 
         dnn_input = combined_dnn_input(sparse_embedding_list, dense_value_list)
 
