@@ -4,7 +4,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
 class FM(nn.Module):
     """Factorization Machine models pairwise (order-2) feature interactions
      without linear term and bias.
@@ -228,7 +227,7 @@ class InteractingLayer(nn.Module):
             self.W_Res = nn.Parameter(torch.Tensor(
                 embedding_size, self.att_embedding_size * self.head_num))
         for tensor in self.parameters():
-            nn.init.normal_(tensor)
+            nn.init.normal_(tensor,mean=0.0,std=0.05)
 
         self.to(device)
 
