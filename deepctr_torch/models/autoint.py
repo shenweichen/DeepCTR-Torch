@@ -60,7 +60,7 @@ class AutoInt(BaseModel):
         self.dnn_hidden_units = dnn_hidden_units
         self.att_layer_num = att_layer_num
 
-        self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, embedding_size, ), dnn_hidden_units,
+        self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, embedding_size,), dnn_hidden_units,
                        activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
                        init_std=init_std,device=device)
         self.int_layers = nn.ModuleList([InteractingLayer(embedding_size if i == 0 else att_embedding_size*att_head_num,

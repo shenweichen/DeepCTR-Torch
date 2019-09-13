@@ -13,7 +13,7 @@ class WDL(BaseModel):
                  linear_feature_columns, dnn_feature_columns, embedding_size=8, dnn_hidden_units=(128, 128),
                  l2_reg_linear=1e-5,
                  l2_reg_embedding=1e-5, l2_reg_dnn=0, init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation=F.relu,
-                 dnn_use_bn=False, task='binary', device='cpu'):
+                 task='binary', device='cpu'):
         """Instantiates the Wide&Deep Learning architecture.
         :param linear_feature_columns: An iterable containing all the features used by linear part of the model.
         :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
