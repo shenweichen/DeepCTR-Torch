@@ -30,7 +30,7 @@ class AutoInt(BaseModel):
 
     def __init__(self, dnn_feature_columns, embedding_size=8, att_layer_num=3, att_embedding_size=8, att_head_num=2,
                  att_res=True,
-                 dnn_hidden_units=(256, 256), dnn_activation=F.relu,
+                 dnn_hidden_units=(256, 128), dnn_activation=F.relu,
                  l2_reg_dnn=0, l2_reg_embedding=1e-5, dnn_use_bn=False, dnn_dropout=0, init_std=0.0001, seed=1024,
                  task='binary', device='cpu'):
 
