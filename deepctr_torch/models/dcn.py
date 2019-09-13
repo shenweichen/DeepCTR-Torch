@@ -27,14 +27,14 @@ class DCN(BaseModel):
     :return: A Keras model instance.
     """
 
-    def __init__(self, linear_feature_columns,
+    def __init__(self,
                  dnn_feature_columns, embedding_size=8, cross_num=2,
                  dnn_hidden_units=(128, 128), l2_reg_linear=0.00001,
                  l2_reg_embedding=0.00001, l2_reg_cross=0.00001, l2_reg_dnn=0, init_std=0.0001, seed=1024,
                  dnn_dropout=0,
                  dnn_activation=F.relu, dnn_use_bn=False, task='binary', device='cpu'):
 
-        super(DCN, self).__init__(linear_feature_columns=linear_feature_columns,
+        super(DCN, self).__init__(linear_feature_columns=[],
                                   dnn_feature_columns=dnn_feature_columns,
                                   embedding_size=embedding_size,
                                   dnn_hidden_units=dnn_hidden_units,
@@ -45,7 +45,8 @@ class DCN(BaseModel):
         self.dnn_hidden_units = dnn_hidden_units
         self.cross_num = cross_num
         self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, embedding_size, ), dnn_hidden_units,
-                       activation=dnn_activation,use_bn=dnn_use_bn, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, init_std=init_std)
+                       activation=dnn_activation, use_bn=dnn_use_bn, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout,
+                       init_std=init_std)
         if len(self.dnn_hidden_units) > 0 and self.cross_num > 0:
             self.dnn_linear = nn.Linear(
                 self.compute_input_dim(dnn_feature_columns, embedding_size, ) + dnn_hidden_units[-1], 1, bias=False)
