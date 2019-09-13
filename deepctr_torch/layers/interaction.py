@@ -185,7 +185,6 @@ class AFMLayer(nn.Module):
 
         afm_out = torch.tensordot(
             attention_output, self.projection_p, dims=([-1], [0]))
-
         return afm_out
 
 
