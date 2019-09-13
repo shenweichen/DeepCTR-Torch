@@ -85,6 +85,7 @@ class CIN(nn.Module):
         final_result = []
 
         for i, size in enumerate(self.layer_size):
+          
             # x^(k-1) * x^0
             x = torch.einsum(
                 'bhd,bmd->bhmd', hidden_nn_layers[-1], hidden_nn_layers[0])
@@ -185,6 +186,7 @@ class AFMLayer(nn.Module):
 
         afm_out = torch.tensordot(
             attention_output, self.projection_p, dims=([-1], [0]))
+        
         return afm_out
 
 

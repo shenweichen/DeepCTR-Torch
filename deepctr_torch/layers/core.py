@@ -14,6 +14,7 @@ class DNN(nn.Module):
         self.l2_reg = l2_reg
         self.use_bn = use_bn
         hidden_units = [inputs_dim] + list(hidden_units)
+
         # self.weight = nn.ParameterList([nn.Parameter(torch.Tensor(
         #     hidden_units[i+1], hidden_units[i])) for i in range(len(hidden_units)-1)])
         # self.bias = nn.ParameterList([nn.Parameter(torch.zeros(
