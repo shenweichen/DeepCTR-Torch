@@ -47,13 +47,13 @@ class xDeepFM(BaseModel):
         self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False)
 
         self.cin_layer_size = cin_layer_size
-        self.field_num = len(self.embedding_dict)
+        field_num = len(self.embedding_dict)
         if cin_split_half == True:
             self.featuremap_num = sum(
                 cin_layer_size[:-1]) // 2 + cin_layer_size[-1]
         else:
             self.featuremap_num = sum(cin_layer_size)
-        self.cin = CIN(self.field_num, cin_layer_size,
+        self.cin = CIN(field_num, cin_layer_size,
                        cin_activation, cin_split_half, l2_reg_cin, seed)
         self.cin_linear = nn.Linear(self.featuremap_num, 1, bias=False)
 
@@ -74,7 +74,7 @@ class xDeepFM(BaseModel):
         cin_input = torch.cat(sparse_embedding_list, dim=1)
         cin_output = self.cin(cin_input)
         cin_logit = self.cin_linear(cin_output)
-        #         pdb.set_trace()
+
         dnn_input = combined_dnn_input(sparse_embedding_list, dense_value_list)
         dnn_output = self.dnn(dnn_input)
         dnn_logit = self.dnn_linear(dnn_output)
@@ -84,7 +84,7 @@ class xDeepFM(BaseModel):
         elif len(self.dnn_hidden_units) == 0 and len(self.cin_layer_size) > 0:  # linear + CIN
             final_logit = linear_logit + cin_logit
         elif len(self.dnn_hidden_units) > 0 and len(self.cin_layer_size) == 0:  # linear +　Deep
-            final_logit = linear_logit + deep_logit
+            final_logit = linear_logit + dnn_logit
         elif len(self.dnn_hidden_units) > 0 and len(self.cin_layer_size) > 0:  # linear + CIN + Deep
             final_logit = linear_logit + dnn_logit + cin_logit
         else:

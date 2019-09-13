@@ -10,7 +10,7 @@
 [![Gitter](https://badges.gitter.im/DeepCTR/community.svg)](https://gitter.im/DeepCTR/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![License](https://img.shields.io/github/license/shenweichen/deepctr.svg)](https://github.com/shenweichen/deepctr/blob/master/LICENSE)
 
-PyTorch version of [DeepCTR](https://github.com/shenweichen/DeepCTR).
+PyTorch version of [DeepCTR](https://github.com/shenweichen/DeepCTR).Use`pip install -U deepctr-torch` to install!
 
 DeepCTR is a **Easy-to-use**,**Modular** and **Extendible** package of deep-learning based CTR models along with lots of core components layers which can be used to build your own custom model easily.You can use any complex model with `model.fit()`and `model.predict()` .
 

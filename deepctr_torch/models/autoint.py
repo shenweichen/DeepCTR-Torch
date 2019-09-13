@@ -1,0 +1,99 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+from .basemodel import BaseModel
+from ..inputs import combined_dnn_input
+from ..layers import DNN, concat_fun, InteractingLayer
+
+
+class AutoInt(BaseModel):
+    """Instantiates the AutoInt Network architecture.
+    :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
+    :param embedding_size: positive integer,sparse feature embedding_size
+    :param att_layer_num: int.The InteractingLayer number to be used.
+    :param att_embedding_size: int.The embedding size in multi-head self-attention network.
+    :param att_head_num: int.The head number in multi-head  self-attention network.
+    :param att_res: bool.Whether or not use standard residual connections before output.
+    :param dnn_hidden_units: list,list of positive integer or empty list, the layer number and units in each layer of DNN
+    :param dnn_activation: Activation function to use in DNN
+    :param l2_reg_dnn: float. L2 regularizer strength applied to DNN
+    :param l2_reg_embedding: float. L2 regularizer strength applied to embedding vector
+    :param dnn_use_bn:  bool. Whether use BatchNormalization before activation or not in DNN
+    :param dnn_dropout: float in [0,1), the probability we will drop out a given DNN coordinate.
+    :param init_std: float,to use as the initialize std of embedding vector
+    :param seed: integer ,to use as random seed.
+    :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
+    :return: A PyTorch model instance.
+    """
+
+    def __init__(self, dnn_feature_columns, embedding_size=8, att_layer_num=3, att_embedding_size=8, att_head_num=2,
+                 att_res=True,
+                 dnn_hidden_units=(256, 256), dnn_activation=F.relu,
+                 l2_reg_dnn=0, l2_reg_embedding=1e-5, dnn_use_bn=False, dnn_dropout=0, init_std=0.0001, seed=1024,
+                 task='binary', device='cpu'):
+
+        super(AutoInt, self).__init__([], dnn_feature_columns, embedding_size=embedding_size,
+                                      dnn_hidden_units=dnn_hidden_units,
+                                      l2_reg_linear=0,
+                                      l2_reg_embedding=l2_reg_embedding, l2_reg_dnn=l2_reg_dnn, init_std=init_std,
+                                      seed=seed,
+                                      dnn_dropout=dnn_dropout, dnn_activation=dnn_activation,
+                                      task=task, device=device)
+
+        if len(dnn_hidden_units) <= 0 and att_layer_num <= 0:
+            raise ValueError("Either hidden_layer or att_layer_num must > 0")
+        field_num = len(self.embedding_dict)
+
+        if len(dnn_hidden_units) and att_layer_num > 0:
+            dnn_linear_in_feature = dnn_hidden_units[-1] + field_num * att_embedding_size * att_head_num
+        elif len(dnn_hidden_units) > 0:
+            dnn_linear_in_feature = dnn_hidden_units[-1]
+        elif att_layer_num > 0:
+            dnn_linear_in_feature = field_num * att_embedding_size * att_head_num
+        else:
+            raise NotImplementedError
+
+        self.dnn_linear = nn.Linear(dnn_linear_in_feature, 1, bias=False)
+        self.dnn_hidden_units = dnn_hidden_units
+        self.att_layer_num = att_layer_num
+
+        self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, embedding_size, ), dnn_hidden_units,
+                       activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
+                       init_std=init_std)
+        self.int_layers = nn.ModuleList([InteractingLayer(embedding_size if i ==0 else att_embedding_size*att_head_num,
+            att_embedding_size, att_head_num, att_res) for i in range(att_layer_num)])
+
+        self.add_regularization_loss(self.dnn.weight, l2_reg_dnn)
+
+        self.to(device)
+
+    def forward(self, X):
+
+        sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
+                                                                                  self.embedding_dict)
+
+        att_input = concat_fun(sparse_embedding_list, axis=1)
+
+        for layer in self.int_layers:
+            att_input = layer(att_input)
+
+        att_output = torch.flatten(att_input,start_dim=1)
+
+        dnn_input = combined_dnn_input(sparse_embedding_list, dense_value_list)
+
+        if len(self.dnn_hidden_units) > 0 and self.att_layer_num > 0:  # Deep & Interacting Layer
+            deep_out = self.dnn(dnn_input)
+            stack_out = concat_fun([att_output, deep_out])
+            final_logit = self.dnn_linear(stack_out)
+        elif len(self.dnn_hidden_units) > 0:  # Only Deep
+            deep_out = self.dnn(dnn_input)
+            final_logit = self.dnn_linear(deep_out)
+        elif self.att_layer_num > 0:  # Only Interacting Layer
+            final_logit = self.dnn_linear(att_output)
+        else:  # Error
+            raise NotImplementedError
+
+        y_pred = self.out(final_logit)
+
+        return y_pred
