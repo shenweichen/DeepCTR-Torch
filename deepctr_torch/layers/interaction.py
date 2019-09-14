@@ -28,6 +28,92 @@ class FM(nn.Module):
 
         return cross_term
 
+class SENETLayer(nn.Module):
+    """SENETLayer used in FiBiNET.
+      Input shape
+        - A list of 3D tensor with shape: ``(batch_size,filed_size,embedding_size)``.
+      Output shape
+        - A list of 3D tensor with shape: ``(batch_size,filed_size,embedding_size)``.
+      Arguments
+        - **reduction_ratio** : Positive integer, dimensionality of the
+         attention network output space.
+        - **seed** : A Python integer to use as random seed.
+      References
+        - [FiBiNET: Combining Feature Importance and Bilinear feature Interaction for Click-Through Rate Prediction
+Tongwen](https://arxiv.org/pdf/1905.09433.pdf)
+    """
+
+    def __init__(self, filed_size, reduction_ratio=3,  seed=1024, device='cpu'):
+        super(SENETLayer, self).__init__()
+        self.seed = seed
+        self.filed_size = filed_size
+        self.reduction_size = max(1, filed_size // reduction_ratio)
+        self.excitation = nn.ModuleList()
+        self.excitation.append(nn.Linear(self.filed_size, self.reduction_size, bias=False))
+        self.excitation.append(nn.ReLU())
+        self.excitation.append(nn.Linear(self.reduction_size, self.filed_size, bias=False))
+        self.excitation.append(nn.ReLU())
+        self.to(device)
+
+
+    def forward(self, inputs):
+        if len(inputs.shape) != 3:
+            raise ValueError(
+                "Unexpected inputs dimensions %d, expect to be 3 dimensions" % (len(inputs.shape)))
+        Z = torch.mean(inputs, dim = -1, out=None)
+        A = self.excitation(Z)
+        V = torch.mul(inputs, A)
+
+        return V
+
+class BilinearInteraction(nn.Module):
+    """BilinearInteraction Layer used in FiBiNET.
+      Input shape
+        - A list of 3D tensor with shape: ``(batch_size,filed_size, embedding_size)``.
+      Output shape
+        - 3D tensor with shape: ``(batch_size,filed_size, embedding_size)``.
+      Arguments
+        - **str** : String, types of bilinear functions used in this layer.
+        - **seed** : A Python integer to use as random seed.
+      References
+        - [FiBiNET: Combining Feature Importance and Bilinear feature Interaction for Click-Through Rate Prediction
+Tongwen](https://arxiv.org/pdf/1905.09433.pdf)
+    """
+
+    def __init__(self, filed_size, embedding_size, bilinear_type="interaction", seed=1024, device='cpu'):
+        super(BilinearInteraction, self).__init__()
+        self.bilinear_type = bilinear_type
+        self.seed = seed
+        self.bilinear = nn.ModuleList()
+        if self.bilinear_type == "all":
+            self.bilinear.append(nn.Linear(embedding_size, embedding_size, bias=False))
+        elif self.bilinear_type == "each":
+            for i in range(filed_size):
+                self.bilinear.append(nn.Linear(embedding_size, embedding_size, bias=False))
+        elif self.bilinear_type == "interaction":
+            for i, j in itertools.combinations(range(filed_size), 2):
+                self.bilinear.append(nn.Linear(embedding_size, embedding_size, bias=False))
+
+        else:
+            raise NotImplementedError
+        self.to(device)
+
+    def forward(self, inputs):
+        if len(inputs.shape) != 3:
+            raise ValueError(
+                "Unexpected inputs dimensions %d, expect to be 3 dimensions" % (len(inputs.shape)))
+        if self.bilinear_type == "all":
+            p = [torch.mul(self.bilinear(v_i), v_j)
+                 for v_i, v_j in itertools.combinations(inputs, 2)]
+        elif self.bilinear_type == "each":
+            p = [torch.mul(self.bilinear[i](inputs[i]), inputs[j])
+                 for i, j in itertools.combinations(range(len(inputs)), 2)]
+        elif self.bilinear_type == "interaction":
+            p = [torch.mul(bilinear(v[0]), v[1])
+                 for v, bilinear in zip(itertools.combinations(inputs, 2), self.bilinear)]
+        else:
+            raise NotImplementedError
+        return p
 
 class CIN(nn.Module):
     """Compressed Interaction Network used in xDeepFM.

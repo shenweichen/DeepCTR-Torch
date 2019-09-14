@@ -2,6 +2,8 @@ import pandas as pd
 from sklearn.metrics import log_loss, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+import sys
+sys.path.append('/home/zhangwutong/DeepCTR-PyTorch')
 from deepctr_torch.models import *
 from deepctr_torch.inputs import SparseFeat, DenseFeat, get_fixlen_feature_names
 import torch
@@ -50,7 +52,7 @@ if __name__ == "__main__":
         print('cuda ready...')
         device = 'cuda:0'
 
-    model = DeepFM(linear_feature_columns=linear_feature_columns, dnn_feature_columns=dnn_feature_columns, task='binary',
+    model = FiBiNET(linear_feature_columns=linear_feature_columns, dnn_feature_columns=dnn_feature_columns, task='binary',
                    l2_reg_embedding=1e-5, device=device)
 
     model.compile("adagrad", "binary_crossentropy",
