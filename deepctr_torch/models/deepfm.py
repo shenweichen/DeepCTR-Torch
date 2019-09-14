@@ -11,10 +11,10 @@ class DeepFM(BaseModel):
 
     def __init__(self,
                  linear_feature_columns, dnn_feature_columns, embedding_size=8, use_fm=True,
-                 dnn_hidden_units=(128, 128),
+                 dnn_hidden_units=(256, 128),
                  l2_reg_linear=0.00001, l2_reg_embedding=0.00001, l2_reg_dnn=0, init_std=0.0001, seed=1024,
                  dnn_dropout=0,
-                 dnn_activation=F.relu, dnn_use_bn=False, task='binary', device='cpu'):
+                 dnn_activation='relu', dnn_use_bn=False, device='cpu'):
         """Instantiates the DeepFM Network architecture.
         :param linear_feature_columns: An iterable containing all the features used by linear part of the model.
         :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
@@ -43,10 +43,10 @@ class DeepFM(BaseModel):
                                      task=task, device=device)
 
         self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, embedding_size, ), dnn_hidden_units,
-                       activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn, init_std=init_std)
-        self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False)
-
-        self.add_regularization_loss(self.dnn.weight, l2_reg_dnn)
+                       activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn, init_std=init_std,device=device)
+        self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False).to(device)
+        self.add_regularization_loss(
+            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
         self.add_regularization_loss(self.dnn_linear.weight, l2_reg_dnn)
 
         if use_fm:

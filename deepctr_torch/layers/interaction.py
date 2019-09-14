@@ -4,7 +4,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
 class FM(nn.Module):
     """Factorization Machine models pairwise (order-2) feature interactions
      without linear term and bias.
@@ -43,10 +42,9 @@ class CIN(nn.Module):
         - **seed** : A Python integer to use as random seed.
       References
         - [Lian J, Zhou X, Zhang F, et al. xDeepFM: Combining Explicit and Implicit Feature Interactions for Recommender Systems[J]. arXiv preprint arXiv:1803.05170, 2018.] (https://arxiv.org/pdf/1803.05170.pdf)
-    """   
-    
+    """
 
-    def __init__(self, field_nums, layer_size=(128, 128), activation=F.relu, split_half=True, l2_reg=1e-5, seed=1024, ):
+    def __init__(self, field_nums, layer_size=(128, 128), activation=F.relu, split_half=True, l2_reg=1e-5, seed=1024,device='cpu'):
         super(CIN, self).__init__()
         if len(layer_size) == 0:
             raise ValueError(
@@ -73,8 +71,9 @@ class CIN(nn.Module):
             else:
                 self.field_nums.append(size)
 
-#         for tensor in self.conv1ds:
-#             nn.init.normal_(tensor.weight, mean=0, std=init_std)
+    #         for tensor in self.conv1ds:
+    #             nn.init.normal_(tensor.weight, mean=0, std=init_std)
+        self.to(device)
 
     def forward(self, inputs):
         if len(inputs.shape) != 3:
@@ -86,7 +85,7 @@ class CIN(nn.Module):
         final_result = []
 
         for i, size in enumerate(self.layer_size):
-            #x^(k-1) * x^0
+            # x^(k-1) * x^0
             x = torch.einsum(
                 'bhd,bmd->bhmd', hidden_nn_layers[-1], hidden_nn_layers[0])
             # x.shape = (batch_size , hi * m, dim)
@@ -187,3 +186,116 @@ class AFMLayer(nn.Module):
         afm_out = torch.tensordot(
             attention_output, self.projection_p, dims=([-1], [0]))
         return afm_out
+
+
+class InteractingLayer(nn.Module):
+    """A Layer used in AutoInt that model the correlations between different feature fields by multi-head self-attention mechanism.
+      Input shape
+            - A 3D tensor with shape: ``(batch_size,field_size,embedding_size)``.
+      Output shape
+            - 3D tensor with shape:``(batch_size,field_size,att_embedding_size * head_num)``.
+      Arguments
+            - **att_embedding_size**: int.The embedding size in multi-head self-attention network.
+            - **head_num**: int.The head number in multi-head  self-attention network.
+            - **use_res**: bool.Whether or not use standard residual connections before output.
+            - **seed**: A Python integer to use as random seed.
+      References
+            - [Song W, Shi C, Xiao Z, et al. AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks[J]. arXiv preprint arXiv:1810.11921, 2018.](https://arxiv.org/abs/1810.11921)
+    """
+
+    def __init__(self, in_feature, att_embedding_size=8, head_num=2, use_res=True, seed=1024, device='cpu'):
+        super(InteractingLayer, self).__init__()
+        if head_num <= 0:
+            raise ValueError('head_num must be a int > 0')
+        self.att_embedding_size = att_embedding_size
+        self.head_num = head_num
+        self.use_res = use_res
+        self.seed = seed
+
+        embedding_size = in_feature
+
+        self.W_Query = nn.Parameter(torch.Tensor(
+            embedding_size, self.att_embedding_size * self.head_num))
+
+        self.W_key = nn.Parameter(torch.Tensor(
+            embedding_size, self.att_embedding_size * self.head_num))
+
+        self.W_Value = nn.Parameter(torch.Tensor(
+            embedding_size, self.att_embedding_size * self.head_num))
+
+        if self.use_res:
+            self.W_Res = nn.Parameter(torch.Tensor(
+                embedding_size, self.att_embedding_size * self.head_num))
+        for tensor in self.parameters():
+            nn.init.normal_(tensor,mean=0.0,std=0.05)
+
+        self.to(device)
+
+    def forward(self, inputs):
+
+        if len(inputs.shape) != 3:
+            raise ValueError(
+                "Unexpected inputs dimensions %d, expect to be 3 dimensions" % (len(inputs.shape)))
+
+        querys = torch.tensordot(inputs, self.W_Query,
+                                 dims=([-1], [0]))  # None F D*head_num
+        keys = torch.tensordot(inputs, self.W_key, dims=([-1], [0]))
+        values = torch.tensordot(inputs, self.W_Value, dims=([-1], [0]))
+
+        # head_num None F D
+
+        querys = torch.stack(torch.split(
+            querys, self.att_embedding_size, dim=2))
+        keys = torch.stack(torch.split(keys, self.att_embedding_size, dim=2))
+        values = torch.stack(torch.split(
+            values, self.att_embedding_size, dim=2))
+        inner_product = torch.einsum(
+            'bnik,bnjk->bnij', querys, keys)  # head_num None F F
+
+        self.normalized_att_scores = F.softmax(
+            inner_product, dim=1)  # head_num None F F
+        result = torch.matmul(self.normalized_att_scores,
+                              values)  # head_num None F D
+
+        result = torch.cat(torch.split(result, 1, ), dim=-1)
+        result = torch.squeeze(result, dim=0)  # None F D*head_num
+        if self.use_res:
+            result += torch.tensordot(inputs, self.W_Res, dims=([-1], [0]))
+        result = F.relu(result)
+
+        return result
+
+
+class CrossNet(nn.Module):
+    """The Cross Network part of Deep&Cross Network model,
+    which leans both low and high degree cross feature.
+      Input shape
+        - 2D tensor with shape: ``(batch_size, units)``.
+      Output shape
+        - 2D tensor with shape: ``(batch_size, units)``.
+      Arguments
+        - **input_feature_num**: Positive integer, shape(Input tensor)[-1]
+        - **layer_num**: Positive integer, the cross layer number
+        - **l2_reg**: float between 0 and 1. L2 regularizer strength applied to the kernel weights matrix
+        - **seed**: A Python integer to use as random seed.
+      References
+        - [Wang R, Fu B, Fu G, et al. Deep & cross network for ad click predictions[C]//Proceedings of the ADKDD'17. ACM, 2017: 12.](https://arxiv.org/abs/1708.05123)
+    """
+
+    def __init__(self, input_feature_num, layer_num=2, seed=1024,device='cpu'):
+        super(CrossNet, self).__init__()
+        self.layer_num = layer_num
+        self.kernels = torch.nn.ParameterList(
+            [nn.Parameter(nn.init.xavier_normal_(torch.empty(input_feature_num, 1))) for i in range(self.layer_num)])
+        self.bias = torch.nn.ParameterList(
+            [nn.Parameter(nn.init.zeros_(torch.empty(input_feature_num, 1))) for i in range(self.layer_num)])
+        self.to(device)
+    def forward(self, inputs):
+        x_0 = inputs.unsqueeze(2)
+        x_l = x_0
+        for i in range(self.layer_num):
+            xl_w = torch.tensordot(x_l, self.kernels[i], dims=([1], [0]))
+            dot_ = torch.matmul(x_0, xl_w)
+            x_l = dot_ + self.bias[i] + x_l
+        x_l = torch.squeeze(x_l, dim=2)
+        return x_l
