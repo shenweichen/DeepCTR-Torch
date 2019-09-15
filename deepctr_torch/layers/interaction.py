@@ -48,11 +48,12 @@ Tongwen](https://arxiv.org/pdf/1905.09433.pdf)
         self.seed = seed
         self.filed_size = filed_size
         self.reduction_size = max(1, filed_size // reduction_ratio)
-        self.excitation = nn.ModuleList()
-        self.excitation.append(nn.Linear(self.filed_size, self.reduction_size, bias=False))
-        self.excitation.append(nn.ReLU())
-        self.excitation.append(nn.Linear(self.reduction_size, self.filed_size, bias=False))
-        self.excitation.append(nn.ReLU())
+        self.excitation = nn.Sequential(
+            nn.Linear(self.filed_size, self.reduction_size, bias=False),
+            nn.ReLU(),
+            nn.Linear(self.reduction_size, self.filed_size, bias=False),
+            nn.ReLU()
+        )
         self.to(device)
 
 
@@ -62,7 +63,7 @@ Tongwen](https://arxiv.org/pdf/1905.09433.pdf)
                 "Unexpected inputs dimensions %d, expect to be 3 dimensions" % (len(inputs.shape)))
         Z = torch.mean(inputs, dim = -1, out=None)
         A = self.excitation(Z)
-        V = torch.mul(inputs, A)
+        V = torch.mul(inputs, torch.unsqueeze(A, dim=2))
 
         return V
 
@@ -102,6 +103,7 @@ Tongwen](https://arxiv.org/pdf/1905.09433.pdf)
         if len(inputs.shape) != 3:
             raise ValueError(
                 "Unexpected inputs dimensions %d, expect to be 3 dimensions" % (len(inputs.shape)))
+        inputs = torch.split(inputs, 1, dim=1)
         if self.bilinear_type == "all":
             p = [torch.mul(self.bilinear(v_i), v_j)
                  for v_i, v_j in itertools.combinations(inputs, 2)]
@@ -113,7 +115,7 @@ Tongwen](https://arxiv.org/pdf/1905.09433.pdf)
                  for v, bilinear in zip(itertools.combinations(inputs, 2), self.bilinear)]
         else:
             raise NotImplementedError
-        return p
+        return torch.cat(p, dim=1)
 
 class CIN(nn.Module):
     """Compressed Interaction Network used in xDeepFM.
