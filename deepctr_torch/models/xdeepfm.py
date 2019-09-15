@@ -1,3 +1,11 @@
+# -*- coding:utf-8 -*-
+"""
+Author:
+    Wutong Zhang
+Reference:
+    [1] Guo H, Tang R, Ye Y, et al. Deepfm: a factorization-machine based neural network for ctr prediction[J]. arXiv preprint arXiv:1703.04247, 2017.(https://arxiv.org/abs/1703.04247)
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -25,7 +33,7 @@ class xDeepFM(BaseModel):
     :param dnn_activation: Activation function to use in DNN
     :param dnn_use_bn: bool. Whether use BatchNormalization before activation or not in DNN
     :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
-    :return: A Keras model instance.
+    :return: A PyTorch model instance.
     """
 
     def __init__(self, linear_feature_columns, dnn_feature_columns, embedding_size=8, dnn_hidden_units=(256, 256),

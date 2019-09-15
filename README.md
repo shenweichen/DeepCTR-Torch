@@ -1,7 +1,8 @@
 # DeepCTR-PyTorch
 
-[![Python Versions](https://img.shields.io/pypi/pyversions/deepctr-torch.svg)](https://pypi.org/project/deepctr)
+[![Python Versions](https://img.shields.io/pypi/pyversions/deepctr-torch.svg)](https://pypi.org/project/deepctr-torch)
 [![Downloads](https://pepy.tech/badge/deepctr-torch)](https://pepy.tech/project/deepctr-torch)
+[![PyPI Version](https://img.shields.io/pypi/v/deepctr-torch.svg)](https://pypi.org/project/deepctr-torch)
 [![GitHub Issues](https://img.shields.io/github/issues/shenweichen/deepctr-pytorch.svg
 )](https://github.com/shenweichen/deepctr-pytorch/issues)
 
@@ -15,18 +16,6 @@ PyTorch version of [DeepCTR](https://github.com/shenweichen/DeepCTR).Use`pip ins
 DeepCTR is a **Easy-to-use**,**Modular** and **Extendible** package of deep-learning based CTR models along with lots of core components layers which can be used to build your own custom model easily.You can use any complex model with `model.fit()`and `model.predict()` .
 
 Let's [**Get Started!**](https://deepctr-doc.readthedocs.io/en/latest/Quick-Start.html)([Chinese Introduction](https://zhuanlan.zhihu.com/p/53231955))
-
-## **Call for contributers**
-
-This project is under development and we need developers to participate in the construction.
-
-If you 
-- familiar and interested in CTR models
-- familiar with pytorch(both pytorch and tensorflow better)
-- have spare time to learn and develop
-- familiar with git
-
-please send a brief introduction of your background and experience to wcshen1994@163.com, welcome to join us!
 
 ## Models List
 

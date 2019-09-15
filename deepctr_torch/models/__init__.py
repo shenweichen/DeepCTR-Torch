@@ -4,4 +4,4 @@ from .xdeepfm import xDeepFM
 from .afm import AFM
 from .autoint import AutoInt
 from .dcn import DCN
-from .nffm import NFFM
+from .fibinet import FiBiNET

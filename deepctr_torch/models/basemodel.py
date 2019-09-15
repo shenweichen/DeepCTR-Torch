@@ -278,28 +278,6 @@ class BaseModel(nn.Module):
 
         return sparse_embedding_list, dense_value_list
 
-    def input_from_second_order_column(self, X, feature_columns, second_order_embedding_dict):
-        '''
-        :param X: same as input_from_feature_columns
-        :param feature_columns: same as input_from_feature_columns
-        :param second_order_embedding_dict: ex: {'A1+A2': Interac model} created by function create_second_order_embedding_matrix
-        :return:
-        '''
-        sparse_feature_columns = list(
-            filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
-        second_order_embedding_list = []
-        for first_index in range(len(sparse_feature_columns) - 1):
-            for second_index in range(first_index + 1, len(sparse_feature_columns)):
-                first_name = sparse_feature_columns[first_index].embedding_name
-                second_name = sparse_feature_columns[second_index].embedding_name
-                second_order_embedding_list.append(
-                    second_order_embedding_dict[first_name + "+" + second_name](
-                        X[:, self.feature_index[first_name][0]:self.feature_index[first_name][1]].long(),
-                        X[:, self.feature_index[second_name][0]:self.feature_index[second_name][1]].long()
-                    )
-                )
-        return second_order_embedding_list
-
     def create_embedding_matrix(self, feature_columns, embedding_size, init_std=0.0001, sparse=False):
 
         sparse_feature_columns = list(
@@ -313,50 +291,6 @@ class BaseModel(nn.Module):
             nn.init.normal_(tensor.weight, mean=0, std=init_std)
 
         return embedding_dict
-
-    def create_second_order_embedding_matrix(self, feature_columns, embedding_size, init_std=0.0001, sparse=False):
-        '''
-        :param feature_columns: same as create_embedding_matrix, ex: [spare_f or dense_f ...]
-        :param embedding_size: same as create_embedding_matrix
-        :param init_std: same as create_embedding_matrix
-        :param sparse: same as create_embedding_matrix
-        :return:
-        '''
-        class Interac(nn.Module):
-            def __init__(self, first_size, second_size, emb_size, init_std, sparse=False):
-                super(Interac, self).__init__()
-                self.emb1 = nn.Embedding(first_size, emb_size, sparse=sparse)
-                self.emb2 = nn.Embedding(second_size, emb_size, sparse=sparse)
-                self.__init_weight(init_std)
-
-            def __init_weight(self, init_std):
-                nn.init.normal_(self.emb1.weight, mean=0, std=init_std)
-
-            def forward(self, first, second):
-                """
-                input:
-                    x batch_size * 2
-                output:
-                    y batch_size * emb_size
-                """
-                first_emb = self.emb1(first)
-                second_emb = self.emb2(second)
-                y = first_emb * second_emb  # core code
-                return y
-
-        sparse_feature_columns = list(
-            filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
-        temp_dict = {}
-        for first_index in range(len(sparse_feature_columns) - 1):
-            for second_index in range(first_index + 1, len(sparse_feature_columns)):
-                first_name = sparse_feature_columns[first_index].embedding_name
-                second_name = sparse_feature_columns[second_index].embedding_name
-                temp_dict[first_name + "+" + second_name] = Interac(sparse_feature_columns[first_index].dimension,
-                                                                    sparse_feature_columns[second_index].dimension,
-                                                                    emb_size=embedding_size,
-                                                                    init_std=init_std,
-                                                                    sparse=sparse)
-        return nn.ModuleDict(temp_dict)
 
     def compute_input_dim(self, feature_columns, embedding_size, dense_only=False):
         sparse_feature_columns = list(
