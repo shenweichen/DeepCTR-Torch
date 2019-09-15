@@ -2,8 +2,6 @@ import pandas as pd
 from sklearn.metrics import log_loss, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
-import sys
-sys.path.append('/home/zhangwutong/DeepCTR-PyTorch')
 from deepctr_torch.models import *
 from deepctr_torch.inputs import SparseFeat, DenseFeat, get_fixlen_feature_names
 import torch

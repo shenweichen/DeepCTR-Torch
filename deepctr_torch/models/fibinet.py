@@ -65,7 +65,6 @@ class FiBiNET(BaseModel):
         if dense_only:
             return sum(map(lambda x: x.dimension, dense_feature_columns))
         else:
-
             return field_size * (field_size - 1) * embedding_size + sum(map(lambda x: x.dimension, dense_feature_columns))
 
     def forward(self, X):
