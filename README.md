@@ -1,7 +1,7 @@
 # DeepCTR-PyTorch
 
-[![Python Versions](https://img.shields.io/pypi/pyversions/deepctr-torch.svg)](https://pypi.org/project/deepctr)
-[![Downloads](https://pepy.tech/badge/deepctr)](https://pepy.tech/project/deepctr)
+[![Python Versions](https://img.shields.io/pypi/pyversions/deepctr-torch.svg)](https://pypi.org/project/deepctr-torch)
+[![Downloads](https://pepy.tech/badge/deepctr-torch)](https://pepy.tech/project/deepctr-torch)
 [![PyPI Version](https://img.shields.io/pypi/v/deepctr-torch.svg)](https://pypi.org/project/deepctr-torch)
 [![GitHub Issues](https://img.shields.io/github/issues/shenweichen/deepctr-pytorch.svg
 )](https://github.com/shenweichen/deepctr-pytorch/issues)
