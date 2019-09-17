@@ -33,6 +33,7 @@ class xDeepFM(BaseModel):
     :param dnn_activation: Activation function to use in DNN
     :param dnn_use_bn: bool. Whether use BatchNormalization before activation or not in DNN
     :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
+    :param device: 
     :return: A PyTorch model instance.
     """
 

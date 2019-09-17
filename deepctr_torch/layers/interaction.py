@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class FM(nn.Module):
     """Factorization Machine models pairwise (order-2) feature interactions
      without linear term and bias.
@@ -30,18 +31,17 @@ class FM(nn.Module):
 
 
 class BiInteractionPooling(nn.Module):
-    """
-    Bi-Interaction Layer used in Neural FM, compress the 
-    pairwise element-wise product of features into one single vector.
-    
-    Input shape
-    - A 3D tensor with shape: ``(batch_size, 1, embedding_size)``.
+    """Bi-Interaction Layer used in Neural FM,compress the
+     pairwise element-wise product of features into one single vector.
 
-    Output shape
-    - 3D tensor with shape: ``(batch_size, 1, embedding_size)``.
+      Input shape
+        - A 3D tensor with shape:``(batch_size,field_size,embedding_size)``.
 
-    References
-    - [He X, Chua T S. Neural factorization machines for sparse predictive analytics[C]//Proceedings of the 40th International ACM SIGIR conference on Research and Development in Information Retrieval. ACM, 2017: 355-364.](http://arxiv.org/abs/1708.05027)
+      Output shape
+        - 3D tensor with shape: ``(batch_size,1,embedding_size)``.
+
+      References
+        - [He X, Chua T S. Neural factorization machines for sparse predictive analytics[C]//Proceedings of the 40th International ACM SIGIR conference on Research and Development in Information Retrieval. ACM, 2017: 355-364.](http://arxiv.org/abs/1708.05027)
     """
 
     def __init__(self):
@@ -49,11 +49,14 @@ class BiInteractionPooling(nn.Module):
 
     def forward(self, inputs):
         concated_embeds_value = inputs
-        square_of_sum = torch.pow(torch.sum(concated_embeds_value, dim=1, keepdim=True), 2)
-        sum_of_square = torch.sum(concated_embeds_value * concated_embeds_value, dim=1, keepdim=True)
+        square_of_sum = torch.pow(
+            torch.sum(concated_embeds_value, dim=1, keepdim=True), 2)
+        sum_of_square = torch.sum(
+            concated_embeds_value * concated_embeds_value, dim=1, keepdim=True)
         cross_term = 0.5 * (square_of_sum - sum_of_square)
         return cross_term
-        
+
+
 class SENETLayer(nn.Module):
     """SENETLayer used in FiBiNET.
       Input shape
@@ -82,16 +85,16 @@ Tongwen](https://arxiv.org/pdf/1905.09433.pdf)
         )
         self.to(device)
 
-
     def forward(self, inputs):
         if len(inputs.shape) != 3:
             raise ValueError(
                 "Unexpected inputs dimensions %d, expect to be 3 dimensions" % (len(inputs.shape)))
-        Z = torch.mean(inputs, dim = -1, out=None)
+        Z = torch.mean(inputs, dim=-1, out=None)
         A = self.excitation(Z)
         V = torch.mul(inputs, torch.unsqueeze(A, dim=2))
 
         return V
+
 
 class BilinearInteraction(nn.Module):
     """BilinearInteraction Layer used in FiBiNET.
@@ -113,13 +116,16 @@ Tongwen](https://arxiv.org/pdf/1905.09433.pdf)
         self.seed = seed
         self.bilinear = nn.ModuleList()
         if self.bilinear_type == "all":
-            self.bilinear.append(nn.Linear(embedding_size, embedding_size, bias=False))
+            self.bilinear.append(
+                nn.Linear(embedding_size, embedding_size, bias=False))
         elif self.bilinear_type == "each":
             for i in range(filed_size):
-                self.bilinear.append(nn.Linear(embedding_size, embedding_size, bias=False))
+                self.bilinear.append(
+                    nn.Linear(embedding_size, embedding_size, bias=False))
         elif self.bilinear_type == "interaction":
             for i, j in itertools.combinations(range(filed_size), 2):
-                self.bilinear.append(nn.Linear(embedding_size, embedding_size, bias=False))
+                self.bilinear.append(
+                    nn.Linear(embedding_size, embedding_size, bias=False))
 
         else:
             raise NotImplementedError
@@ -143,6 +149,7 @@ Tongwen](https://arxiv.org/pdf/1905.09433.pdf)
             raise NotImplementedError
         return torch.cat(p, dim=1)
 
+
 class CIN(nn.Module):
     """Compressed Interaction Network used in xDeepFM.
       Input shape
@@ -158,7 +165,7 @@ class CIN(nn.Module):
         - [Lian J, Zhou X, Zhang F, et al. xDeepFM: Combining Explicit and Implicit Feature Interactions for Recommender Systems[J]. arXiv preprint arXiv:1803.05170, 2018.] (https://arxiv.org/pdf/1803.05170.pdf)
     """
 
-    def __init__(self, field_nums, layer_size=(128, 128), activation=F.relu, split_half=True, l2_reg=1e-5, seed=1024,device='cpu'):
+    def __init__(self, field_nums, layer_size=(128, 128), activation=F.relu, split_half=True, l2_reg=1e-5, seed=1024, device='cpu'):
         super(CIN, self).__init__()
         if len(layer_size) == 0:
             raise ValueError(
@@ -341,7 +348,7 @@ class InteractingLayer(nn.Module):
             self.W_Res = nn.Parameter(torch.Tensor(
                 embedding_size, self.att_embedding_size * self.head_num))
         for tensor in self.parameters():
-            nn.init.normal_(tensor,mean=0.0,std=0.05)
+            nn.init.normal_(tensor, mean=0.0, std=0.05)
 
         self.to(device)
 
@@ -396,7 +403,7 @@ class CrossNet(nn.Module):
         - [Wang R, Fu B, Fu G, et al. Deep & cross network for ad click predictions[C]//Proceedings of the ADKDD'17. ACM, 2017: 12.](https://arxiv.org/abs/1708.05123)
     """
 
-    def __init__(self, input_feature_num, layer_num=2, seed=1024,device='cpu'):
+    def __init__(self, input_feature_num, layer_num=2, seed=1024, device='cpu'):
         super(CrossNet, self).__init__()
         self.layer_num = layer_num
         self.kernels = torch.nn.ParameterList(
@@ -404,6 +411,7 @@ class CrossNet(nn.Module):
         self.bias = torch.nn.ParameterList(
             [nn.Parameter(nn.init.zeros_(torch.empty(input_feature_num, 1))) for i in range(self.layer_num)])
         self.to(device)
+
     def forward(self, inputs):
         x_0 = inputs.unsqueeze(2)
         x_l = x_0

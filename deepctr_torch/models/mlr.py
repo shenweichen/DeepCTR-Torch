@@ -2,6 +2,7 @@
 """
 Author:
     Wutong Zhang
+    Weichen Shen,wcshen1994@163.com
 Reference:
     [1] Gai K, Zhu X, Li H, et al. Learning Piece-wise Linear Models from Large Scale Data for Ad Click Prediction[J]. arXiv preprint arXiv:1704.05194, 2017.(https://arxiv.org/abs/1704.05194)
 """
@@ -25,7 +26,8 @@ class MLR(BaseModel):
     :param seed: integer ,to use as random seed.
     :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
     :param bias_feature_columns: An iterable containing all the features used by bias part of the model.
-    :return: A Keras model instance.
+    :param device:
+    :return: A PyTorch model instance.
     """
 
     def __init__(self, region_feature_columns, base_feature_columns=None, bias_feature_columns=None,

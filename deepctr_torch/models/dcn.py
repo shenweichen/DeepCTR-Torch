@@ -1,4 +1,10 @@
-# -*- coding: utf-8 -*-
+# -*- coding:utf-8 -*-
+"""
+Author:
+    chen_kkkk, bgasdo36977@gmail.com
+Reference:
+    [1] Wang R, Fu B, Fu G, et al. Deep & cross network for ad click predictions[C]//Proceedings of the ADKDD'17. ACM, 2017: 12. (https://arxiv.org/abs/1708.05123)
+"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -24,7 +30,7 @@ class DCN(BaseModel):
     :param dnn_activation: Activation function to use in DNN
     :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
     :param device:
-    :return: A Keras model instance.
+    :return: A PyTorch model instance.
     """
 
     def __init__(self,

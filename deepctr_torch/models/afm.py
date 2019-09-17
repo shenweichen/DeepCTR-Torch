@@ -1,3 +1,11 @@
+# -*- coding:utf-8 -*-
+"""
+Author:
+    Weichen Shen,wcshen1994@163.com
+Reference:
+    [1] Xiao J, Ye H, He X, et al. Attentional factorization machines: Learning the weight of feature interactions via attention networks[J]. arXiv preprint arXiv:1708.04617, 2017.
+    (https://arxiv.org/abs/1708.04617)
+"""
 import torch
 import torch.nn.functional as F
 
@@ -49,13 +57,14 @@ class AFM(BaseModel):
 
     def forward(self, X):
 
-        sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
-                                                                                  self.embedding_dict)
+        sparse_embedding_list, _ = self.input_from_feature_columns(X, self.dnn_feature_columns,
+                                                                                  self.embedding_dict,support_dense=False)
         logit = self.linear_model(X)
-        if self.use_attention:
-            logit += self.fm(sparse_embedding_list)
-        else:
-            logit += self.fm(torch.cat(sparse_embedding_list, dim=1))
+        if len(sparse_embedding_list) > 0:
+            if self.use_attention:
+                logit += self.fm(sparse_embedding_list)
+            else:
+                logit += self.fm(torch.cat(sparse_embedding_list, dim=1))
 
         y_pred = self.out(logit)
 
