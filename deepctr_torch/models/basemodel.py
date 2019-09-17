@@ -46,7 +46,7 @@ class Linear(nn.Module):
 
         if len(self.dense_feature_columns) > 0:
             self.weight = nn.Parameter(torch.Tensor(len(self.dense_feature_columns), 1)).to(
-            device)
+                device)
             torch.nn.init.normal_(self.weight, mean=0, std=init_std)
 
     def forward(self, X):
@@ -58,13 +58,17 @@ class Linear(nn.Module):
                             self.dense_feature_columns]
 
         if len(sparse_embedding_list) > 0 and len(dense_value_list) > 0:
-            linear_sparse_logit = torch.sum(torch.cat(sparse_embedding_list, dim=-1), dim=-1, keepdim=False)
-            linear_dense_logit = torch.cat(dense_value_list, dim=-1).matmul(self.weight)
+            linear_sparse_logit = torch.sum(
+                torch.cat(sparse_embedding_list, dim=-1), dim=-1, keepdim=False)
+            linear_dense_logit = torch.cat(
+                dense_value_list, dim=-1).matmul(self.weight)
             linear_logit = linear_sparse_logit + linear_dense_logit
         elif len(sparse_embedding_list) > 0:
-            linear_logit = torch.sum(torch.cat(sparse_embedding_list, dim=-1), dim=-1, keepdim=False)
+            linear_logit = torch.sum(
+                torch.cat(sparse_embedding_list, dim=-1), dim=-1, keepdim=False)
         elif len(dense_value_list) > 0:
-            linear_logit = torch.cat(dense_value_list, dim=-1).matmul(self.weight)
+            linear_logit = torch.cat(
+                dense_value_list, dim=-1).matmul(self.weight)
         else:
             raise NotImplementedError
 
@@ -98,7 +102,8 @@ class BaseModel(nn.Module):
         self.reg_loss = torch.zeros((1,), device=device)
         self.device = device  # device
 
-        self.feature_index = build_input_features(linear_feature_columns + dnn_feature_columns)
+        self.feature_index = build_input_features(
+            linear_feature_columns + dnn_feature_columns)
         self.dnn_feature_columns = dnn_feature_columns
 
         self.embedding_dict = self.create_embedding_matrix(dnn_feature_columns, embedding_size, init_std,
@@ -108,10 +113,13 @@ class BaseModel(nn.Module):
         #              self.dnn_feature_columns}
         #         )
 
-        self.linear_model = Linear(linear_feature_columns, self.feature_index, device=device)
+        self.linear_model = Linear(
+            linear_feature_columns, self.feature_index, device=device)
 
-        self.add_regularization_loss(self.embedding_dict.parameters(), l2_reg_embedding)
-        self.add_regularization_loss(self.linear_model.parameters(), l2_reg_linear)
+        self.add_regularization_loss(
+            self.embedding_dict.parameters(), l2_reg_embedding)
+        self.add_regularization_loss(
+            self.linear_model.parameters(), l2_reg_linear)
 
         self.out = PredictionLayer(task, )
         self.to(device)
@@ -127,7 +135,6 @@ class BaseModel(nn.Module):
             validation_data=None,
             shuffle=True, ):
         if validation_data:
-
             if len(validation_data) == 2:
                 val_x, val_y = validation_data
                 val_sample_weight = None
@@ -147,24 +154,29 @@ class BaseModel(nn.Module):
                 split_at = int(x[0].shape[0] * (1. - validation_split))
             else:
                 split_at = int(len(x[0]) * (1. - validation_split))
-            x, val_x = (slice_arrays(x, 0, split_at), slice_arrays(x, split_at))
-            y, val_y = (slice_arrays(y, 0, split_at), slice_arrays(y, split_at))
+            x, val_x = (slice_arrays(x, 0, split_at),
+                        slice_arrays(x, split_at))
+            y, val_y = (slice_arrays(y, 0, split_at),
+                        slice_arrays(y, split_at))
 
         else:
             val_x = []
             val_y = []
 
         train_tensor_data = Data.TensorDataset(
-            torch.from_numpy(np.hstack(list(map(lambda x: np.expand_dims(x, axis=1), x)))),
+            torch.from_numpy(
+                np.hstack(list(map(lambda x: np.expand_dims(x, axis=1), x)))),
             torch.from_numpy(y))
 
-        train_loader = DataLoader(dataset=train_tensor_data, shuffle=shuffle, batch_size=batch_size)
+        train_loader = DataLoader(
+            dataset=train_tensor_data, shuffle=shuffle, batch_size=batch_size)
 
         print(self.device, end="\n")
         model = self.train()
         loss_func = self.loss_func
         optim = self.optim
-        print("Train on {0} samples, validate on {1} samples".format(len(train_tensor_data), len(val_y)))
+        print("Train on {0} samples, validate on {1} samples".format(
+            len(train_tensor_data), len(val_y)))
         for epoch in range(initial_epoch, epochs):
             start_time = time.time()
             loss_epoch = 0
@@ -195,8 +207,8 @@ class BaseModel(nn.Module):
                             for name, metric_fun in self.metrics.items():
                                 if name not in train_result:
                                     train_result[name] = []
-                                train_result[name].append(metric_fun(y.cpu().data.numpy(), y_pred.cpu().data.numpy()))
-
+                                train_result[name].append(metric_fun(
+                                    y.cpu().data.numpy(), y_pred.cpu().data.numpy()))
 
             except KeyboardInterrupt:
                 t.close()
@@ -207,16 +219,19 @@ class BaseModel(nn.Module):
             if verbose > 0:
                 print('Epoch {0}/{1}'.format(epoch + 1, epochs))
 
-                eval_str = "{0}s - loss: {1: .4f}".format(epoch_time, total_loss_epoch / sample_num)
+                eval_str = "{0}s - loss: {1: .4f}".format(
+                    epoch_time, total_loss_epoch / sample_num)
 
                 for name, result in train_result.items():
-                    eval_str += " - " + name + ": {0: .4f}".format(np.sum(result) / steps_per_epoch)
+                    eval_str += " - " + name + \
+                        ": {0: .4f}".format(np.sum(result) / steps_per_epoch)
 
                 if len(val_x) and len(val_y):
                     eval_result = self.evaluate(val_x, val_y, batch_size)
 
                     for name, result in eval_result.items():
-                        eval_str += " - val_" + name + ": {0: .4f}".format(result)
+                        eval_str += " - val_" + name + \
+                            ": {0: .4f}".format(result)
                 print(eval_str)
 
     def evaluate(self, x, y, batch_size=256):
@@ -231,7 +246,8 @@ class BaseModel(nn.Module):
         model = self.eval()
         x = np.hstack(list(map(lambda x: np.expand_dims(x, axis=1), x)))
         tensor_data = Data.TensorDataset(torch.from_numpy(x))
-        test_loader = DataLoader(dataset=tensor_data, shuffle=False, batch_size=batch_size)
+        test_loader = DataLoader(
+            dataset=tensor_data, shuffle=False, batch_size=batch_size)
 
         pred_ans = []
         with torch.no_grad():
@@ -243,11 +259,15 @@ class BaseModel(nn.Module):
                 pred_ans.append(y_pred)
         return np.concatenate(pred_ans)
 
-    def input_from_feature_columns(self, X, feature_columns, embedding_dict):
+    def input_from_feature_columns(self, X, feature_columns, embedding_dict, support_dense=True):
         sparse_feature_columns = list(
             filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
         dense_feature_columns = list(
             filter(lambda x: isinstance(x, DenseFeat), feature_columns)) if len(feature_columns) else []
+
+        if not support_dense and len(dense_feature_columns) > 0:
+            raise ValueError(
+                "DenseFeat is not supported in dnn_feature_columns")
 
         sparse_embedding_list = [embedding_dict[feat.embedding_name](
             X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()) for
@@ -287,7 +307,10 @@ class BaseModel(nn.Module):
     def add_regularization_loss(self, weight_list, weight_decay, p=2):
         reg_loss = torch.zeros((1,), device=self.device)
         for w in weight_list:
-            l2_reg = torch.norm(w, p=p, )
+            if isinstance(w, tuple):
+                l2_reg = torch.norm(w[1], p=p, )
+            else:
+                l2_reg = torch.norm(w, p=p, )
             reg_loss = reg_loss + l2_reg
         reg_loss = weight_decay * reg_loss
         self.reg_loss += reg_loss
