@@ -70,8 +70,7 @@ class Linear(nn.Module):
             linear_logit = torch.cat(
                 dense_value_list, dim=-1).matmul(self.weight)
         else:
-            raise NotImplementedError
-
+            linear_logit = torch.zeros([X.shape[0],1])
         return linear_logit
 
     def create_embedding_matrix(self, feature_columns, embedding_size, init_std=0.0001, sparse=False):
