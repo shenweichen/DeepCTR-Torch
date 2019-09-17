@@ -11,7 +11,7 @@ import torch.nn.functional as F
 
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
-from ..layers import DNN,BiInteractionPooling
+from ..layers import DNN, BiInteractionPooling
 
 
 class NFM(BaseModel):
@@ -40,15 +40,17 @@ class NFM(BaseModel):
         """
 
         super(NFM, self).__init__(linear_feature_columns, dnn_feature_columns, embedding_size=embedding_size,
-                                     dnn_hidden_units=dnn_hidden_units,
-                                     l2_reg_linear=l2_reg_linear,
-                                     l2_reg_embedding=l2_reg_embedding, l2_reg_dnn=l2_reg_dnn, init_std=init_std,
-                                     seed=seed,
-                                     dnn_dropout=dnn_dropout, dnn_activation=dnn_activation,
-                                     task=task, device=device)
+                                  dnn_hidden_units=dnn_hidden_units,
+                                  l2_reg_linear=l2_reg_linear,
+                                  l2_reg_embedding=l2_reg_embedding, l2_reg_dnn=l2_reg_dnn, init_std=init_std,
+                                  seed=seed,
+                                  dnn_dropout=dnn_dropout, dnn_activation=dnn_activation,
+                                  task=task, device=device)
 
-        self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, embedding_size,True)+embedding_size, dnn_hidden_units,
-                       activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=False, init_std=init_std,device=device)
+        self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, embedding_size, True) + embedding_size,
+                       dnn_hidden_units,
+                       activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=False,
+                       init_std=init_std, device=device)
         self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False).to(device)
         self.add_regularization_loss(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
@@ -70,7 +72,6 @@ class NFM(BaseModel):
             bi_out = self.dropout(bi_out)
 
         dnn_input = combined_dnn_input([bi_out], dense_value_list)
-        print(dnn_input.shape)
         dnn_output = self.dnn(dnn_input)
         dnn_logit = self.dnn_linear(dnn_output)
 
