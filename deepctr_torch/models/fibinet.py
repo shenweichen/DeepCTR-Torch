@@ -32,6 +32,7 @@ class FiBiNET(BaseModel):
     :param dnn_dropout: float in [0,1), the probability we will drop out a given DNN coordinate.
     :param dnn_activation: Activation function to use in DNN
     :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
+    :param divece:
     :return: A PyTorch model instance.
     """
 

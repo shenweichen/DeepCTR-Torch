@@ -13,6 +13,8 @@ class DNN(nn.Module):
         self.seed = seed
         self.l2_reg = l2_reg
         self.use_bn = use_bn
+        if len(hidden_units) == 0:
+            raise ValueError("hidden_units is empty!!")
         hidden_units = [inputs_dim] + list(hidden_units)
 
         # self.weight = nn.ParameterList([nn.Parameter(torch.Tensor(
