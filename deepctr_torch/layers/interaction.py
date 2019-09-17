@@ -30,18 +30,17 @@ class FM(nn.Module):
 
 
 class BiInteractionPooling(nn.Module):
-    """
-    Bi-Interaction Layer used in Neural FM, compress the 
-    pairwise element-wise product of features into one single vector.
-    
-    Input shape
-    - A 3D tensor with shape: ``(batch_size, 1, embedding_size)``.
+    """Bi-Interaction Layer used in Neural FM,compress the
+     pairwise element-wise product of features into one single vector.
 
-    Output shape
-    - 3D tensor with shape: ``(batch_size, 1, embedding_size)``.
+      Input shape
+        - A 3D tensor with shape:``(batch_size,field_size,embedding_size)``.
 
-    References
-    - [He X, Chua T S. Neural factorization machines for sparse predictive analytics[C]//Proceedings of the 40th International ACM SIGIR conference on Research and Development in Information Retrieval. ACM, 2017: 355-364.](http://arxiv.org/abs/1708.05027)
+      Output shape
+        - 3D tensor with shape: ``(batch_size,1,embedding_size)``.
+
+      References
+        - [He X, Chua T S. Neural factorization machines for sparse predictive analytics[C]//Proceedings of the 40th International ACM SIGIR conference on Research and Development in Information Retrieval. ACM, 2017: 355-364.](http://arxiv.org/abs/1708.05027)
     """
 
     def __init__(self):
