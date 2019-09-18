@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-import deepctr_torch.models.PNN as PNN
+from deepctr_torch.models import PNN
 from sklearn.metrics import log_loss, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
@@ -52,13 +52,13 @@ if use_cuda and torch.cuda.is_available():
     print('cuda ready...')
     device = 'cuda:0'
 
-model = PNN(dnn_feature_columns,
-            l2_reg_embedding=1e-5,l2_reg_linear=1e-5,l2_reg_dnn=0,device=device)
+model = PNN(linear_feature_columns, dnn_feature_columns, use_inner=False, use_outter=True,
+                     device=device, task="binary")
 
-model.compile("adagrad","binary_crossentropy",metrics=["binary_crossentropy","auc"],)
-model.fit(train_model_input, train[target].values,batch_size=256,epochs=3,validation_split=0.2,verbose=2)
+model.compile("adagrad", "binary_crossentropy", metrics=["binary_crossentropy", "auc"],)
+model.fit(train_model_input, train[target].values, batch_size=32, epochs=1, validation_split=0.2, verbose=2)
 
-pred_ans = model.predict(test_model_input,256)
+pred_ans = model.predict(test_model_input, 32)
 #print(pred_ans)
 print("")
 print("test LogLoss", round(log_loss(test[target].values, pred_ans), 4))

@@ -64,72 +64,85 @@ class PNN(BaseModel):
 
         print("Init second order part")
         if self.use_inner:
-            self.inner_second_weight_emb = nn.ModuleList(
-                [nn.ParameterList([torch.nn.Parameter(torch.randn(embedding_size),
-                requires_grad=True) for j in range(field_size)]) for i in range(deep_layers[0])])
+            self.inner_second_weight_emb = nn.ModuleList([nn.ParameterList(
+                [torch.nn.Parameter(torch.randn(self.embedding_size), requires_grad=True) for j in
+                 range(field_size)]) for i in range(deep_layers[0])])
 
         if self.use_outter:
             arr = []
             for i in range(deep_layers[0]):
                 tmp = torch.randn(embedding_size, embedding_size)
-                arr.append(torch.nn.Parameter(torch.mm(tmp,tmp.t())))
+                arr.append(torch.nn.Parameter(torch.mm(tmp, tmp.t())))
             self.outer_second_weight_emb = nn.ParameterList(arr)
         print("Init second order part finished")
-
-
 
     def forward(self, X):
 
         if self.kernel_type not in ['mat', 'vec', 'num']:
             raise ValueError("kernel_type must be mat,vec or num")
-
+        """
+        # sparse_embedding_list: dnn_feature * batch_size * embedding_size   emb_arr
+        # dense_value_list: linear_feature * batch_size * 1
+        # linear_signal: batch_size * (dnn_feature * embedding_size)
+        # second_product: batch_size * (dnn_feature * embedding_size)
+        """
         sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
                                                                                   self.embedding_dict)
 
-        linear_signal = concat_fun(sparse_embedding_list).reshape([X.shape[0], len(sparse_embedding_list) * self.embedding_size])
+        cur_bs = len(sparse_embedding_list[0])
+        print("sparse_embedding_list: ", len(sparse_embedding_list), len(sparse_embedding_list[0]))
+        print("dense_value_list: ", len(dense_value_list), len(dense_value_list[0]))
+
+        linear_signal = concat_fun(sparse_embedding_list).reshape([X.shape[0],
+                                                                   len(sparse_embedding_list) * self.embedding_size])
         print("linear_signal", len(linear_signal), len(linear_signal[0]))
+        #print(linear_signal[0])
 
         if self.use_inner:
             inner_product_arr = []
-            for i, weight_arr in enumerate(self.first_order_weight):
+            for i, weight_arr in enumerate(self.inner_second_weight_emb):
                 tmp_arr = []
                 for j, weight in enumerate(weight_arr):
-                    tmp_arr.append(torch.sum(sparse_embedding_list[j] * weight, 1))
+                    tmp_arr.append(torch.sum(sparse_embedding_list[j].view(cur_bs, self.embedding_size) * weight, 1))
                 sum_ = sum(tmp_arr)
                 inner_product_arr.append((sum_*sum_).view([-1, 1]))
             inner_product = torch.cat(inner_product_arr, 1)
-            first_order = inner_product
+            second_product = inner_product
 
         if self.use_outter:
             outer_product_arr = []
             emb_arr_sum = sum(sparse_embedding_list)
+            #print("emb_arr_sum", emb_arr_sum)
             emb_matrix_arr = torch.bmm(emb_arr_sum.view([-1, self.embedding_size, 1]),
                                        emb_arr_sum.view([-1, 1, self.embedding_size]))
+            print("emb_matrix_arr", len(emb_matrix_arr), len(emb_matrix_arr[0]), emb_matrix_arr.shape)
             for i, weight in enumerate(self.outer_second_weight_emb):
                 outer_product_arr.append(torch.sum(torch.sum(emb_matrix_arr*weight, 2), 1).view([-1, 1]))
             outer_product = torch.cat(outer_product_arr, 1)
-            first_order = outer_product
+            second_product = outer_product
 
-        print("first_order: ", len(first_order), len(first_order[0]))
+        print("out second_product: ", len(second_product), len(second_product[0]))
+        # print(second_product[0])
 
-        first_order = first_order.detach().numpy().tolist()
-        first_order = [[[j] for j in i] for i in first_order]
-        first_order = torch.Tensor(first_order)
-        print("first_order: ", len(first_order), len(first_order[0]))
+        com = second_product + linear_signal
+        # com = torch.cat([linear_signal, second_product], dim=-1).squeeze()
+        print("com", len(com), len(com[0]), com.shape)
+        # print(com[0])
 
-        dnn_input = combined_dnn_input([first_order], dense_value_list)
-        #print("dnn_input: ", dnn_input)
+        dnn_input = combined_dnn_input([com], dense_value_list)
+        #dnn_input = combined_dnn_input([second_product], [linear_signal])
+        print("dnn_input: ", dnn_input.shape)
 
         dnn_output = self.dnn(dnn_input)
-        #print("dnn_output: ", dnn_output)
+        # print("dnn_output: ", dnn_output)
 
         dnn_logit = self.dnn_linear(dnn_output)
-        #print("dnn_logit: ", dnn_logit)
+        # print("dnn_logit: ", dnn_logit)
 
         logit = dnn_logit
-        #print("logit: ", logit)
+        # print("logit: ", logit)
 
         y_pred = self.out(logit)
-        #print("y_pred: ", y_pred)
+        # print("y_pred: ", y_pred)
 
         return y_pred
