@@ -5,3 +5,4 @@ from .afm import AFM
 from .autoint import AutoInt
 from .dcn import DCN
 from .fibinet import FiBiNET
+from .pnn import PNN
