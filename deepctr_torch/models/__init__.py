@@ -6,3 +6,4 @@ from .autoint import AutoInt
 from .dcn import DCN
 from .fibinet import FiBiNET
 from .pnn import PNN
+from .deepfm_test import DeepFM_test
