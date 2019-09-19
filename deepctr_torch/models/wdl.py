@@ -1,4 +1,10 @@
-from itertools import chain
+# -*- coding:utf-8 -*-
+"""
+Author:
+    Weichen Shen,wcshen1994@163.com
+Reference:
+    [1] Cheng H T, Koc L, Harmsen J, et al. Wide & deep learning for recommender systems[C]//Proceedings of the 1st Workshop on Deep Learning for Recommender Systems. ACM, 2016: 7-10.(https://arxiv.org/pdf/1606.07792.pdf)
+"""
 
 import torch.nn as nn
 import torch.nn.functional as F
@@ -38,12 +44,15 @@ class WDL(BaseModel):
                                   dnn_dropout=dnn_dropout, dnn_activation=dnn_activation,
                                   task=task, device=device)
 
-        self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, embedding_size, ), dnn_hidden_units,
-                       activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn, init_std=init_std,device=device)
-        self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False).to(device)
-        self.add_regularization_loss(
-            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
-        self.add_regularization_loss(self.dnn_linear.weight, l2_reg_dnn)
+        self.use_dnn = len(dnn_feature_columns) > 0 and len(
+            dnn_hidden_units) > 0
+        if self.use_dnn:
+            self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, embedding_size, ), dnn_hidden_units,
+                           activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn, init_std=init_std,device=device)
+            self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False).to(device)
+            self.add_regularization_loss(
+                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
+            self.add_regularization_loss(self.dnn_linear.weight, l2_reg_dnn)
 
         self.to(device)
 
@@ -51,13 +60,14 @@ class WDL(BaseModel):
 
         sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
                                                                                   self.embedding_dict)
-        linear_logit = self.linear_model(X)
+        logit = self.linear_model(X)
 
-        dnn_input = combined_dnn_input(sparse_embedding_list, dense_value_list)
+        if self.use_dnn:
+            dnn_input = combined_dnn_input(sparse_embedding_list, dense_value_list)
 
-        dnn_output = self.dnn(dnn_input)
-        dnn_logit = self.dnn_linear(dnn_output)
-        logit = linear_logit + dnn_logit
+            dnn_output = self.dnn(dnn_input)
+            dnn_logit = self.dnn_linear(dnn_output)
+            logit += dnn_logit
 
         y_pred = self.out(logit)
 
