@@ -52,11 +52,11 @@ if use_cuda and torch.cuda.is_available():
     print('cuda ready...')
     device = 'cuda:0'
 
-model = PNN(linear_feature_columns, dnn_feature_columns, use_inner=False, use_outter=True,
-                     device=device, task="binary")
+model = PNN(linear_feature_columns, dnn_feature_columns, field_size=5, use_inner=True, use_outter=True, device=device,
+            task="binary")
 
 model.compile("adagrad", "binary_crossentropy", metrics=["binary_crossentropy", "auc"],)
-model.fit(train_model_input, train[target].values, batch_size=32, epochs=1, validation_split=0.2, verbose=2)
+model.fit(train_model_input, train[target].values, batch_size=32, epochs=3, validation_split=0.2, verbose=2)
 
 pred_ans = model.predict(test_model_input, 32)
 #print(pred_ans)

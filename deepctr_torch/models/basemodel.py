@@ -303,6 +303,12 @@ class BaseModel(nn.Module):
 
             return len(sparse_feature_columns) * embedding_size + sum(map(lambda x: x.dimension, dense_feature_columns))
 
+    def compute_order_dim(self, feature_columns, embedding_size):
+        sparse_feature_columns = list(
+            filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
+
+        return len(sparse_feature_columns) * embedding_size
+
     def add_regularization_loss(self, weight_list, weight_decay, p=2):
         reg_loss = torch.zeros((1,), device=self.device)
         for w in weight_list:
