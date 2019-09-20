@@ -38,3 +38,23 @@ Let's [**Get Started!**](https://deepctr-doc.readthedocs.io/en/latest/Quick-Star
 |                  FGCNN                  | [WWW 2019][Feature Generation by Convolutional Neural Network for Click-Through Rate Prediction ](https://arxiv.org/pdf/1904.04447)                            |
 |                  Deep Session Interest Network                | [IJCAI 2019][Deep Session Interest Network for Click-Through Rate Prediction ](https://arxiv.org/abs/1905.06482)                         |
 |                  FiBiNET               | [RecSys 2019][FiBiNET: Combining Feature Importance and Bilinear feature Interaction for Click-Through Rate Prediction](https://arxiv.org/pdf/1905.09433.pdf)   |
+
+## Contributers
+<a href="https://github.com/shenweichen">
+    <img src="https://avatars.githubusercontent.com/shenweichen " width=60 height="60" alt="pic" >
+</a>
+<a href="https://github.com/wutongzhang">
+    <img src="https://avatars.githubusercontent.com/wutongzhang " width=60 height="60" alt="pic" >
+</a>
+<a href="https://github.com/JyiHUO">
+    <img src="https://avatars.githubusercontent.com/JyiHUO " width=60 height="60" alt="pic" >
+</a>
+<a href="https://github.com/chenkkkk">
+    <img src="https://avatars.githubusercontent.com/chenkkkk " width=60 height="60" alt="pic" >
+</a>
+<a href="https://github.com/tangaqi">
+    <img src="https://avatars.githubusercontent.com/tangaqi " width=60 height="60" alt="pic" >
+</a>
+<a href="https://github.com/uestc7d">
+    <img src="https://avatars.githubusercontent.com/uestc7d " width=60 height="60" alt="pic" >
+</a>
