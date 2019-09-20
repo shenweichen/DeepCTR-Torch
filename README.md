@@ -41,20 +41,20 @@ Let's [**Get Started!**](https://deepctr-doc.readthedocs.io/en/latest/Quick-Star
 
 ## Contributers
 <a href="https://github.com/shenweichen">
-    <img src="https://avatars.githubusercontent.com/shenweichen " width=60 height="60" alt="pic" >
+    <img src="https://avatars.githubusercontent.com/shenweichen " width=70 height="70" alt="pic" >
 </a>
 <a href="https://github.com/wutongzhang">
-    <img src="https://avatars.githubusercontent.com/wutongzhang " width=60 height="60" alt="pic" >
+    <img src="https://avatars.githubusercontent.com/wutongzhang " width=70 height="70" alt="pic" >
 </a>
 <a href="https://github.com/JyiHUO">
-    <img src="https://avatars.githubusercontent.com/JyiHUO " width=60 height="60" alt="pic" >
+    <img src="https://avatars.githubusercontent.com/JyiHUO " width=70 height="70" alt="pic" >
 </a>
 <a href="https://github.com/chenkkkk">
-    <img src="https://avatars.githubusercontent.com/chenkkkk " width=60 height="60" alt="pic" >
+    <img src="https://avatars.githubusercontent.com/chenkkkk " width=70 height="70" alt="pic" >
 </a>
 <a href="https://github.com/tangaqi">
-    <img src="https://avatars.githubusercontent.com/tangaqi " width=60 height="60" alt="pic" >
+    <img src="https://avatars.githubusercontent.com/tangaqi " width=70 height=70" alt="pic" >
 </a>
 <a href="https://github.com/uestc7d">
-    <img src="https://avatars.githubusercontent.com/uestc7d " width=60 height="60" alt="pic" >
+    <img src="https://avatars.githubusercontent.com/uestc7d " width=70 height="70" alt="pic" >
 </a>
