@@ -52,4 +52,4 @@ jobs:
         token: ${{secrets.CODECOV_TOKEN}}
         file: ./coverage.xml
         flags: pytest
-        name: py${{ matrix.python-version }}-tf${{ matrix.torch-version }}
+        name: py${{ matrix.python-version }}-torch${{ matrix.torch-version }}
