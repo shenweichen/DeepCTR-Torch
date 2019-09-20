@@ -17,6 +17,26 @@ DeepCTR is a **Easy-to-use**,**Modular** and **Extendible** package of deep-lear
 
 Let's [**Get Started!**](https://deepctr-doc.readthedocs.io/en/latest/Quick-Start.html)([Chinese Introduction](https://zhuanlan.zhihu.com/p/53231955))
 
+## Contributers
+<a href="https://github.com/shenweichen">
+    <img src="https://avatars.githubusercontent.com/shenweichen " width=70 height="70" alt="pic" >
+</a>
+<a href="https://github.com/wutongzhang">
+    <img src="https://avatars.githubusercontent.com/wutongzhang " width=70 height="70" alt="pic" >
+</a>
+<a href="https://github.com/JyiHUO">
+    <img src="https://avatars.githubusercontent.com/JyiHUO " width=70 height="70" alt="pic" >
+</a>
+<a href="https://github.com/chenkkkk">
+    <img src="https://avatars.githubusercontent.com/chenkkkk " width=70 height="70" alt="pic" >
+</a>
+<a href="https://github.com/tangaqi">
+    <img src="https://avatars.githubusercontent.com/tangaqi " width=70 height=70" alt="pic" >
+</a>
+<a href="https://github.com/uestc7d">
+    <img src="https://avatars.githubusercontent.com/uestc7d " width=70 height="70" alt="pic" >
+</a>
+
 ## Models List
 
 |                 Model                  | Paper                                                                                                                                                           |
@@ -39,22 +59,3 @@ Let's [**Get Started!**](https://deepctr-doc.readthedocs.io/en/latest/Quick-Star
 |                  Deep Session Interest Network                | [IJCAI 2019][Deep Session Interest Network for Click-Through Rate Prediction ](https://arxiv.org/abs/1905.06482)                         |
 |                  FiBiNET               | [RecSys 2019][FiBiNET: Combining Feature Importance and Bilinear feature Interaction for Click-Through Rate Prediction](https://arxiv.org/pdf/1905.09433.pdf)   |
 
-## Contributers
-<a href="https://github.com/shenweichen">
-    <img src="https://avatars.githubusercontent.com/shenweichen " width=70 height="70" alt="pic" >
-</a>
-<a href="https://github.com/wutongzhang">
-    <img src="https://avatars.githubusercontent.com/wutongzhang " width=70 height="70" alt="pic" >
-</a>
-<a href="https://github.com/JyiHUO">
-    <img src="https://avatars.githubusercontent.com/JyiHUO " width=70 height="70" alt="pic" >
-</a>
-<a href="https://github.com/chenkkkk">
-    <img src="https://avatars.githubusercontent.com/chenkkkk " width=70 height="70" alt="pic" >
-</a>
-<a href="https://github.com/tangaqi">
-    <img src="https://avatars.githubusercontent.com/tangaqi " width=70 height=70" alt="pic" >
-</a>
-<a href="https://github.com/uestc7d">
-    <img src="https://avatars.githubusercontent.com/uestc7d " width=70 height="70" alt="pic" >
-</a>
