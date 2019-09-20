@@ -4,7 +4,7 @@ import torch as torch
 import os
 from deepctr_torch.inputs import SparseFeat, DenseFeat, VarLenSparseFeat
 
-SAMPLE_SIZE=16
+SAMPLE_SIZE=32
 
 
 def gen_sequence(dim, max_len, sample_size):
@@ -47,8 +47,6 @@ def get_test_data(sample_size=1000, sparse_feature_num=1, dense_feature_num=1, s
 
     if classification:
         y = np.random.randint(0, 2, sample_size)
-        y[0] = 1
-        y[-1] = 0
     else:
         y = np.random.random(sample_size)
 
