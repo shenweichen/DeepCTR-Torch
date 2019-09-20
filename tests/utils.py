@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
-import pandas as pd
 import numpy as np
 import torch as torch
 import os
 from deepctr_torch.inputs import SparseFeat, DenseFeat, VarLenSparseFeat
 
-SAMPLE_SIZE=16
+SAMPLE_SIZE=32
 
 
 def gen_sequence(dim, max_len, sample_size):

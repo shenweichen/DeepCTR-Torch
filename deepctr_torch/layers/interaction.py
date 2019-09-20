@@ -116,8 +116,7 @@ Tongwen](https://arxiv.org/pdf/1905.09433.pdf)
         self.seed = seed
         self.bilinear = nn.ModuleList()
         if self.bilinear_type == "all":
-            self.bilinear.append(
-                nn.Linear(embedding_size, embedding_size, bias=False))
+            self.bilinear = nn.Linear(embedding_size, embedding_size, bias=False)
         elif self.bilinear_type == "each":
             for i in range(filed_size):
                 self.bilinear.append(
@@ -126,7 +125,6 @@ Tongwen](https://arxiv.org/pdf/1905.09433.pdf)
             for i, j in itertools.combinations(range(filed_size), 2):
                 self.bilinear.append(
                     nn.Linear(embedding_size, embedding_size, bias=False))
-
         else:
             raise NotImplementedError
         self.to(device)
@@ -214,7 +212,11 @@ class CIN(nn.Module):
                 batch_size, hidden_nn_layers[-1].shape[1] * hidden_nn_layers[0].shape[1], dim)
             # x.shape = (batch_size , hi, dim)
             x = self.conv1ds[i](x)
-            curr_out = self.activation(x)
+
+            if self.activation is None or self.activation=='linear':
+                curr_out = x
+            else:
+                curr_out = self.activation(x)
 
             if self.split_half:
                 if i != len(self.layer_size) - 1:

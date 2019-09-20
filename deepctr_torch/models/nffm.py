@@ -7,6 +7,28 @@ from ..inputs import combined_dnn_input
 from ..layers import DNN
 
 
+class Interac(nn.Module):
+    def __init__(self, first_size, second_size, emb_size, init_std, sparse=False):
+        super(Interac, self).__init__()
+        self.emb1 = nn.Embedding(first_size, emb_size, sparse=sparse)
+        self.emb2 = nn.Embedding(second_size, emb_size, sparse=sparse)
+        self.__init_weight(init_std)
+
+    def __init_weight(self, init_std):
+        nn.init.normal_(self.emb1.weight, mean=0, std=init_std)
+
+    def forward(self, first, second):
+        """
+        input:
+            x batch_size * 2
+        output:
+            y batch_size * emb_size
+        """
+        first_emb = self.emb1(first)
+        second_emb = self.emb2(second)
+        y = first_emb * second_emb  # core code
+        return y
+
 class NFFM(BaseModel):
     def __init__(self, linear_feature_columns, dnn_feature_columns, embedding_size=4,
                  dnn_hidden_units=(128, 128),
@@ -94,27 +116,6 @@ class NFFM(BaseModel):
         return second_order_embedding_list
 
     def __create_second_order_embedding_matrix(self, feature_columns, embedding_size, init_std=0.0001, sparse=False):
-        class Interac(nn.Module):
-            def __init__(self, first_size, second_size, emb_size, init_std, sparse=False):
-                super(Interac, self).__init__()
-                self.emb1 = nn.Embedding(first_size, emb_size, sparse=sparse)
-                self.emb2 = nn.Embedding(second_size, emb_size, sparse=sparse)
-                self.__init_weight(init_std)
-
-            def __init_weight(self, init_std):
-                nn.init.normal_(self.emb1.weight, mean=0, std=init_std)
-
-            def forward(self, first, second):
-                """
-                input:
-                    x batch_size * 2
-                output:
-                    y batch_size * emb_size
-                """
-                first_emb = self.emb1(first)
-                second_emb = self.emb2(second)
-                y = first_emb * second_emb  # core code
-                return y
 
         sparse_feature_columns = list(
             filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
@@ -142,15 +143,13 @@ class NFFM(BaseModel):
         dnn_output = self.dnn(dnn_input)
         dnn_logit = self.dnn_linear(dnn_output)
 
-        if len(self.linear_feature_columns) > 0 and len(self.dnn_feature_columns) > 0:
+        if len(self.dnn_feature_columns) > 0:
             final_logit = dnn_logit + linear_logit
-        elif len(self.linear_feature_columns) > 0:
-            final_logit = linear_logit
-        elif len(self.dnn_feature_columns) > 0:
-            final_logit = dnn_logit
         else:
-            raise NotImplementedError
+            final_logit = linear_logit
 
         y_pred = self.out(final_logit)
 
         return y_pred
+
+

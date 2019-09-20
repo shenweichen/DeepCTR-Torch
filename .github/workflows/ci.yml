@@ -1,0 +1,55 @@
+name: CI
+
+on: 
+  push:
+    path:
+      - 'deepctr_torch/*'
+      - 'tests/*'
+  pull_request:
+    path:
+      - 'deepctr_torch/*'
+      - 'tests/*'
+      
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      matrix:
+        python-version: [3.5,3.6,3.7]
+        torch-version: [1.1.0,1.2.0]
+        
+    #    exclude:
+    #      - python-version: 3.7
+    #        tf-version: 1.4.0
+
+    steps:
+    
+    - uses: actions/checkout@v1
+    
+    - name: Setup python environment
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        pip3 install -q torch==${{ matrix.torch-version }}
+        pip install -q requests
+        pip install -e .
+    - name: Test with pytest
+      timeout-minutes: 120
+      run: |
+        pip install -q pytest
+        pip install -q pytest-cov
+        pip install -q python-coveralls
+        pip install -q sklearn
+        pytest --cov=deepctr --cov-report=xml
+    - name: Upload coverage to Codecov  
+      uses: codecov/codecov-action@v1.0.2
+      with:
+        token: ${{secrets.CODECOV_TOKEN}}
+        file: ./coverage.xml
+        flags: pytest
+        name: py${{ matrix.python-version }}-torch${{ matrix.torch-version }}
