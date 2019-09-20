@@ -91,7 +91,7 @@ class MLR(BaseModel):
         learner_score = self.get_learner_score(X, self.region_num)
 
         final_logit = torch.sum(
-            region_score*learner_score, dim=-1, keepdims=True)
+            region_score*learner_score, dim=-1, keepdim=True)
 
         if self.bias_feature_columns is not None and len(self.bias_feature_columns) > 0:
             bias_score = self.bias_model(X)
