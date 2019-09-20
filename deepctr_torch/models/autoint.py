@@ -51,6 +51,7 @@ class AutoInt(BaseModel):
 
         if len(dnn_hidden_units) <= 0 and att_layer_num <= 0:
             raise ValueError("Either hidden_layer or att_layer_num must > 0")
+        self.use_dnn = len(dnn_feature_columns) > 0 and len(dnn_hidden_units) > 0
         field_num = len(self.embedding_dict)
 
         if len(dnn_hidden_units) and att_layer_num > 0:
@@ -66,15 +67,17 @@ class AutoInt(BaseModel):
         self.dnn_linear = nn.Linear(dnn_linear_in_feature, 1, bias=False).to(device)
         self.dnn_hidden_units = dnn_hidden_units
         self.att_layer_num = att_layer_num
+        if self.use_dnn:
+            self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, embedding_size,), dnn_hidden_units,
+                           activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
+                           init_std=init_std,device=device)
+            self.add_regularization_loss(
+                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
 
-        self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, embedding_size,), dnn_hidden_units,
-                       activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
-                       init_std=init_std,device=device)
         self.int_layers = nn.ModuleList([InteractingLayer(embedding_size if i == 0 else att_embedding_size*att_head_num,
                                                           att_embedding_size, att_head_num, att_res, device=device) for i in range(att_layer_num)])
 
-        self.add_regularization_loss(
-            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
+
 
         self.to(device)
 

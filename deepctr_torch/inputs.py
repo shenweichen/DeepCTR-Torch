@@ -107,13 +107,12 @@ def get_dense_input(features, feature_columns):
 
 def combined_dnn_input(sparse_embedding_list, dense_value_list):
     if len(sparse_embedding_list) > 0 and len(dense_value_list) > 0:
-        sparse_dnn_input = torch.cat(sparse_embedding_list, dim=-1).squeeze()
-
-        dense_dnn_input = torch.cat(dense_value_list, dim=-1).squeeze()
+        sparse_dnn_input = torch.flatten(torch.cat(sparse_embedding_list, dim=-1), start_dim=1)
+        dense_dnn_input = torch.flatten(torch.cat(dense_value_list, dim=-1), start_dim=1)
         return concat_fun([sparse_dnn_input, dense_dnn_input])
     elif len(sparse_embedding_list) > 0:
-        return torch.cat(sparse_embedding_list, dim=-1).squeeze()
+        return torch.flatten(torch.cat(sparse_embedding_list, dim=-1), start_dim=1)
     elif len(dense_value_list) > 0:
-        return torch.cat(dense_value_list, dim=-1).squeeze()
+        return torch.flatten(torch.cat(dense_value_list, dim=-1), start_dim=1)
     else:
         raise NotImplementedError
