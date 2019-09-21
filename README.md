@@ -19,7 +19,7 @@ DeepCTR is a **Easy-to-use**,**Modular** and **Extendible** package of deep-lear
 
 Let's [**Get Started!**](https://deepctr-doc.readthedocs.io/en/latest/Quick-Start.html)([Chinese Introduction](https://zhuanlan.zhihu.com/p/53231955))
 
-## Contributers
+## Contributors
 <a href="https://github.com/shenweichen">
     <img src="https://avatars.githubusercontent.com/shenweichen " width=70 height="70" alt="pic" >
 </a>
