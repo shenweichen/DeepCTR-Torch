@@ -51,7 +51,7 @@ if __name__ == "__main__":
         device = 'cuda:0'
 
     model = PNN(linear_feature_columns=linear_feature_columns, dnn_feature_columns=dnn_feature_columns, task='binary',
-                   l2_reg_embedding=1e-5, device=device)
+                   l2_reg_embedding=1e-5, device=device,use_outter=True)
 
     model.compile("adagrad", "binary_crossentropy",
                   metrics=["binary_crossentropy", "auc"],)

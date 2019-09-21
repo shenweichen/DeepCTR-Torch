@@ -290,17 +290,23 @@ class BaseModel(nn.Module):
 
         return embedding_dict
 
-    def compute_input_dim(self, feature_columns, embedding_size, dense_only=False):
+    def compute_input_dim(self, feature_columns, embedding_size=1, include_sparse=True, include_dense=True, feature_group=False):
         sparse_feature_columns = list(
             filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
         dense_feature_columns = list(
             filter(lambda x: isinstance(x, DenseFeat), feature_columns)) if len(feature_columns) else []
 
-        if dense_only:
-            return sum(map(lambda x: x.dimension, dense_feature_columns))
+        dense_input_dim = sum(map(lambda x: x.dimension, dense_feature_columns))
+        if feature_group:
+            sparse_input_dim = len(sparse_feature_columns)
         else:
-
-            return len(sparse_feature_columns) * embedding_size + sum(map(lambda x: x.dimension, dense_feature_columns))
+            sparse_input_dim = len(sparse_feature_columns)* embedding_size
+        input_dim = 0
+        if include_sparse:
+            input_dim += sparse_input_dim
+        if include_dense:
+            input_dim += dense_input_dim
+        return input_dim
 
     def add_regularization_loss(self, weight_list, weight_decay, p=2):
         reg_loss = torch.zeros((1,), device=self.device)

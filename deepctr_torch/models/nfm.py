@@ -47,7 +47,7 @@ class NFM(BaseModel):
                                   dnn_dropout=dnn_dropout, dnn_activation=dnn_activation,
                                   task=task, device=device)
 
-        self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, embedding_size, True) + embedding_size,
+        self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, embedding_size, include_sparse=False) + embedding_size,
                        dnn_hidden_units,
                        activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=False,
                        init_std=init_std, device=device)
