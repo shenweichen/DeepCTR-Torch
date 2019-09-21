@@ -76,7 +76,7 @@ class PNN(BaseModel):
         self.add_regularization_loss(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
         self.add_regularization_loss(self.dnn_linear.weight, l2_reg_dnn)
-        self.eps = torch.tensor(1e-9).to(device)
+
         self.to(device)
 
     def forward(self, X):
@@ -109,8 +109,5 @@ class PNN(BaseModel):
         logit = dnn_logit
 
         y_pred = self.out(logit)
-
-        #if self.task == "binary":
-        #    y_pred = torch.max(y_pred, self.eps)
 
         return y_pred
