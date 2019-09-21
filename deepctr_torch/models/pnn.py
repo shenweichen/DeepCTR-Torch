@@ -12,14 +12,14 @@ import torch.nn.functional as F
 
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
-from ..layers import DNN, concat_fun,InnerProductLayer, OutterProductLayer
+from ..layers import DNN, concat_fun, InnerProductLayer, OutterProductLayer
 
 
 class PNN(BaseModel):
 
     def __init__(self, dnn_feature_columns, embedding_size=8, dnn_hidden_units=(128, 128), l2_reg_embedding=1e-5, l2_reg_dnn=0,
-        init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation=F.relu, use_inner=True, use_outter=False,
-        kernel_type='mat', task='binary', device='cpu',):
+                 init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation=F.relu, use_inner=True, use_outter=False,
+                 kernel_type='mat', task='binary', device='cpu',):
         """Instantiates the Product-based Neural Network architecture.
         :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
         :param embedding_size: positive integer,sparse feature embedding_size
@@ -76,6 +76,7 @@ class PNN(BaseModel):
         self.add_regularization_loss(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
         self.add_regularization_loss(self.dnn_linear.weight, l2_reg_dnn)
+        self.eps = torch.tensor(1e-9).to(device)
         self.to(device)
 
     def forward(self, X):
@@ -110,6 +111,6 @@ class PNN(BaseModel):
         y_pred = self.out(logit)
 
         if self.task == "binary":
-            y_pred= torch.max(y_pred,torch.tensor(1e-9))
+            y_pred = torch.max(y_pred, self.eps)
 
         return y_pred
