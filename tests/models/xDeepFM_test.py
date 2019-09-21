@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import pytest
-import sys
 import torch.nn.functional as F
 from deepctr_torch.models import xDeepFM
 from ..utils import get_test_data, SAMPLE_SIZE, check_model

@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 import pytest
-import sys
-import torch
-from packaging import version
 from deepctr_torch.models import AutoInt
 from ..utils import get_test_data, SAMPLE_SIZE, check_model
 

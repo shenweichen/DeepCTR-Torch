@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import pytest
-import sys
 from deepctr_torch.models import MLR
 from ..utils import check_model, SAMPLE_SIZE, get_test_data
 
