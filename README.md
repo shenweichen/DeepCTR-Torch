@@ -8,6 +8,7 @@
 
 
 [![Documentation Status](https://readthedocs.org/projects/deepctr-doc/badge/?version=latest)](https://deepctr-doc.readthedocs.io/)
+![CI status](https://github.com/shenweichen/deepctr-pytorch/workflows/CI/badge.svg)
 [![Gitter](https://badges.gitter.im/DeepCTR/community.svg)](https://gitter.im/DeepCTR/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![License](https://img.shields.io/github/license/shenweichen/deepctr-pytorch.svg)](https://github.com/shenweichen/deepctr-pytorch/blob/master/LICENSE)
 
