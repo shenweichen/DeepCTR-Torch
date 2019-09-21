@@ -487,27 +487,20 @@ class OutterProductLayer(nn.Module):
     def __init__(self,field_size,embedding_size, kernel_type='mat', seed=1024, device='cpu'):
         super(OutterProductLayer, self).__init__()
         self.kernel_type = kernel_type
-        #-------------------------------------
+
         num_inputs = field_size
         num_pairs = int(num_inputs * (num_inputs - 1) / 2)
         embed_size = embedding_size
         if self.kernel_type == 'mat':
 
             self.kernel = nn.Parameter(torch.Tensor(embed_size,num_pairs,embed_size))
-                # self.add_weight(shape=(embed_size, num_pairs, embed_size),
-                #                           initializer=glorot_uniform(
-                #                               seed=self.seed),
-                #                           name='kernel')
+
         elif self.kernel_type == 'vec':
             self.kernel = nn.Parameter(torch.Tensor(num_pairs,embed_size))
-                # self.add_weight(shape=(num_pairs, embed_size,), initializer=glorot_uniform(self.seed),
-                #                           name='kernel'
-                #                           )
+
         elif self.kernel_type == 'num':
             self.kernel = nn.Parameter(torch.Tensor(num_pairs,1))
-                #self.add_weight(
-                #shape=(num_pairs, 1), initializer=glorot_uniform(self.seed), name='kernel')
-
+        nn.init.xavier_uniform_(self.kerne)
 
         self.to(device)
 
@@ -522,13 +515,11 @@ class OutterProductLayer(nn.Module):
                 col.append(j)
         p = torch.cat([embed_list[idx]
                        for idx in row], dim=1)  # batch num_pairs k
-        # Reshape([num_pairs, self.embedding_size])
         q = torch.cat([embed_list[idx] for idx in col], dim=1)
 
         # -------------------------
         if self.kernel_type == 'mat':
             p.unsqueeze_(dim=1)
-            # p = tf.expand_dims(p, 1)
             # k     k* pair* k
             # batch * pair
             kp = torch.sum(
@@ -562,7 +553,6 @@ class OutterProductLayer(nn.Module):
             # 1 * pair * (k or 1)
 
             k = torch.unsqueeze(self.kernel,0)
-                #tf.expand_dims(self.kernel, 0)
 
             # batch * pair
 

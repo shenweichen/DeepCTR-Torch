@@ -110,7 +110,7 @@ class PNN(BaseModel):
 
         y_pred = self.out(logit)
 
-        if self.task == "binary":
-            y_pred = torch.max(y_pred, self.eps)
+        #if self.task == "binary":
+        #    y_pred = torch.max(y_pred, self.eps)
 
         return y_pred
