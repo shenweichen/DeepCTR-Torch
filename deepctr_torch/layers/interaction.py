@@ -116,7 +116,8 @@ Tongwen](https://arxiv.org/pdf/1905.09433.pdf)
         self.seed = seed
         self.bilinear = nn.ModuleList()
         if self.bilinear_type == "all":
-            self.bilinear = nn.Linear(embedding_size, embedding_size, bias=False)
+            self.bilinear = nn.Linear(
+                embedding_size, embedding_size, bias=False)
         elif self.bilinear_type == "each":
             for i in range(filed_size):
                 self.bilinear.append(
@@ -213,7 +214,7 @@ class CIN(nn.Module):
             # x.shape = (batch_size , hi, dim)
             x = self.conv1ds[i](x)
 
-            if self.activation is None or self.activation=='linear':
+            if self.activation is None or self.activation == 'linear':
                 curr_out = x
             else:
                 curr_out = self.activation(x)
@@ -423,3 +424,89 @@ class CrossNet(nn.Module):
             x_l = dot_ + self.bias[i] + x_l
         x_l = torch.squeeze(x_l, dim=2)
         return x_l
+
+
+class InnerProductLayer(nn.Module):
+    """InnerProduct Layer used in PNN that compute the element-wise
+    product or inner product between feature vectors.
+      Input shape
+        - a list of 3D tensor with shape: ``(batch_size,1,embedding_size)``.
+      Output shape
+        - 3D tensor with shape: ``(batch_size, N*(N-1)/2 ,1)`` if use reduce_sum. or 3D tensor with shape:
+        ``(batch_size, N*(N-1)/2, embedding_size )`` if not use reduce_sum.
+      Arguments
+        - **reduce_sum**: bool. Whether return inner product or element-wise product
+      References
+            - [Qu Y, Cai H, Ren K, et al. Product-based neural networks for user response prediction[C]//
+            Data Mining (ICDM), 2016 IEEE 16th International Conference on. IEEE, 2016: 1149-1154.]
+            (https://arxiv.org/pdf/1611.00144.pdf)"""
+
+    def __init__(self, order_len, embedding_size=8, field_size=5, device='cpu'):
+        super(InnerProductLayer, self).__init__()
+
+        self.embedding_size = embedding_size
+        print("Init IPNN component")
+        self.ipnn_weight_embed = nn.ModuleList([nn.ParameterList(
+            [torch.nn.Parameter(torch.randn(self.embedding_size), requires_grad=True) for j in
+             range(field_size)]) for i in range(order_len)])
+        print("Init IPNN component finished")
+        self.to(device)
+
+    def forward(self, inputs, cur_bs):
+        sparse_embedding_list = inputs
+        cur_bs = cur_bs
+        inner_product_arr = []
+        for i, weight_arr in enumerate(self.ipnn_weight_embed):
+            tmp_arr = []
+            for j, weight in enumerate(weight_arr):
+                tmp_arr.append(torch.sum(sparse_embedding_list[j].view(
+                    cur_bs, self.embedding_size) * weight, 1))
+            sum_ = sum(tmp_arr)
+            inner_product_arr.append((sum_ * sum_).view([-1, 1]))
+        inner_product = torch.cat(inner_product_arr, 1)
+
+        return inner_product
+
+
+class OutterProductLayer(nn.Module):
+    """OutterProduct Layer used in PNN.This implemention is
+    adapted from code that the author of the paper published on https://github.com/Atomu2014/product-nets.
+      Input shape
+            - A list of N 3D tensor with shape: ``(batch_size,1,embedding_size)``.
+      Output shape
+            - 2D tensor with shape:``(batch_size,N*(N-1)/2 )``.
+      Arguments
+            - **kernel_type**: str. The kernel weight matrix type to use,can be mat,vec or num
+            - **seed**: A Python integer to use as random seed.
+      References
+            - [Qu Y, Cai H, Ren K, et al. Product-based neural networks for user response prediction[C]//Data Mining (ICDM), 2016 IEEE 16th International Conference on. IEEE, 2016: 1149-1154.](https://arxiv.org/pdf/1611.00144.pdf)
+    """
+
+    def __init__(self, order_len, embedding_size=8, field_size=5, device='cpu'):
+        super(OutterProductLayer, self).__init__()
+
+        self.embedding_size = embedding_size
+        print("Init OPNN component")
+        arr = []
+        for i in range(order_len):
+            tmp = torch.randn(self.embedding_size, self.embedding_size)
+            arr.append(torch.nn.Parameter(torch.mm(tmp, tmp.t())))
+        self.opnn_weight_embed = nn.ParameterList(arr)
+        print("Init OPNN component finished")
+
+        self.to(device)
+
+    def forward(self, inputs, cur_bs):
+        sparse_embedding_list = inputs
+        cur_bs = cur_bs
+
+        outer_product_arr = []
+        emb_arr_sum = sum(sparse_embedding_list)
+        emb_matrix_arr = torch.bmm(emb_arr_sum.view([-1, self.embedding_size, 1]),
+                                   emb_arr_sum.view([-1, 1, self.embedding_size]))
+        for i, weight in enumerate(self.opnn_weight_embed):
+            outer_product_arr.append(
+                torch.sum(torch.sum(emb_matrix_arr * weight, 2), 1).view([-1, 1]))
+        outer_product = torch.cat(outer_product_arr, 1)
+
+        return outer_product

@@ -8,3 +8,4 @@ from .fibinet import FiBiNET
 from .nfm import NFM
 from .mlr import MLR
 from .nffm import NFFM
+from .pnn import PNN
