@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import pytest
-import sys
 from deepctr_torch.models import AFM
 from ..utils import get_test_data, SAMPLE_SIZE, check_model
 
