@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 REQUIRED_PACKAGES = [
-    'torch','deepctr','tqdm'
+    'torch>=1.1.0','deepctr','tqdm'
 ]
 
 setuptools.setup(
