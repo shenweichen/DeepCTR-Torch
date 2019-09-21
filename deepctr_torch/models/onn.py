@@ -1,6 +1,10 @@
-import torch.nn as nn
-import torch.nn.functional as F
-import torch
+# -*- coding:utf-8 -*-
+"""
+Author:
+    Junyi Huo
+Reference:
+    [1] Yang Y, Xu B, Shen F, et al. Operation-aware Neural Networks for User Response Prediction[J]. arXiv preprint arXiv:1904.12579, 2019. （https://arxiv.org/pdf/1904.12579）
+"""
 
 from .basemodel import *
 from ..inputs import combined_dnn_input
@@ -29,7 +33,7 @@ class Interac(nn.Module):
         y = first_emb * second_emb  # core code
         return y
 
-class NFFM(BaseModel):
+class ONN(BaseModel):
     def __init__(self, linear_feature_columns, dnn_feature_columns, embedding_size=4,
                  dnn_hidden_units=(128, 128),
                  l2_reg_embedding=1e-5, l2_reg_linear=1e-5, l2_reg_dnn=0,
@@ -52,13 +56,13 @@ class NFFM(BaseModel):
         :param device: 
         :return: A PyTorch model instance.
         """
-        super(NFFM, self).__init__(linear_feature_columns, dnn_feature_columns, embedding_size=embedding_size,
-                                   dnn_hidden_units=dnn_hidden_units,
-                                   l2_reg_linear=l2_reg_linear,
-                                   l2_reg_embedding=l2_reg_embedding, l2_reg_dnn=l2_reg_dnn, init_std=init_std,
-                                   seed=seed,
-                                   dnn_dropout=dnn_dropout, dnn_activation=dnn_activation,
-                                   task=task, device=device)
+        super(ONN, self).__init__(linear_feature_columns, dnn_feature_columns, embedding_size=embedding_size,
+                                  dnn_hidden_units=dnn_hidden_units,
+                                  l2_reg_linear=l2_reg_linear,
+                                  l2_reg_embedding=l2_reg_embedding, l2_reg_dnn=l2_reg_dnn, init_std=init_std,
+                                  seed=seed,
+                                  dnn_dropout=dnn_dropout, dnn_activation=dnn_activation,
+                                  task=task, device=device)
 
         # second order part
         self.second_order_embedding_dict = self.__create_second_order_embedding_matrix(
