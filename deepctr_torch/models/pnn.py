@@ -51,6 +51,7 @@ class PNN(BaseModel):
         self.use_inner = use_inner
         self.use_outter = use_outter
         self.kernel_type = kernel_type
+        self.task = task
 
         product_out_dim = 0
         num_inputs = self.compute_input_dim(dnn_feature_columns, embedding_size, include_dense=False,
@@ -107,5 +108,8 @@ class PNN(BaseModel):
         logit = dnn_logit
 
         y_pred = self.out(logit)
+
+        if self.task == "binary":
+            y_pred= torch.max(y_pred,torch.tensor(1e-9))
 
         return y_pred
