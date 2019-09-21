@@ -500,7 +500,7 @@ class OutterProductLayer(nn.Module):
 
         elif self.kernel_type == 'num':
             self.kernel = nn.Parameter(torch.Tensor(num_pairs,1))
-        nn.init.xavier_uniform_(self.kerne)
+        nn.init.xavier_uniform_(self.kernel)
 
         self.to(device)
 
