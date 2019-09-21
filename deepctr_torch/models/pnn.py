@@ -38,10 +38,10 @@ class PNN(BaseModel):
         :return: A PyTorch model instance.
         """
 
-        super(PNN, self).__init__(linear_feature_columns, dnn_feature_columns, embedding_size=embedding_size,
+        super(PNN, self).__init__([], dnn_feature_columns, embedding_size=embedding_size,
                                   dnn_hidden_units=dnn_hidden_units,
                                   l2_reg_embedding=l2_reg_embedding, l2_reg_dnn=l2_reg_dnn,
-                                  l2_reg_linear=l2_reg_linear, init_std=init_std, seed=seed,
+                                  l2_reg_linear=0, init_std=init_std, seed=seed,
                                   dnn_dropout=dnn_dropout, dnn_activation=dnn_activation,
                                   task=task, device=device)
 
@@ -67,7 +67,7 @@ class PNN(BaseModel):
                 num_inputs, embedding_size, kernel_type=kernel_type, device=device)
 
         self.dnn = DNN(product_out_dim + self.compute_input_dim(dnn_feature_columns, embedding_size), dnn_hidden_units,
-                       activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
+                       activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=False,
                        init_std=init_std, device=device)
 
         self.dnn_linear = nn.Linear(
