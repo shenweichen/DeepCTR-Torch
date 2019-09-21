@@ -116,7 +116,8 @@ Tongwen](https://arxiv.org/pdf/1905.09433.pdf)
         self.seed = seed
         self.bilinear = nn.ModuleList()
         if self.bilinear_type == "all":
-            self.bilinear = nn.Linear(embedding_size, embedding_size, bias=False)
+            self.bilinear = nn.Linear(
+                embedding_size, embedding_size, bias=False)
         elif self.bilinear_type == "each":
             for i in range(filed_size):
                 self.bilinear.append(
@@ -213,7 +214,7 @@ class CIN(nn.Module):
             # x.shape = (batch_size , hi, dim)
             x = self.conv1ds[i](x)
 
-            if self.activation is None or self.activation=='linear':
+            if self.activation is None or self.activation == 'linear':
                 curr_out = x
             else:
                 curr_out = self.activation(x)
@@ -423,3 +424,140 @@ class CrossNet(nn.Module):
             x_l = dot_ + self.bias[i] + x_l
         x_l = torch.squeeze(x_l, dim=2)
         return x_l
+
+
+class InnerProductLayer(nn.Module):
+    """InnerProduct Layer used in PNN that compute the element-wise
+    product or inner product between feature vectors.
+      Input shape
+        - a list of 3D tensor with shape: ``(batch_size,1,embedding_size)``.
+      Output shape
+        - 3D tensor with shape: ``(batch_size, N*(N-1)/2 ,1)`` if use reduce_sum. or 3D tensor with shape:
+        ``(batch_size, N*(N-1)/2, embedding_size )`` if not use reduce_sum.
+      Arguments
+        - **reduce_sum**: bool. Whether return inner product or element-wise product
+      References
+            - [Qu Y, Cai H, Ren K, et al. Product-based neural networks for user response prediction[C]//
+            Data Mining (ICDM), 2016 IEEE 16th International Conference on. IEEE, 2016: 1149-1154.]
+            (https://arxiv.org/pdf/1611.00144.pdf)"""
+
+    def __init__(self, reduce_sum=True, device='cpu'):
+        super(InnerProductLayer, self).__init__()
+        self.reduce_sum = reduce_sum
+        self.to(device)
+
+    def forward(self, inputs):
+
+        embed_list = inputs
+        row = []
+        col = []
+        num_inputs = len(embed_list)
+
+        for i in range(num_inputs - 1):
+            for j in range(i + 1, num_inputs):
+                row.append(i)
+                col.append(j)
+        p = torch.cat([embed_list[idx]
+                       for idx in row], dim=1)  # batch num_pairs k
+        q = torch.cat([embed_list[idx]
+                       for idx in col], dim=1)
+
+        inner_product = p * q
+        if self.reduce_sum:
+            inner_product = torch.sum(
+                inner_product, dim=2, keepdim=True)
+        return inner_product
+
+
+
+class OutterProductLayer(nn.Module):
+    """OutterProduct Layer used in PNN.This implemention is
+    adapted from code that the author of the paper published on https://github.com/Atomu2014/product-nets.
+      Input shape
+            - A list of N 3D tensor with shape: ``(batch_size,1,embedding_size)``.
+      Output shape
+            - 2D tensor with shape:``(batch_size,N*(N-1)/2 )``.
+      Arguments
+            - **kernel_type**: str. The kernel weight matrix type to use,can be mat,vec or num
+            - **seed**: A Python integer to use as random seed.
+      References
+            - [Qu Y, Cai H, Ren K, et al. Product-based neural networks for user response prediction[C]//Data Mining (ICDM), 2016 IEEE 16th International Conference on. IEEE, 2016: 1149-1154.](https://arxiv.org/pdf/1611.00144.pdf)
+    """
+
+    def __init__(self,field_size,embedding_size, kernel_type='mat', seed=1024, device='cpu'):
+        super(OutterProductLayer, self).__init__()
+        self.kernel_type = kernel_type
+
+        num_inputs = field_size
+        num_pairs = int(num_inputs * (num_inputs - 1) / 2)
+        embed_size = embedding_size
+        if self.kernel_type == 'mat':
+
+            self.kernel = nn.Parameter(torch.Tensor(embed_size,num_pairs,embed_size))
+
+        elif self.kernel_type == 'vec':
+            self.kernel = nn.Parameter(torch.Tensor(num_pairs,embed_size))
+
+        elif self.kernel_type == 'num':
+            self.kernel = nn.Parameter(torch.Tensor(num_pairs,1))
+        nn.init.xavier_uniform_(self.kernel)
+
+        self.to(device)
+
+    def forward(self, inputs):
+        embed_list = inputs
+        row = []
+        col = []
+        num_inputs = len(embed_list)
+        for i in range(num_inputs - 1):
+            for j in range(i + 1, num_inputs):
+                row.append(i)
+                col.append(j)
+        p = torch.cat([embed_list[idx]
+                       for idx in row], dim=1)  # batch num_pairs k
+        q = torch.cat([embed_list[idx] for idx in col], dim=1)
+
+        # -------------------------
+        if self.kernel_type == 'mat':
+            p.unsqueeze_(dim=1)
+            # k     k* pair* k
+            # batch * pair
+            kp = torch.sum(
+
+                # batch * pair * k
+
+                torch.mul(
+
+                    # batch * pair * k
+
+                    torch.transpose(
+
+                        # batch * k * pair
+
+                        torch.sum(
+
+                            # batch * k * pair * k
+
+                            torch.mul(
+
+                                p, self.kernel),
+
+                            dim=-1),
+
+                        2,1),
+
+                    q),
+
+                dim=-1)
+        else:
+            # 1 * pair * (k or 1)
+
+            k = torch.unsqueeze(self.kernel,0)
+
+            # batch * pair
+
+            kp = torch.sum(p * q * k, dim=-1)
+
+            # p q # b * p * k
+
+        return kp

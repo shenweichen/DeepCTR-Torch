@@ -52,21 +52,28 @@ class FiBiNET(BaseModel):
         self.filed_size = len(self.embedding_dict)
         self.SE = SENETLayer(self.filed_size, reduction_ratio, seed, device)
         self.Bilinear = BilinearInteraction(self.filed_size,embedding_size, bilinear_type, seed, device)
-        self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, embedding_size, ), dnn_hidden_units,
+        self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, embedding_size), dnn_hidden_units,
                        activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=False,
-                       init_std=init_std,device=device)
+                       init_std=init_std, device=device)
         self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False).to(device)
 
-    def compute_input_dim(self, feature_columns, embedding_size, dense_only=False):
+    def compute_input_dim(self, feature_columns, embedding_size, include_sparse=True, include_dense=True):
         sparse_feature_columns = list(
             filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
         dense_feature_columns = list(
             filter(lambda x: isinstance(x, DenseFeat), feature_columns)) if len(feature_columns) else []
         field_size = len(sparse_feature_columns)
-        if dense_only:
-            return sum(map(lambda x: x.dimension, dense_feature_columns))
-        else:
-            return field_size * (field_size - 1) * embedding_size + sum(map(lambda x: x.dimension, dense_feature_columns))
+
+        dense_input_dim = sum(map(lambda x: x.dimension, dense_feature_columns))
+        sparse_input_dim = field_size * (field_size - 1) * embedding_size
+        input_dim = 0
+
+        if include_sparse:
+            input_dim += sparse_input_dim
+        if include_dense:
+            input_dim += dense_input_dim
+
+        return input_dim
 
     def forward(self, X):
         sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
