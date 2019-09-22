@@ -7,7 +7,7 @@
 )](https://github.com/shenweichen/deepctr-pytorch/issues)
 
 
-[![Documentation Status](https://readthedocs.org/projects/deepctr-doc/badge/?version=latest)](https://deepctr-doc.readthedocs.io/)
+[![Documentation Status](https://readthedocs.org/projects/deepctr-pytorch/badge/?version=latest)](https://deepctr-pytorch.readthedocs.io/)
 ![CI status](https://github.com/shenweichen/deepctr-pytorch/workflows/CI/badge.svg)
 [![codecov](https://codecov.io/gh/shenweichen/DeepCTR-PyTorch/branch/master/graph/badge.svg)](https://codecov.io/gh/shenweichen/DeepCTR-PyTorch)
 [![Gitter](https://badges.gitter.im/DeepCTR/community.svg)](https://gitter.im/DeepCTR/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
