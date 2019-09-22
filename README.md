@@ -3,15 +3,15 @@
 [![Python Versions](https://img.shields.io/pypi/pyversions/deepctr-torch.svg)](https://pypi.org/project/deepctr-torch)
 [![Downloads](https://pepy.tech/badge/deepctr-torch)](https://pepy.tech/project/deepctr-torch)
 [![PyPI Version](https://img.shields.io/pypi/v/deepctr-torch.svg)](https://pypi.org/project/deepctr-torch)
-[![GitHub Issues](https://img.shields.io/github/issues/shenweichen/deepctr-pytorch.svg
-)](https://github.com/shenweichen/deepctr-pytorch/issues)
+[![GitHub Issues](https://img.shields.io/github/issues/shenweichen/deepctr-torch.svg
+)](https://github.com/shenweichen/deepctr-torch/issues)
 
 
-[![Documentation Status](https://readthedocs.org/projects/deepctr-pytorch/badge/?version=latest)](https://deepctr-pytorch.readthedocs.io/)
+[![Documentation Status](https://readthedocs.org/projects/deepctr-torch/badge/?version=latest)](https://deepctr-torch.readthedocs.io/)
 ![CI status](https://github.com/shenweichen/deepctr-pytorch/workflows/CI/badge.svg)
-[![codecov](https://codecov.io/gh/shenweichen/DeepCTR-PyTorch/branch/master/graph/badge.svg)](https://codecov.io/gh/shenweichen/DeepCTR-PyTorch)
+[![codecov](https://codecov.io/gh/shenweichen/DeepCTR-Torch/branch/master/graph/badge.svg)](https://codecov.io/gh/shenweichen/DeepCTR-PyTorch)
 [![Gitter](https://badges.gitter.im/DeepCTR/community.svg)](https://gitter.im/DeepCTR/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
-[![License](https://img.shields.io/github/license/shenweichen/deepctr-pytorch.svg)](https://github.com/shenweichen/deepctr-pytorch/blob/master/LICENSE)
+[![License](https://img.shields.io/github/license/shenweichen/deepctr-torch.svg)](https://github.com/shenweichen/deepctr-torch/blob/master/LICENSE)
 
 PyTorch version of [DeepCTR](https://github.com/shenweichen/DeepCTR).
 

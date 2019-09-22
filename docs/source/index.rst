@@ -11,17 +11,17 @@ Welcome to DeepCTR-PyTorch's documentation!
 .. |Downloads| image:: https://pepy.tech/badge/deepctr-torch
 .. _Downloads: https://pepy.tech/project/deepctr-torch
 
-.. |Stars| image:: https://img.shields.io/github/stars/shenweichen/deepctr-pytorch.svg
-.. _Stars: https://github.com/shenweichen/DeepCTR-PyTorch
+.. |Stars| image:: https://img.shields.io/github/stars/shenweichen/deepctr-torch.svg
+.. _Stars: https://github.com/shenweichen/DeepCTR-Torch
 
-.. |Forks| image:: https://img.shields.io/github/forks/shenweichen/deepctr-pytorch.svg
-.. _Forks: https://github.com/shenweichen/DeepCTR-PyTorch/fork
+.. |Forks| image:: https://img.shields.io/github/forks/shenweichen/deepctr-torch.svg
+.. _Forks: https://github.com/shenweichen/DeepCTR-Torch/fork
 
 .. |PyPi| image:: https://img.shields.io/pypi/v/deepctr-torch.svg
 .. _PyPi: https://pypi.org/project/deepctr-torch/
 
-.. |Issues| image:: https://img.shields.io/github/issues/shenweichen/deepctr-pytorch.svg
-.. _Issues: https://github.com/shenweichen/deepctr-pytorch/issues
+.. |Issues| image:: https://img.shields.io/github/issues/shenweichen/deepctr-torch.svg
+.. _Issues: https://github.com/shenweichen/deepctr-torch/issues
 
 .. |Gitter| image:: https://badges.gitter.im/DeepCTR/community.svg
 .. _Gitter: https://gitter.im/DeepCTR/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
@@ -30,7 +30,7 @@ DeepCTR-PyTorch is a **Easy-to-use** , **Modular** and **Extendible** package of
 
 Let's `Get Started! <./Quick-Start.html>`_ (`Chinese Introduction <https://zhuanlan.zhihu.com/p/53231955>`_)
 
-You can read the latest code at https://github.com/shenweichen/DeepCTR-PyTorch and `DeepCTR <https://github.com/shenweichen/DeepCTR>`_ for tensorflow version.
+You can read the latest code at https://github.com/shenweichen/DeepCTR-Torch and `DeepCTR <https://github.com/shenweichen/DeepCTR>`_ for tensorflow version.
 
 News
 -----
