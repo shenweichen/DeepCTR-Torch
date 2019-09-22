@@ -4,6 +4,30 @@ import torch.nn.functional as F
 
 
 class DNN(nn.Module):
+    """The Multi Layer Percetron
+
+      Input shape
+        - nD tensor with shape: ``(batch_size, ..., input_dim)``. The most common situation would be a 2D input with shape ``(batch_size, input_dim)``.
+
+      Output shape
+        - nD tensor with shape: ``(batch_size, ..., hidden_size[-1])``. For instance, for a 2D input with shape ``(batch_size, input_dim)``, the output would have shape ``(batch_size, hidden_size[-1])``.
+
+      Arguments
+        - **inputs_dim**: input feature dimension.
+
+        - **hidden_units**:list of positive integer, the layer number and units in each layer.
+
+        - **activation**: Activation function to use.
+
+        - **l2_reg**: float between 0 and 1. L2 regularizer strength applied to the kernel weights matrix.
+
+        - **dropout_rate**: float in [0,1). Fraction of the units to dropout.
+
+        - **use_bn**: bool. Whether use BatchNormalization before activation or not.
+
+        - **seed**: A Python integer to use as random seed.
+    """
+
     def __init__(self, inputs_dim, hidden_units, activation=F.relu, l2_reg=0, dropout_rate=0, use_bn=False,
                  init_std=0.0001, seed=1024, device='cpu'):
         super(DNN, self).__init__()
@@ -17,10 +41,6 @@ class DNN(nn.Module):
             raise ValueError("hidden_units is empty!!")
         hidden_units = [inputs_dim] + list(hidden_units)
 
-        # self.weight = nn.ParameterList([nn.Parameter(torch.Tensor(
-        #     hidden_units[i+1], hidden_units[i])) for i in range(len(hidden_units)-1)])
-        # self.bias = nn.ParameterList([nn.Parameter(torch.zeros(
-        #     (hidden_units[i+1],))) for i in range(len(hidden_units)-1)])
         self.linears = nn.ModuleList(
             [nn.Linear(hidden_units[i], hidden_units[i + 1]) for i in range(len(hidden_units) - 1)])
 
@@ -37,9 +57,7 @@ class DNN(nn.Module):
         deep_input = inputs
 
         for i in range(len(self.linears)):
-            # fc = F.linear(deep_input, self.weight[i], self.bias[i])
 
-            # for i in range(len(self.linears)):
             fc = self.linears[i](deep_input)
 
             if self.use_bn:
