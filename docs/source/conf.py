@@ -169,5 +169,4 @@ source_parsers = {
 }
 
 autodoc_mock_imports = [
-    "torch",
 ]
