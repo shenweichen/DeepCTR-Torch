@@ -17,7 +17,7 @@ DeepCTR-PyTorch Models API
    DSIN<deepctr_torch.models.dsin>
    xDeepFM<deepctr_torch.models.xdeepfm>
    AutoInt<deepctr_torch.models.autoint>
-   NFFM<deepctr_torch.models.nffm>
+   ONN<deepctr_torch.models.onn>
    FGCNN<deepctr_torch.models.fgcnn>
    FiBiNET<deepctr_torch.models.fibinet>
    

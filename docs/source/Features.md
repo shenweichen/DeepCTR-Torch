@@ -143,7 +143,7 @@ By stacking multiple interacting layers,AutoInt is able to model different order
 
 ONN models second order feature interactions like like FFM and preserves second-order interaction information  as much as possible.Further more,deep neural network is used to learn higher-ordered feature interactions. 
 
-[**NFFM Model API**](./deepctr_torch.models.onn.html)
+[**ONN Model API**](./deepctr_torch.models.onn.html)
 
 ![NFFM](../pics/ONN.png)
 

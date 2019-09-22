@@ -6,7 +6,7 @@
 ```bash
 $ pip install -U deepctr-torch
 ```
-## Getting started: 4 steps to DeepCTR
+## Getting started: 4 steps to DeepCTR-Torch
 
 
 ### Step 1: Import model
