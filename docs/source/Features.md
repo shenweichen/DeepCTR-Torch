@@ -145,7 +145,7 @@ ONN models second order feature interactions like like FFM and preserves second-
 
 [**ONN Model API**](./deepctr_torch.models.onn.html)
 
-![NFFM](../pics/ONN.png)
+![ONN](../pics/ONN.png)
 
 [Yang Y, Xu B, Shen F, et al. Operation-aware Neural Networks for User Response Prediction[J]. arXiv preprint arXiv:1904.12579, 2019.](https://arxiv.org/pdf/1904.12579.pdf)
 
