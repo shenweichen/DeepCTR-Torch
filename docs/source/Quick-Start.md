@@ -1,7 +1,7 @@
 # Quick-Start
 
 ## Installation Guide
-`deepctr-torch` depends on tensorflow>=1.1.0, you can specify to install it through `pip`.
+`deepctr-torch` depends on torch>=1.1.0, you can specify to install it through `pip`.
 
 ```bash
 $ pip install -U deepctr-torch
@@ -42,7 +42,8 @@ Usually there are two simple way to encode the sparse categorical feature for em
       lbe = LabelEncoder()
       data[feat] = lbe.fit_transform(data[feat])
   ```
-- Hash Encoding: Currently not supported.
+- Hash Encoding: 【Currently not supported】.
+
 And for dense numerical features,they are usually  discretized to buckets,here we use normalization.
 
 ```python
