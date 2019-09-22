@@ -1,4 +1,4 @@
-deepctr\_torch.models.autoint module
+deepctr_torch.models.autoint module
 ====================================
 
 .. automodule:: deepctr_torch.models.autoint

@@ -1,4 +1,4 @@
-deepctr\_torch.models.basemodel module
+deepctr_torch.models.basemodel module
 ======================================
 
 .. automodule:: deepctr_torch.models.basemodel

@@ -1,4 +1,4 @@
-deepctr\_torch.inputs module
+deepctr_torch.inputs module
 ============================
 
 .. automodule:: deepctr_torch.inputs

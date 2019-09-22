@@ -1,4 +1,4 @@
-deepctr\_torch.models.pnn module
+deepctr_torch.models.pnn module
 ================================
 
 .. automodule:: deepctr_torch.models.pnn

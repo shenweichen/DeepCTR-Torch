@@ -1,4 +1,4 @@
-deepctr\_torch.models.onn module
+deepctr_torch.models.onn module
 ================================
 
 .. automodule:: deepctr_torch.models.onn

@@ -1,4 +1,4 @@
-deepctr\_torch.models.wdl module
+deepctr_torch.models.wdl module
 ================================
 
 .. automodule:: deepctr_torch.models.wdl

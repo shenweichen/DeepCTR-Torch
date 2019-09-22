@@ -1,4 +1,4 @@
-deepctr\_torch.models package
+deepctr_torch.models package
 =============================
 
 Submodules

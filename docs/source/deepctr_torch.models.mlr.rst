@@ -1,4 +1,4 @@
-deepctr\_torch.models.mlr module
+deepctr_torch.models.mlr module
 ================================
 
 .. automodule:: deepctr_torch.models.mlr

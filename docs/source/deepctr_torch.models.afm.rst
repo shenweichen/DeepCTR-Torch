@@ -1,4 +1,4 @@
-deepctr\_torch.models.afm module
+deepctr_torch.models.afm module
 ================================
 
 .. automodule:: deepctr_torch.models.afm

@@ -1,4 +1,4 @@
-deepctr\_torch.models.xdeepfm module
+deepctr_torch.models.xdeepfm module
 ====================================
 
 .. automodule:: deepctr_torch.models.xdeepfm

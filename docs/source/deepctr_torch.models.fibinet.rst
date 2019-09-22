@@ -1,4 +1,4 @@
-deepctr\_torch.models.fibinet module
+deepctr_torch.models.fibinet module
 ====================================
 
 .. automodule:: deepctr_torch.models.fibinet

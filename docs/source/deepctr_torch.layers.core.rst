@@ -1,4 +1,4 @@
-deepctr\_torch.layers.core module
+deepctr_torch.layers.core module
 =================================
 
 .. automodule:: deepctr_torch.layers.core

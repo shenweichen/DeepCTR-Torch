@@ -1,4 +1,4 @@
-deepctr\_torch.layers.utils module
+deepctr_torch.layers.utils module
 ==================================
 
 .. automodule:: deepctr_torch.layers.utils

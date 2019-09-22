@@ -1,4 +1,4 @@
-deepctr\_torch.layers package
+deepctr_torch.layers package
 =============================
 
 Submodules
