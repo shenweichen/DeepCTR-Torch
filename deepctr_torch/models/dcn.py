@@ -13,9 +13,10 @@ from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
 from ..layers import CrossNet, DNN
 
-
 class DCN(BaseModel):
+
     """Instantiates the Deep&Cross Network architecture.
+
     :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
     :param embedding_size: positive int or str,sparse feature embedding_size.If set to "auto",it will be 6*pow(cardinality,025)
     :param cross_num: positive integet,cross layer number
@@ -29,8 +30,9 @@ class DCN(BaseModel):
     :param dnn_use_bn: bool. Whether use BatchNormalization before activation or not DNN
     :param dnn_activation: Activation function to use in DNN
     :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
-    :param device:
+    :param device: str, ``"cpu"`` or ``"cuda:0"``
     :return: A PyTorch model instance.
+    
     """
 
     def __init__(self,
@@ -62,7 +64,7 @@ class DCN(BaseModel):
 
         self.dnn_linear = nn.Linear(dnn_linear_in_feature, 1, bias=False).to(
             device)
-        self.crossnet = CrossNet(input_feature_num=self.compute_input_dim(dnn_feature_columns, embedding_size),
+        self.crossnet = CrossNet(in_features=self.compute_input_dim(dnn_feature_columns, embedding_size),
                                  layer_num=cross_num, seed=1024, device=device)
         self.add_regularization_loss(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)

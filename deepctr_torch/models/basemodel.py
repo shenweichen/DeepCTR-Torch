@@ -14,7 +14,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data as Data
-from sklearn.metrics import log_loss, roc_auc_score
+from sklearn.metrics import *
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -128,11 +128,23 @@ class BaseModel(nn.Module):
             batch_size=None,
             epochs=1,
             verbose=1,
-            callbacks=None,
             initial_epoch=0,
             validation_split=0.,
             validation_data=None,
             shuffle=True, ):
+        """
+
+        :param x: Numpy array of training data (if the model has a single input), or list of Numpy arrays (if the model has multiple inputs).
+        :param y: Numpy array of target (label) data (if the model has a single output), or list of Numpy arrays (if the model has multiple outputs).
+        :param batch_size: Integer or `None`. Number of samples per gradient update. If unspecified, `batch_size` will default to 256.
+        :param epochs: Integer. Number of epochs to train the model. An epoch is an iteration over the entire `x` and `y` data provided. Note that in conjunction with `initial_epoch`, `epochs` is to be understood as "final epoch". The model is not trained for a number of iterations given by `epochs`, but merely until the epoch of index `epochs` is reached.
+        :param verbose: Integer. 0, 1, or 2. Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per epoch.
+        :param initial_epoch: Integer. Epoch at which to start training (useful for resuming a previous training run).
+        :param validation_split: Float between 0 and 1. Fraction of the training data to be used as validation data. The model will set apart this fraction of the training data, will not train on it, and will evaluate the loss and any model metrics on this data at the end of each epoch. The validation data is selected from the last samples in the `x` and `y` data provided, before shuffling.
+        :param validation_data: tuple `(x_val, y_val)` or tuple `(x_val, y_val, val_sample_weights)` on which to evaluate the loss and any model metrics at the end of each epoch. The model will not be trained on this data. `validation_data` will override `validation_split`.
+        :param shuffle: Boolean. Whether to shuffle the order of the batches at the beginning of each epoch.
+
+        """
         if validation_data:
             if len(validation_data) == 2:
                 val_x, val_y = validation_data
@@ -166,7 +178,8 @@ class BaseModel(nn.Module):
             torch.from_numpy(
                 np.hstack(list(map(lambda x: np.expand_dims(x, axis=1), x)))),
             torch.from_numpy(y))
-
+        if batch_size is None:
+            batch_size = 256
         train_loader = DataLoader(
             dataset=train_tensor_data, shuffle=shuffle, batch_size=batch_size)
 
@@ -234,6 +247,13 @@ class BaseModel(nn.Module):
                 print(eval_str)
 
     def evaluate(self, x, y, batch_size=256):
+        """
+
+        :param x: Numpy array of test data (if the model has a single input), or list of Numpy arrays (if the model has multiple inputs).
+        :param y: Numpy array of target (label) data (if the model has a single output), or list of Numpy arrays (if the model has multiple outputs).
+        :param batch_size:
+        :return: Integer or `None`. Number of samples per evaluation step. If unspecified, `batch_size` will default to 256.
+        """
         pred_ans = self.predict(x, batch_size)
         eval_result = {}
         for name, metric_fun in self.metrics.items():
@@ -241,7 +261,12 @@ class BaseModel(nn.Module):
         return eval_result
 
     def predict(self, x, batch_size=256):
+        """
 
+        :param x: The input data, as a Numpy array (or list of Numpy arrays if the model has multiple inputs).
+        :param batch_size: Integer. If unspecified, it will default to 256.
+        :return: Numpy array(s) of predictions.
+        """
         model = self.eval()
         x = np.hstack(list(map(lambda x: np.expand_dims(x, axis=1), x)))
         tensor_data = Data.TensorDataset(torch.from_numpy(x))
@@ -322,8 +347,13 @@ class BaseModel(nn.Module):
     def compile(self, optimizer,
                 loss=None,
                 metrics=None,
-                loss_weights=None,
-                sample_weight_mode=None):
+                ):
+        """
+        :param optimizer: String (name of optimizer) or optimizer instance. See [optimizers](https://pytorch.org/docs/stable/optim.html).
+        :param loss: String (name of objective function) or objective function. See [losses](https://pytorch.org/docs/stable/nn.functional.html#loss-functions).
+        :param metrics: List of metrics to be evaluated by the model during training and testing. Typically you will use `metrics=['accuracy']`.
+        """
+
 
         self.optim = self._get_optim(optimizer)
         self.loss_func = self._get_loss_func(loss)
@@ -367,4 +397,8 @@ class BaseModel(nn.Module):
                     metrics_[metric] = log_loss
                 if metric == "auc":
                     metrics_[metric] = roc_auc_score
+                if metric == "mse":
+                    metrics_[metric] = mean_squared_error
+                if metric == "accuracy" or metric =="acc":
+                    metrics_[metric] = lambda y_true,y_pred: accuracy_score(y_true,np.where(y_pred > 0.5, 1, 0))
         return metrics_

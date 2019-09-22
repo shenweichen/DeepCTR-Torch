@@ -1,23 +1,23 @@
-# DeepCTR-PyTorch
+# DeepCTR-Torch
 
 [![Python Versions](https://img.shields.io/pypi/pyversions/deepctr-torch.svg)](https://pypi.org/project/deepctr-torch)
 [![Downloads](https://pepy.tech/badge/deepctr-torch)](https://pepy.tech/project/deepctr-torch)
 [![PyPI Version](https://img.shields.io/pypi/v/deepctr-torch.svg)](https://pypi.org/project/deepctr-torch)
-[![GitHub Issues](https://img.shields.io/github/issues/shenweichen/deepctr-pytorch.svg
-)](https://github.com/shenweichen/deepctr-pytorch/issues)
+[![GitHub Issues](https://img.shields.io/github/issues/shenweichen/deepctr-torch.svg
+)](https://github.com/shenweichen/deepctr-torch/issues)
 
 
-[![Documentation Status](https://readthedocs.org/projects/deepctr-doc/badge/?version=latest)](https://deepctr-doc.readthedocs.io/)
-![CI status](https://github.com/shenweichen/deepctr-pytorch/workflows/CI/badge.svg)
-[![codecov](https://codecov.io/gh/shenweichen/DeepCTR-PyTorch/branch/master/graph/badge.svg)](https://codecov.io/gh/shenweichen/DeepCTR-PyTorch)
+[![Documentation Status](https://readthedocs.org/projects/deepctr-torch/badge/?version=latest)](https://deepctr-torch.readthedocs.io/)
+![CI status](https://github.com/shenweichen/deepctr-torch/workflows/CI/badge.svg)
+[![codecov](https://codecov.io/gh/shenweichen/DeepCTR-Torch/branch/master/graph/badge.svg)](https://codecov.io/gh/shenweichen/DeepCTR-Torch)
 [![Gitter](https://badges.gitter.im/DeepCTR/community.svg)](https://gitter.im/DeepCTR/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
-[![License](https://img.shields.io/github/license/shenweichen/deepctr-pytorch.svg)](https://github.com/shenweichen/deepctr-pytorch/blob/master/LICENSE)
+[![License](https://img.shields.io/github/license/shenweichen/deepctr-torch.svg)](https://github.com/shenweichen/deepctr-torch/blob/master/LICENSE)
 
-PyTorch version of [DeepCTR](https://github.com/shenweichen/DeepCTR).Use`pip install -U deepctr-torch` to install!
+PyTorch version of [DeepCTR](https://github.com/shenweichen/DeepCTR).
 
-DeepCTR is a **Easy-to-use**,**Modular** and **Extendible** package of deep-learning based CTR models along with lots of core components layers which can be used to build your own custom model easily.You can use any complex model with `model.fit()`and `model.predict()` .
+DeepCTR is a **Easy-to-use**,**Modular** and **Extendible** package of deep-learning based CTR models along with lots of core components layers which can be used to build your own custom model easily.You can use any complex model with `model.fit()`and `model.predict()` .Install through `pip install deepctr-torch`~
 
-Let's [**Get Started!**](https://deepctr-doc.readthedocs.io/en/latest/Quick-Start.html)([Chinese Introduction](https://zhuanlan.zhihu.com/p/53231955))
+Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-Start.html)([Chinese Introduction](https://zhuanlan.zhihu.com/p/53231955))
 
 ## Contributors
 <a href="https://github.com/shenweichen">

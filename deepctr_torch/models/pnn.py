@@ -16,27 +16,29 @@ from ..layers import DNN, concat_fun, InnerProductLayer, OutterProductLayer
 
 
 class PNN(BaseModel):
+    """Instantiates the Product-based Neural Network architecture.
+
+    :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
+    :param embedding_size: positive integer,sparse feature embedding_size
+    :param dnn_hidden_units: list,list of positive integer or empty list, the layer number and units in each layer of deep net
+    :param l2_reg_embedding: float . L2 regularizer strength applied to embedding vector
+    :param l2_reg_dnn: float. L2 regularizer strength applied to DNN
+    :param init_std: float,to use as the initialize std of embedding vector
+    :param seed: integer ,to use as random seed.
+    :param dnn_dropout: float in [0,1), the probability we will drop out a given DNN coordinate.
+    :param dnn_activation: Activation function to use in DNN
+    :param use_inner: bool,whether use inner-product or not.
+    :param use_outter: bool,whether use outter-product or not.
+    :param kernel_type: str,kernel_type used in outter-product,can be ``'mat'`` , ``'vec'`` or ``'num'``
+    :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
+    :param device: str, ``"cpu"`` or ``"cuda:0"``
+    :return: A PyTorch model instance.
+    
+    """
 
     def __init__(self, dnn_feature_columns, embedding_size=8, dnn_hidden_units=(128, 128), l2_reg_embedding=1e-5, l2_reg_dnn=0,
                  init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation=F.relu, use_inner=True, use_outter=False,
                  kernel_type='mat', task='binary', device='cpu',):
-        """Instantiates the Product-based Neural Network architecture.
-        :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
-        :param embedding_size: positive integer,sparse feature embedding_size
-        :param dnn_hidden_units: list,list of positive integer or empty list, the layer number and units in each layer of deep net
-        :param l2_reg_embedding: float . L2 regularizer strength applied to embedding vector
-        :param l2_reg_dnn: float. L2 regularizer strength applied to DNN
-        :param init_std: float,to use as the initialize std of embedding vector
-        :param seed: integer ,to use as random seed.
-        :param dnn_dropout: float in [0,1), the probability we will drop out a given DNN coordinate.
-        :param dnn_activation: Activation function to use in DNN
-        :param use_inner: bool,whether use inner-product or not.
-        :param use_outter: bool,whether use outter-product or not.
-        :param kernel_type: str,kernel_type used in outter-product,can be ``'mat'`` , ``'vec'`` or ``'num'``
-        :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
-        :param device:
-        :return: A PyTorch model instance.
-        """
 
         super(PNN, self).__init__([], dnn_feature_columns, embedding_size=embedding_size,
                                   dnn_hidden_units=dnn_hidden_units,

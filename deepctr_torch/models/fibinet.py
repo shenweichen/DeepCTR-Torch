@@ -18,6 +18,7 @@ from ..layers import SENETLayer,BilinearInteraction,DNN
 
 class FiBiNET(BaseModel):
     """Instantiates the Feature Importance and Bilinear feature Interaction NETwork architecture.
+
     :param linear_feature_columns: An iterable containing all the features used by linear part of the model.
     :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
     :param embedding_size: positive integer,sparse feature embedding_size
@@ -32,8 +33,9 @@ class FiBiNET(BaseModel):
     :param dnn_dropout: float in [0,1), the probability we will drop out a given DNN coordinate.
     :param dnn_activation: Activation function to use in DNN
     :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
-    :param divece:
+    :param device: str, ``"cpu"`` or ``"cuda:0"``
     :return: A PyTorch model instance.
+    
     """
 
     def __init__(self, linear_feature_columns, dnn_feature_columns, embedding_size=8, bilinear_type='interaction',
