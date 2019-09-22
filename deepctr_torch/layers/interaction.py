@@ -64,6 +64,7 @@ class SENETLayer(nn.Module):
       Output shape
         - A list of 3D tensor with shape: ``(batch_size,filed_size,embedding_size)``.
       Arguments
+        - **filed_size** : Positive integer, number of feature groups.
         - **reduction_ratio** : Positive integer, dimensionality of the
          attention network output space.
         - **seed** : A Python integer to use as random seed.
@@ -103,6 +104,7 @@ class BilinearInteraction(nn.Module):
       Output shape
         - 3D tensor with shape: ``(batch_size,filed_size, embedding_size)``.
       Arguments
+        - **filed_size** : Positive integer, number of feature groups.
         - **str** : String, types of bilinear functions used in this layer.
         - **seed** : A Python integer to use as random seed.
       References
@@ -156,6 +158,7 @@ class CIN(nn.Module):
       Output shape
         - 2D tensor with shape: ``(batch_size, featuremap_num)`` ``featuremap_num =  sum(self.layer_size[:-1]) // 2 + self.layer_size[-1]`` if ``split_half=True``,else  ``sum(layer_size)`` .
       Arguments
+        - **filed_size** : Positive integer, number of feature groups.
         - **layer_size** : list of int.Feature maps in each layer.
         - **activation** : activation function used on feature maps.
         - **split_half** : bool.if set to False, half of the feature maps in each hidden will connect to output unit.
@@ -164,14 +167,14 @@ class CIN(nn.Module):
         - [Lian J, Zhou X, Zhang F, et al. xDeepFM: Combining Explicit and Implicit Feature Interactions for Recommender Systems[J]. arXiv preprint arXiv:1803.05170, 2018.] (https://arxiv.org/pdf/1803.05170.pdf)
     """
 
-    def __init__(self, field_nums, layer_size=(128, 128), activation=F.relu, split_half=True, l2_reg=1e-5, seed=1024, device='cpu'):
+    def __init__(self, field_size, layer_size=(128, 128), activation=F.relu, split_half=True, l2_reg=1e-5, seed=1024, device='cpu'):
         super(CIN, self).__init__()
         if len(layer_size) == 0:
             raise ValueError(
                 "layer_size must be a list(tuple) of length greater than 1")
 
         self.layer_size = layer_size
-        self.field_nums = [field_nums]
+        self.field_nums = [field_size]
         self.split_half = split_half
         self.activation = activation
         self.l2_reg = l2_reg
@@ -247,6 +250,7 @@ class AFMLayer(nn.Module):
       Output shape
         - 2D tensor with shape: ``(batch_size, 1)``.
       Arguments
+        - **in_feature** : Positive integer, dimensionality of input features.
         - **attention_factor** : Positive integer, dimensionality of the
          attention network output space.
         - **l2_reg_w** : float between 0 and 1. L2 regularizer strength
@@ -319,6 +323,7 @@ class InteractingLayer(nn.Module):
       Output shape
             - 3D tensor with shape:``(batch_size,field_size,att_embedding_size * head_num)``.
       Arguments
+            - **in_feature** : Positive integer, dimensionality of input features.
             - **att_embedding_size**: int.The embedding size in multi-head self-attention network.
             - **head_num**: int.The head number in multi-head  self-attention network.
             - **use_res**: bool.Whether or not use standard residual connections before output.
@@ -398,6 +403,7 @@ class CrossNet(nn.Module):
       Output shape
         - 2D tensor with shape: ``(batch_size, units)``.
       Arguments
+        - **in_feature** : Positive integer, dimensionality of input features.
         - **input_feature_num**: Positive integer, shape(Input tensor)[-1]
         - **layer_num**: Positive integer, the cross layer number
         - **l2_reg**: float between 0 and 1. L2 regularizer strength applied to the kernel weights matrix
@@ -406,13 +412,13 @@ class CrossNet(nn.Module):
         - [Wang R, Fu B, Fu G, et al. Deep & cross network for ad click predictions[C]//Proceedings of the ADKDD'17. ACM, 2017: 12.](https://arxiv.org/abs/1708.05123)
     """
 
-    def __init__(self, input_feature_num, layer_num=2, seed=1024, device='cpu'):
+    def __init__(self, input_feature, layer_num=2, seed=1024, device='cpu'):
         super(CrossNet, self).__init__()
         self.layer_num = layer_num
         self.kernels = torch.nn.ParameterList(
-            [nn.Parameter(nn.init.xavier_normal_(torch.empty(input_feature_num, 1))) for i in range(self.layer_num)])
+            [nn.Parameter(nn.init.xavier_normal_(torch.empty(input_feature, 1))) for i in range(self.layer_num)])
         self.bias = torch.nn.ParameterList(
-            [nn.Parameter(nn.init.zeros_(torch.empty(input_feature_num, 1))) for i in range(self.layer_num)])
+            [nn.Parameter(nn.init.zeros_(torch.empty(input_feature, 1))) for i in range(self.layer_num)])
         self.to(device)
 
     def forward(self, inputs):
@@ -478,6 +484,7 @@ class OutterProductLayer(nn.Module):
       Output shape
             - 2D tensor with shape:``(batch_size,N*(N-1)/2 )``.
       Arguments
+            - **filed_size** : Positive integer, number of feature groups.
             - **kernel_type**: str. The kernel weight matrix type to use,can be mat,vec or num
             - **seed**: A Python integer to use as random seed.
       References
