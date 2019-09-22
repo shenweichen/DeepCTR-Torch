@@ -39,7 +39,9 @@ class DCN(BaseModel):
                  l2_reg_embedding=0.00001, l2_reg_cross=0.00001, l2_reg_dnn=0, init_std=0.0001, seed=1024,
                  dnn_dropout=0,
                  dnn_activation=F.relu, dnn_use_bn=False, task='binary', device='cpu'):
-
+        """
+        test 
+        """
         super(DCN, self).__init__(linear_feature_columns=[],
                                   dnn_feature_columns=dnn_feature_columns,
                                   embedding_size=embedding_size,
