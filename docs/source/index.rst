@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to DeepCTR-PyTorch's documentation!
+Welcome to DeepCTR-Torch's documentation!
 ===================================
 
 |Downloads|_ |Stars|_ |Forks|_ |PyPi|_ |Issues|_ |Gitter|_
@@ -26,7 +26,7 @@ Welcome to DeepCTR-PyTorch's documentation!
 .. |Gitter| image:: https://badges.gitter.im/DeepCTR/community.svg
 .. _Gitter: https://gitter.im/DeepCTR/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
 
-DeepCTR-PyTorch is a **Easy-to-use** , **Modular** and **Extendible** package of deep-learning based CTR models along with lots of core components layer  which can be used to build your own custom model easily.It is compatible with **PyTorch**.You can use any complex model with ``model.fit()`` and ``model.predict()``.
+DeepCTR-Torch is a **Easy-to-use** , **Modular** and **Extendible** package of deep-learning based CTR models along with lots of core components layer  which can be used to build your own custom model easily.It is compatible with **PyTorch**.You can use any complex model with ``model.fit()`` and ``model.predict()``.
 
 Let's `Get Started! <./Quick-Start.html>`_ (`Chinese Introduction <https://zhuanlan.zhihu.com/p/53231955>`_)
 
