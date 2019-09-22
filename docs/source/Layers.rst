@@ -8,6 +8,4 @@ DeepCTR Layers API
 
    Core Layers<deepctr_torch.layers.core>
    Interaction Layers<deepctr_torch.layers.interaction>
-   Activation Layers<deepctr_torch.layers.activation>
-   Normalization Layers<deepctr_torch.layers.normalization>
    Sequence Layers<deepctr_torch.layers.sequence>

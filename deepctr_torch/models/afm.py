@@ -19,7 +19,9 @@ class AFM(BaseModel):
                  linear_feature_columns, dnn_feature_columns, embedding_size=8, use_attention=True, attention_factor=8,
                  l2_reg_linear=1e-5, l2_reg_embedding=1e-5, l2_reg_att=1e-5, afm_dropout=0, init_std=0.0001, seed=1024,
                  task='binary', device='cpu'):
+
         """Instantiates the Attentional Factorization Machine architecture.
+        
         :param linear_feature_columns: An iterable containing all the features used by linear part of the model.
         :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
         :param embedding_size: positive integer,sparse feature embedding_size
