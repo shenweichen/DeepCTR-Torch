@@ -16,6 +16,7 @@ from ..layers import DNN, concat_fun, InteractingLayer
 
 class AutoInt(BaseModel):
     """Instantiates the AutoInt Network architecture.
+
     :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
     :param embedding_size: positive integer,sparse feature embedding_size
     :param att_layer_num: int.The InteractingLayer number to be used.
@@ -31,8 +32,9 @@ class AutoInt(BaseModel):
     :param init_std: float,to use as the initialize std of embedding vector
     :param seed: integer ,to use as random seed.
     :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
-    :param device: 
+    :param device: str, ``"cpu"`` or ``"cuda:0"``
     :return: A PyTorch model instance.
+    
     """
 
     def __init__(self, dnn_feature_columns, embedding_size=8, att_layer_num=3, att_embedding_size=8, att_head_num=2,

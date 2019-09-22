@@ -18,6 +18,7 @@ from ..layers import PredictionLayer
 class MLR(BaseModel):
 
     """Instantiates the Mixed Logistic Regression/Piece-wise Linear Model.
+
     :param region_feature_columns: An iterable containing all the features used by region part of the model.
     :param base_feature_columns: An iterable containing all the features used by base part of the model.
     :param region_num: integer > 1,indicate the piece number
@@ -26,8 +27,9 @@ class MLR(BaseModel):
     :param seed: integer ,to use as random seed.
     :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
     :param bias_feature_columns: An iterable containing all the features used by bias part of the model.
-    :param device:
+    :param device: str, ``"cpu"`` or ``"cuda:0"``
     :return: A PyTorch model instance.
+    
     """
 
     def __init__(self, region_feature_columns, base_feature_columns=None, bias_feature_columns=None,
