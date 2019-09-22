@@ -15,11 +15,11 @@
 
 PyTorch version of [DeepCTR](https://github.com/shenweichen/DeepCTR).
 
-DeepCTR is a **Easy-to-use**,**Modular** and **Extendible** package of deep-learning based CTR models along with lots of core components layers which can be used to build your own custom model easily.You can use any complex model with `model.fit()`and `model.predict()` .Install through `pip install deepctr-torch`~
+DeepCTR is a **Easy-to-use**,**Modular** and **Extendible** package of deep-learning based CTR models along with lots of core components layers which can be used to build your own custom model easily.You can use any complex model with `model.fit()`and `model.predict()` .Install through `pip install -U deepctr-torch`.
 
 Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-Start.html)([Chinese Introduction](https://zhuanlan.zhihu.com/p/53231955))
 
-## Contributors
+## Contributors([welcome to join us!](./CONTRIBUTING.md))
 <a href="https://github.com/shenweichen">
     <img src="https://avatars.githubusercontent.com/shenweichen " width=70 height="70" alt="pic" >
 </a>
@@ -38,6 +38,7 @@ Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-St
 <a href="https://github.com/uestc7d">
     <img src="https://avatars.githubusercontent.com/uestc7d " width=70 height="70" alt="pic" >
 </a>
+
 
 ## Models List
 

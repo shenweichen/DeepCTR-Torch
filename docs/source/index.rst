@@ -34,7 +34,7 @@ You can read the latest code at https://github.com/shenweichen/DeepCTR-Torch and
 
 News
 -----
-09/22/2019 : DeepCTR-PyTorch first version v0.1.0  is released on `PyPi <https://pypi.org/project/deepctr-torch/>`_ !
+09/22/2019 : DeepCTR-Torch first version v0.1.0  is released on `PyPi <https://pypi.org/project/deepctr-torch/>`_ !
 
 
 .. toctree::
