@@ -167,3 +167,7 @@ html_theme = 'sphinx_rtd_theme'
 source_parsers = {
     '.md': 'recommonmark.parser.CommonMarkParser',
 }
+
+autodoc_mock_imports = [
+    "torch",
+]
