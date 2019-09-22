@@ -30,7 +30,7 @@ DeepCTR-PyTorch is a **Easy-to-use** , **Modular** and **Extendible** package of
 
 Let's `Get Started! <./Quick-Start.html>`_ (`Chinese Introduction <https://zhuanlan.zhihu.com/p/53231955>`_)
 
-You can read the latest code at https://github.com/shenweichen/DeepCTR-PyTorch
+You can read the latest code at https://github.com/shenweichen/DeepCTR-PyTorch and https://github.com/shenweichen/DeepCTR for tensorflow version.
 
 News
 -----

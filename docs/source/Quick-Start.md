@@ -1,18 +1,10 @@
 # Quick-Start
 
 ## Installation Guide
-Now `deepctr` is available for python `2.7 `and `3.5, 3.6, 3.7`.  
-`deepctr` depends on tensorflow, you can specify to install the cpu version or gpu version through `pip`.
-
-### CPU version
+`deepctr-torch` depends on tensorflow>=1.1.0, you can specify to install it through `pip`.
 
 ```bash
-$ pip install deepctr[cpu]
-```
-### GPU version
-
-```bash
-$ pip install deepctr[gpu]
+$ pip install -U deepctr-torch
 ```
 ## Getting started: 4 steps to DeepCTR
 
@@ -24,8 +16,8 @@ $ pip install deepctr[gpu]
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 from sklearn.model_selection import train_test_split
-from deepctr.models import DeepFM
-from deepctr.inputs import  SparseFeat, DenseFeat,get_fixlen_feature_names
+from deepctr_torch.models import DeepFM
+from deepctr_torch.inputs import  SparseFeat, DenseFeat,get_fixlen_feature_names
 
 data = pd.read_csv('./criteo_sample.txt')
 
@@ -50,18 +42,7 @@ Usually there are two simple way to encode the sparse categorical feature for em
       lbe = LabelEncoder()
       data[feat] = lbe.fit_transform(data[feat])
   ```
-- Hash Encoding: map the features to a fix range,like 0 ~ 9999.Here is 2 way to do that:
-  - Do feature hashing before training
-    ```python
-    for feat in sparse_features:
-        lbe = HashEncoder()
-        data[feat] = lbe.transform(data[feat])
-    ```
-  - Do feature hashing on the fly in training process 
-
-    We can do feature hasing throug setting `use_hash=True` in `SparseFeat` or `VarlenSparseFeat` in Step3.
-
-
+- Hash Encoding: Currently not supported.
 And for dense numerical features,they are usually  discretized to buckets,here we use normalization.
 
 ```python
@@ -82,7 +63,7 @@ sparse_feature_columns = [SparseFeat(feat, data[feat].nunique())
 dense_feature_columns = [DenseFeat(feat, 1)
                       for feat in dense_features]
 ```
-- Feature Hashing on the fly
+- Feature Hashing on the fly【currently not supported】
 ```python
 sparse_feature_columns = [SparseFeat(feat, dimension=1e6,use_hash=True) for feat in sparse_features]#The dimension can be set according to data
 dense_feature_columns = [DenseFeat(feat, 1)
@@ -111,7 +92,13 @@ train_model_input = [train[name] for name in feature_names]
 test_model_input = [test[name] for name in feature_names]
 
 
-model = DeepFM(linear_feature_columns,dnn_feature_columns,task='binary')
+device = 'cpu'
+use_cuda = True
+if use_cuda and torch.cuda.is_available():
+    print('cuda ready...')
+    device = 'cuda:0'
+
+model = DeepFM(linear_feature_columns,dnn_feature_columns,task='binary',device=device)
 model.compile("adam", "binary_crossentropy",
               metrics=['binary_crossentropy'], )
 
