@@ -1,4 +1,4 @@
-deepctr_torch.models.dcn module
+deepctr\_torch.models.dcn module
 ================================
 
 .. automodule:: deepctr_torch.models.dcn

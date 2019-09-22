@@ -1,4 +1,4 @@
-deepctr_torch.models package
+deepctr\_torch.models package
 =============================
 
 Submodules
@@ -24,5 +24,5 @@ Module contents
 
 .. automodule:: deepctr_torch.models
     :members:
-    :no-undoc-members:
-    :no-show-inheritance:
+    :undoc-members:
+    :show-inheritance:

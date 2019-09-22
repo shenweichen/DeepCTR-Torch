@@ -1,4 +1,4 @@
-deepctr_torch package
+deepctr\_torch package
 ======================
 
 Subpackages

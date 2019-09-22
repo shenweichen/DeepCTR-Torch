@@ -1,4 +1,4 @@
-deepctr_torch.layers package
+deepctr\_torch.layers package
 =============================
 
 Submodules
@@ -15,5 +15,5 @@ Module contents
 
 .. automodule:: deepctr_torch.layers
     :members:
-    :no-undoc-members:
-    :no-show-inheritance:
+    :undoc-members:
+    :show-inheritance:

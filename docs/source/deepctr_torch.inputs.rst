@@ -1,7 +1,7 @@
-deepctr_torch.inputs module
+deepctr\_torch.inputs module
 ============================
 
 .. automodule:: deepctr_torch.inputs
     :members:
-    :no-undoc-members:
-    :no-show-inheritance:
+    :undoc-members:
+    :show-inheritance:

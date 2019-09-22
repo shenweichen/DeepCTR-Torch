@@ -1,7 +1,7 @@
-deepctr_torch.layers.interaction module
+deepctr\_torch.layers.interaction module
 ========================================
 
 .. automodule:: deepctr_torch.layers.interaction
     :members:
-    :no-undoc-members:
-    :no-show-inheritance:
+    :undoc-members:
+    :show-inheritance:
