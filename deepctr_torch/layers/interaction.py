@@ -250,7 +250,7 @@ class AFMLayer(nn.Module):
       Output shape
         - 2D tensor with shape: ``(batch_size, 1)``.
       Arguments
-        - **in_feature** : Positive integer, dimensionality of input features.
+        - **in_features** : Positive integer, dimensionality of input features.
         - **attention_factor** : Positive integer, dimensionality of the
          attention network output space.
         - **l2_reg_w** : float between 0 and 1. L2 regularizer strength
@@ -262,13 +262,13 @@ class AFMLayer(nn.Module):
         Interactions via Attention Networks](https://arxiv.org/pdf/1708.04617.pdf)
     """
 
-    def __init__(self, in_feature, attention_factor=4, l2_reg_w=0, dropout_rate=0, seed=1024, device='cpu'):
+    def __init__(self, in_features, attention_factor=4, l2_reg_w=0, dropout_rate=0, seed=1024, device='cpu'):
         super(AFMLayer, self).__init__()
         self.attention_factor = attention_factor
         self.l2_reg_w = l2_reg_w
         self.dropout_rate = dropout_rate
         self.seed = seed
-        embedding_size = in_feature
+        embedding_size = in_features
 
         self.attention_W = nn.Parameter(torch.Tensor(
             embedding_size, self.attention_factor))
@@ -323,7 +323,7 @@ class InteractingLayer(nn.Module):
       Output shape
             - 3D tensor with shape:``(batch_size,field_size,att_embedding_size * head_num)``.
       Arguments
-            - **in_feature** : Positive integer, dimensionality of input features.
+            - **in_features** : Positive integer, dimensionality of input features.
             - **att_embedding_size**: int.The embedding size in multi-head self-attention network.
             - **head_num**: int.The head number in multi-head  self-attention network.
             - **use_res**: bool.Whether or not use standard residual connections before output.
@@ -332,7 +332,7 @@ class InteractingLayer(nn.Module):
             - [Song W, Shi C, Xiao Z, et al. AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks[J]. arXiv preprint arXiv:1810.11921, 2018.](https://arxiv.org/abs/1810.11921)
     """
 
-    def __init__(self, in_feature, att_embedding_size=8, head_num=2, use_res=True, seed=1024, device='cpu'):
+    def __init__(self, in_features, att_embedding_size=8, head_num=2, use_res=True, seed=1024, device='cpu'):
         super(InteractingLayer, self).__init__()
         if head_num <= 0:
             raise ValueError('head_num must be a int > 0')
@@ -341,7 +341,7 @@ class InteractingLayer(nn.Module):
         self.use_res = use_res
         self.seed = seed
 
-        embedding_size = in_feature
+        embedding_size = in_features
 
         self.W_Query = nn.Parameter(torch.Tensor(
             embedding_size, self.att_embedding_size * self.head_num))
@@ -403,7 +403,7 @@ class CrossNet(nn.Module):
       Output shape
         - 2D tensor with shape: ``(batch_size, units)``.
       Arguments
-        - **in_feature** : Positive integer, dimensionality of input features.
+        - **in_features** : Positive integer, dimensionality of input features.
         - **input_feature_num**: Positive integer, shape(Input tensor)[-1]
         - **layer_num**: Positive integer, the cross layer number
         - **l2_reg**: float between 0 and 1. L2 regularizer strength applied to the kernel weights matrix
@@ -412,13 +412,13 @@ class CrossNet(nn.Module):
         - [Wang R, Fu B, Fu G, et al. Deep & cross network for ad click predictions[C]//Proceedings of the ADKDD'17. ACM, 2017: 12.](https://arxiv.org/abs/1708.05123)
     """
 
-    def __init__(self, input_feature, layer_num=2, seed=1024, device='cpu'):
+    def __init__(self, in_features, layer_num=2, seed=1024, device='cpu'):
         super(CrossNet, self).__init__()
         self.layer_num = layer_num
         self.kernels = torch.nn.ParameterList(
-            [nn.Parameter(nn.init.xavier_normal_(torch.empty(input_feature, 1))) for i in range(self.layer_num)])
+            [nn.Parameter(nn.init.xavier_normal_(torch.empty(in_features, 1))) for i in range(self.layer_num)])
         self.bias = torch.nn.ParameterList(
-            [nn.Parameter(nn.init.zeros_(torch.empty(input_feature, 1))) for i in range(self.layer_num)])
+            [nn.Parameter(nn.init.zeros_(torch.empty(in_features, 1))) for i in range(self.layer_num)])
         self.to(device)
 
     def forward(self, inputs):
@@ -475,7 +475,6 @@ class InnerProductLayer(nn.Module):
         return inner_product
 
 
-
 class OutterProductLayer(nn.Module):
     """OutterProduct Layer used in PNN.This implemention is
     adapted from code that the author of the paper published on https://github.com/Atomu2014/product-nets.
@@ -491,7 +490,7 @@ class OutterProductLayer(nn.Module):
             - [Qu Y, Cai H, Ren K, et al. Product-based neural networks for user response prediction[C]//Data Mining (ICDM), 2016 IEEE 16th International Conference on. IEEE, 2016: 1149-1154.](https://arxiv.org/pdf/1611.00144.pdf)
     """
 
-    def __init__(self,field_size,embedding_size, kernel_type='mat', seed=1024, device='cpu'):
+    def __init__(self, field_size, embedding_size, kernel_type='mat', seed=1024, device='cpu'):
         super(OutterProductLayer, self).__init__()
         self.kernel_type = kernel_type
 
@@ -500,13 +499,14 @@ class OutterProductLayer(nn.Module):
         embed_size = embedding_size
         if self.kernel_type == 'mat':
 
-            self.kernel = nn.Parameter(torch.Tensor(embed_size,num_pairs,embed_size))
+            self.kernel = nn.Parameter(torch.Tensor(
+                embed_size, num_pairs, embed_size))
 
         elif self.kernel_type == 'vec':
-            self.kernel = nn.Parameter(torch.Tensor(num_pairs,embed_size))
+            self.kernel = nn.Parameter(torch.Tensor(num_pairs, embed_size))
 
         elif self.kernel_type == 'num':
-            self.kernel = nn.Parameter(torch.Tensor(num_pairs,1))
+            self.kernel = nn.Parameter(torch.Tensor(num_pairs, 1))
         nn.init.xavier_uniform_(self.kernel)
 
         self.to(device)
@@ -551,7 +551,7 @@ class OutterProductLayer(nn.Module):
 
                             dim=-1),
 
-                        2,1),
+                        2, 1),
 
                     q),
 
@@ -559,7 +559,7 @@ class OutterProductLayer(nn.Module):
         else:
             # 1 * pair * (k or 1)
 
-            k = torch.unsqueeze(self.kernel,0)
+            k = torch.unsqueeze(self.kernel, 0)
 
             # batch * pair
 

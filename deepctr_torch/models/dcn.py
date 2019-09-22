@@ -64,7 +64,7 @@ class DCN(BaseModel):
 
         self.dnn_linear = nn.Linear(dnn_linear_in_feature, 1, bias=False).to(
             device)
-        self.crossnet = CrossNet(input_feature_num=self.compute_input_dim(dnn_feature_columns, embedding_size),
+        self.crossnet = CrossNet(in_features=self.compute_input_dim(dnn_feature_columns, embedding_size),
                                  layer_num=cross_num, seed=1024, device=device)
         self.add_regularization_loss(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)

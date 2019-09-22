@@ -21,7 +21,7 @@ can try other transformation technique like log normalization or discretization.
 - embedding_name : default `None`. If None, the `embedding_name` will be same as `name`.
 - embedding : default `True`.If `False`, the feature will not be embeded to a dense vector.
 
-This example shows how to use ``DeepFM`` to solve a simple binary classification task. You can get the demo data [criteo_sample.txt](https://github.com/shenweichen/DeepCTR-PyTorch/tree/master/examples/criteo_sample.txt)
+This example shows how to use ``DeepFM`` to solve a simple binary classification task. You can get the demo data [criteo_sample.txt](https://github.com/shenweichen/DeepCTR-Torch/tree/master/examples/criteo_sample.txt)
 and run the following codes.
 
 ```python
@@ -101,7 +101,7 @@ Here is a small fraction of data include  only sparse field.
 
 
 This example shows how to use ``DeepFM`` to solve a simple binary regression task. You can get the demo data 
-[movielens_sample.txt](https://github.com/shenweichen/DeepCTR-PyTorch/tree/master/examples/movielens_sample.txt) and run the following codes.
+[movielens_sample.txt](https://github.com/shenweichen/DeepCTR-Torch/tree/master/examples/movielens_sample.txt) and run the following codes.
 
 ```python
 import pandas as pd
