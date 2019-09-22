@@ -2,7 +2,7 @@ DeepCTR-PyTorch Models API
 ======================
 
 .. toctree::
-   Model Methods<Model_Methods.md>
+   BaseModel<deepctr_torch.models.basemodel>
    CCPM<deepctr_torch.models.ccpm>
    FNN<deepctr_torch.models.fnn>
    PNN<deepctr_torch.models.pnn>
