@@ -13,6 +13,11 @@ from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
 from ..layers import CrossNet, DNN
 
+def test(a,b):
+    pass
+    """
+    just test a method
+    """
 
 class DCN(BaseModel):
     """Instantiates the Deep&Cross Network architecture.
