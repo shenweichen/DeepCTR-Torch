@@ -13,13 +13,8 @@ from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
 from ..layers import CrossNet, DNN
 
-def test(a,b):
-    pass
-    """
-    just test a method
-    """
-
 class DCN(BaseModel):
+    
     """Instantiates the Deep&Cross Network architecture.
     :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
     :param embedding_size: positive int or str,sparse feature embedding_size.If set to "auto",it will be 6*pow(cardinality,025)

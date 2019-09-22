@@ -24,5 +24,5 @@ Module contents
 
 .. automodule:: deepctr_torch.models
     :members:
-    :undoc-members:
-    :show-inheritance:
+    :no-undoc-members:
+    :no-show-inheritance:
