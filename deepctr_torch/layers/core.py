@@ -1,7 +1,9 @@
+import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
+
 
 class DNN(nn.Module):
     """The Multi Layer Percetron
@@ -46,7 +48,7 @@ class DNN(nn.Module):
 
         if self.use_bn:
             self.bn = nn.ModuleList(
-                [nn.BatchNorm1d(hidden_units[i+1]) for i in range(len(hidden_units)-1)])
+                [nn.BatchNorm1d(hidden_units[i + 1]) for i in range(len(hidden_units) - 1)])
         for name, tensor in self.linears.named_parameters():
             if 'weight' in name:
                 nn.init.normal_(tensor, mean=0, std=init_std)
@@ -95,9 +97,11 @@ class PredictionLayer(nn.Module):
             output = torch.sigmoid(output)
         return output
 
+
 class Conv2dSame(nn.Conv2d):
     """ Tensorflow like 'SAME' convolution wrapper for 2D convolutions
     """
+
     def __init__(self, in_channels, out_channels, kernel_size, stride=1,
                  padding=0, dilation=1, groups=1, bias=True):
         super(Conv2dSame, self).__init__(
@@ -113,7 +117,7 @@ class Conv2dSame(nn.Conv2d):
         pad_h = max((oh - 1) * self.stride[0] + (kh - 1) * self.dilation[0] + 1 - ih, 0)
         pad_w = max((ow - 1) * self.stride[1] + (kw - 1) * self.dilation[1] + 1 - iw, 0)
         if pad_h > 0 or pad_w > 0:
-            x = F.pad(x, [pad_w//2, pad_w - pad_w//2, pad_h//2, pad_h - pad_h//2])
+            x = F.pad(x, [pad_w // 2, pad_w - pad_w // 2, pad_h // 2, pad_h - pad_h // 2])
         out = F.conv2d(x, self.weight, self.bias, self.stride,
-                        self.padding, self.dilation, self.groups)
+                       self.padding, self.dilation, self.groups)
         return out
