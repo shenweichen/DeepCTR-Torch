@@ -9,4 +9,5 @@ from .nfm import NFM
 from .mlr import MLR
 from .onn import ONN
 from .pnn import PNN
+from .ccpm import CCPM
 NFFM = ONN

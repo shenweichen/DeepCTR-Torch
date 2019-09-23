@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-
+import sys
+sys.path.append('/home/SENSETIME/zengkai/final_deepCTR/DeepCTR-Torch')
 import pandas as pd
 from sklearn.metrics import log_loss, roc_auc_score
 from sklearn.model_selection import train_test_split
@@ -10,7 +11,7 @@ import torch
 
 
 if __name__ == "__main__":
-    data = pd.read_csv('./criteo_sample.txt')
+    data = pd.read_csv('/home/SENSETIME/zengkai/final_deepCTR/DeepCTR-Torch/examples/criteo_sample.txt')
 
     sparse_features = ['C' + str(i) for i in range(1, 27)]
     dense_features = ['I' + str(i) for i in range(1, 14)]
@@ -52,13 +53,13 @@ if __name__ == "__main__":
         print('cuda ready...')
         device = 'cuda:0'
 
-    model = DeepFM(linear_feature_columns=linear_feature_columns, dnn_feature_columns=dnn_feature_columns, task='binary',
+    model = CCPM(linear_feature_columns=linear_feature_columns, dnn_feature_columns=dnn_feature_columns, task='binary',
                    l2_reg_embedding=1e-5, device=device)
 
     model.compile("adagrad", "binary_crossentropy",
                   metrics=["binary_crossentropy", "auc"],)
     model.fit(train_model_input, train[target].values,
-              batch_size=256, epochs=10, validation_split=0.2, verbose=2)
+              batch_size=32, epochs=10, validation_split=0.2, verbose=2)
 
     pred_ans = model.predict(test_model_input, 256)
     print("")
