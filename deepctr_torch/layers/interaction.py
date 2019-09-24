@@ -568,3 +568,58 @@ class OutterProductLayer(nn.Module):
             # p q # b * p * k
 
         return kp
+
+class FGCNNLayer(nn.Module):
+    """Feature Generation Layer used in FGCNN,including Convolution,MaxPooling and Recombination.
+      Input shape
+        - A 3D tensor with shape:``(batch_size,field_size,embedding_size)``.
+      Output shape
+        - 3D tensor with shape: ``(batch_size,new_feture_num,embedding_size)``.
+      References
+        - [Liu B, Tang R, Chen Y, et al. Feature Generation by Convolutional Neural Network for Click-Through Rate Prediction[J]. arXiv preprint arXiv:1904.04447, 2019.](https://arxiv.org/pdf/1904.04447)
+    """
+    def __init__(self, field_size, embedding_size, filters=(14, 16,), kernel_width=(7, 7,), new_maps=(3, 3,), pooling_width=(2, 2)):
+        super(FGCNNLayer, self).__init__()
+        if not (len(filters) == len(kernel_width) == len(new_maps) == len(pooling_width)):
+            raise ValueError("length of argument must be equal")
+        self.filters = filters
+        self.kernel_width = kernel_width
+        self.new_maps = new_maps
+        self.pooling_width = pooling_width
+        self.field_size = field_size
+        self.embedding_size = embedding_size
+        self.pooling_shape = self.compute_pooling_shape()
+        self.conv_pooling = nn.ModuleList([nn.Sequential(
+                nn.Conv2d(in_channels=1, out_channels=filters[i], kernel_size=(self.kernel_width[i], 1)),
+                nn.Tanh(),
+                nn.MaxPool2d(kernel_size=(self.pooling_width[i], 1), stride=self.pooling_width[i]),
+            ) for i in range(len(self.filters))])
+        self.recombination = nn.ModuleList([nn.Sequential(
+                nn.Linear(self.pooling_shape[i] * self.embedding_size,
+                          self.pooling_shape[i] * self.embedding_size * self.new_maps[i],
+                          bias=True),
+                nn.Tanh()
+            ) for i in range(len(self.filters))])
+
+    def compute_pooling_shape(self):
+        pooling_shape = []
+        pooling_shape.append(self.field_size // self.pooling_width[0] + 1)
+        for i in range(1, len(self.filters) + 1):
+            pooling_shape.append(pooling_shape[i-1] * self.new_maps[i] // self.pooling_width[i] + 1)
+        return pooling_shape
+
+
+    def forward(self, inputs):
+        if len(inputs.shape) != 3:
+            raise ValueError(
+                "Unexpected inputs dimensions %d, expect to be 3 dimensions" % (K.ndim(inputs)))
+        batch_size = inputs.shape[0]
+        feature = inputs
+        result_list = []
+        for i in range(0, len(self.filters)):
+            feature = self.conv_pooling[i](feature)
+            result = self.recombination[i](torch.flatten(feature,start_dim=1))
+            result_list.append(
+                torch.reshape(result, (batch_size, -1, self.embedding_size)))
+        new_features = torch.cat(result_list, dims=1)
+        return new_features
