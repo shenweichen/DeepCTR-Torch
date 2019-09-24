@@ -76,6 +76,8 @@ class CCPM(BaseModel):
         linear_logit = self.linear_model(X)
         sparse_embedding_list, _ = self.input_from_feature_columns(X, self.dnn_feature_columns,
                                                                    self.embedding_dict, support_dense=True)
+        if len(sparse_embedding_list) == 0:
+            raise ValueError("must have the embedding feature,now the embedding feature is None!")
         conv_input = concat_fun(sparse_embedding_list, axis=1)
         conv_input_concact = torch.unsqueeze(conv_input, 1)
         pooling_result = self.conv_layer(conv_input_concact)

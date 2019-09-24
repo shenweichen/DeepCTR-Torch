@@ -601,7 +601,7 @@ class ConvLayer(nn.Module):
             module_list.append(Conv2dSame(in_channels=in_channels, out_channels=out_channels, kernel_size=(width, 1),
                                         stride=1).to(self.device))
             module_list.append(torch.nn.Tanh().to(self.device))
-            # KMaxPooling ,extract top_k, returns two tensors [values, indices]
+            # KMaxPooling, extract top_k, returns tensors values
             if i == 1:
                 k = min(k, n)
             module_list.append(KMaxPooling(k = k, axis = 2, device = self.device).to(self.device))
