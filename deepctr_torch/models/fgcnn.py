@@ -11,7 +11,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from .basemodel import BaseModel
-from ..inputs import combined_dnn_input
 from ..layers import FGCNNLayer, DNN, InnerProductLayer
 class FGCNN(BaseModel):
     """Instantiates the Feature Generation by Convolutional Neural Network architecture.
@@ -48,31 +47,35 @@ class FGCNN(BaseModel):
         self.pooling_width = pooling_width
         self.field_size = len(self.embedding_dict)
         self.embedding_size = embedding_size
-        self.fgcnn = FGCNNLayer(self.conv_filters, self.conv_kernel_width, self.new_maps, self.pooling_width)
+        self.fgcnn = FGCNNLayer(self.field_size, self.embedding_size,
+                                self.conv_filters, self.conv_kernel_width, self.new_maps, self.pooling_width)
         self.innerproduct = InnerProductLayer()
-        self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, embedding_size), dnn_hidden_units,
-                       activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
+        self.combined_feture_num = self.fgcnn.new_feture_num + self.field_size
+        self.dnn_input_dim = self.combined_feture_num * (self.combined_feture_num - 1) // 2\
+                                + self.combined_feture_num * self.embedding_size
+        self.dnn = DNN(self.dnn_input_dim, dnn_hidden_units,
+                       activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout,
                        init_std=init_std, device=device)
         self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False).to(device)
         self.add_regularization_loss(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
         self.add_regularization_loss(self.dnn_linear.weight, l2_reg_dnn)
+        self.to(device)
 
     def forward(self, X):
+
         sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
                                                                                   self.embedding_dict)
         fg_input = torch.cat(sparse_embedding_list, dim=1)
         origin_input = torch.cat(sparse_embedding_list, dim=1)
-
         if len(self.conv_filters) > 0:
             new_features = self.fgcnn(fg_input)
-            combined_input = torch.cat([origin_input, new_features], axis=1)
+            combined_input = torch.cat([origin_input, new_features], dim=1)
         else:
             combined_input = origin_input
-        inner_product = torch.flatten(self.innerproduct(combined_input),start_dim=1)
+        inner_product = torch.flatten(self.innerproduct(torch.split(combined_input, 1, dim=1)),start_dim=1)
         linear_signal = torch.flatten(combined_input,start_dim=1)
         dnn_input = torch.cat([linear_signal, inner_product], dim=1)
-        dnn_input =  torch.flatten(dnn_input,start_dim=1)
         dnn_output = self.dnn(dnn_input)
         final_logit = self.dnn_linear(dnn_output)
         y_pred = self.out(final_logit)

@@ -4,7 +4,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
 class FM(nn.Module):
     """Factorization Machine models pairwise (order-2) feature interactions
      without linear term and bias.
@@ -430,8 +429,6 @@ class CrossNet(nn.Module):
             x_l = dot_ + self.bias[i] + x_l
         x_l = torch.squeeze(x_l, dim=2)
         return x_l
-
-
 class InnerProductLayer(nn.Module):
     """InnerProduct Layer used in PNN that compute the element-wise
     product or inner product between feature vectors.
@@ -467,7 +464,6 @@ class InnerProductLayer(nn.Module):
                        for idx in row], dim=1)  # batch num_pairs k
         q = torch.cat([embed_list[idx]
                        for idx in col], dim=1)
-
         inner_product = p * q
         if self.reduce_sum:
             inner_product = torch.sum(
@@ -589,37 +585,47 @@ class FGCNNLayer(nn.Module):
         self.field_size = field_size
         self.embedding_size = embedding_size
         self.pooling_shape = self.compute_pooling_shape()
+        self.padding_size = self.compute_padding_size()
+        self.in_channels_size = [1,] + list(self.filters)
+        self.new_feture_num = sum([self.pooling_shape[i] * self.new_maps[i] for i in range(len(self.filters))])
         self.conv_pooling = nn.ModuleList([nn.Sequential(
-                nn.Conv2d(in_channels=1, out_channels=filters[i], kernel_size=(self.kernel_width[i], 1)),
+                nn.Conv2d(in_channels=self.in_channels_size[i], out_channels=self.filters[i], kernel_size=(self.kernel_width[i], 1),
+                          padding=(self.padding_size[i], 0)),
                 nn.Tanh(),
-                nn.MaxPool2d(kernel_size=(self.pooling_width[i], 1), stride=self.pooling_width[i]),
+                nn.MaxPool2d(kernel_size=(self.pooling_width[i], 1), stride=(self.pooling_width[i], 1)),
             ) for i in range(len(self.filters))])
         self.recombination = nn.ModuleList([nn.Sequential(
-                nn.Linear(self.pooling_shape[i] * self.embedding_size,
+                nn.Linear(self.filters[i] * self.pooling_shape[i] * self.embedding_size,
                           self.pooling_shape[i] * self.embedding_size * self.new_maps[i],
                           bias=True),
                 nn.Tanh()
             ) for i in range(len(self.filters))])
 
+    def compute_padding_size(self):
+        padding_size = []
+        padding_size.append(((self.field_size - 1) * 1 + self.kernel_width[0] - self.field_size) // 2)
+        for i in range(1, len(self.filters)):
+            padding_size.append(((self.pooling_shape[i-1] - 1) * 1 + self.kernel_width[i] - self.pooling_shape[i-1]) // 2)
+        return padding_size
+
     def compute_pooling_shape(self):
         pooling_shape = []
-        pooling_shape.append(self.field_size // self.pooling_width[0] + 1)
-        for i in range(1, len(self.filters) + 1):
-            pooling_shape.append(pooling_shape[i-1] * self.new_maps[i] // self.pooling_width[i] + 1)
+        pooling_shape.append(self.field_size // self.pooling_width[0])
+        for i in range(1, len(self.filters)):
+            pooling_shape.append(pooling_shape[i-1] // self.pooling_width[i])
         return pooling_shape
 
 
     def forward(self, inputs):
         if len(inputs.shape) != 3:
             raise ValueError(
-                "Unexpected inputs dimensions %d, expect to be 3 dimensions" % (K.ndim(inputs)))
+                "Unexpected inputs dimensions %d, expect to be 3 dimensions" % (len(inputs.shape)))
         batch_size = inputs.shape[0]
-        feature = inputs
+        feature = inputs.unsqueeze(1)
         result_list = []
         for i in range(0, len(self.filters)):
             feature = self.conv_pooling[i](feature)
             result = self.recombination[i](torch.flatten(feature,start_dim=1))
             result_list.append(
                 torch.reshape(result, (batch_size, -1, self.embedding_size)))
-        new_features = torch.cat(result_list, dims=1)
-        return new_features
+        return torch.cat(result_list, dim=1)
