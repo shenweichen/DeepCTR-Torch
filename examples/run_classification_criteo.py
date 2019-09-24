@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import sys
-sys.path.append('/home/SENSETIME/zengkai/final_deepCTR/DeepCTR-Torch')
 import pandas as pd
 from sklearn.metrics import log_loss, roc_auc_score
 from sklearn.model_selection import train_test_split
@@ -11,7 +9,7 @@ import torch
 
 
 if __name__ == "__main__":
-    data = pd.read_csv('/home/SENSETIME/zengkai/final_deepCTR/DeepCTR-Torch/examples/criteo_sample.txt')
+    data = pd.read_csv('./criteo_sample.txt')
 
     sparse_features = ['C' + str(i) for i in range(1, 27)]
     dense_features = ['I' + str(i) for i in range(1, 14)]
@@ -53,7 +51,7 @@ if __name__ == "__main__":
         print('cuda ready...')
         device = 'cuda:0'
 
-    model = CCPM(linear_feature_columns=linear_feature_columns, dnn_feature_columns=dnn_feature_columns, task='binary',
+    model = DeepFM(linear_feature_columns=linear_feature_columns, dnn_feature_columns=dnn_feature_columns, task='binary',
                    l2_reg_embedding=1e-5, device=device)
 
     model.compile("adagrad", "binary_crossentropy",

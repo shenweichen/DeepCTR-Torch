@@ -29,6 +29,9 @@ Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-St
 <a href="https://github.com/JyiHUO">
     <img src="https://avatars.githubusercontent.com/JyiHUO " width=70 height="70" alt="pic" >
 </a>
+<a href="https://github.com/Zengai">
+    <img src="https://avatars.githubusercontent.com/Zengai " width=70 height="70" alt="pic" >
+</a>
 <a href="https://github.com/chenkkkk">
     <img src="https://avatars.githubusercontent.com/chenkkkk " width=70 height="70" alt="pic" >
 </a>
