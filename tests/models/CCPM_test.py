@@ -8,7 +8,7 @@ from tests.utils import get_test_data, SAMPLE_SIZE, check_model
 
 @pytest.mark.parametrize(
     'sparse_feature_num,dense_feature_num',
-    [(200, 100), (50, 20), (30, 12), (30,5), (3000, 0), (20, 3000)
+    [(200, 100), (50, 20), (30, 12), (30,5), (3000, 0), (20, 3000),(2,0),(3,0)
      ]
 )
 def test_CCPM(sparse_feature_num, dense_feature_num):
