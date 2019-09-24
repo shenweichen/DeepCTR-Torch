@@ -588,8 +588,9 @@ class ConvLayer(nn.Module):
         super(ConvLayer, self).__init__()
         self.device = device
         module_list = []
-        n = filed_size
+        n = int(filed_size)
         l = len(conv_filters)
+        filed_shape = n
         for i in range(1, l + 1):
             if i == 1:
                 in_channels = 1
@@ -602,10 +603,8 @@ class ConvLayer(nn.Module):
                                         stride=1).to(self.device))
             module_list.append(torch.nn.Tanh().to(self.device))
             # KMaxPooling, extract top_k, returns tensors values
-            if i == 1:
-                k = min(k, n)
-            module_list.append(KMaxPooling(k = k, axis = 2, device = self.device).to(self.device))
-    
+            module_list.append(KMaxPooling(k = min(k, filed_shape), axis = 2, device = self.device).to(self.device))
+            filed_shape = min(k, filed_shape)
         self.conv_layer = nn.Sequential(*module_list)
         self.to(device)
     
