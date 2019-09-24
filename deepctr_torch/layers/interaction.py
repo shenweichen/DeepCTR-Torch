@@ -4,8 +4,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ..layers.sequence import KMaxPooling
 from ..layers.core import Conv2dSame
+from ..layers.sequence import KMaxPooling
+
 
 class FM(nn.Module):
     """Factorization Machine models pairwise (order-2) feature interactions
@@ -75,7 +76,7 @@ class SENETLayer(nn.Module):
 Tongwen](https://arxiv.org/pdf/1905.09433.pdf)
     """
 
-    def __init__(self, filed_size, reduction_ratio=3,  seed=1024, device='cpu'):
+    def __init__(self, filed_size, reduction_ratio=3, seed=1024, device='cpu'):
         super(SENETLayer, self).__init__()
         self.seed = seed
         self.filed_size = filed_size
@@ -169,7 +170,8 @@ class CIN(nn.Module):
         - [Lian J, Zhou X, Zhang F, et al. xDeepFM: Combining Explicit and Implicit Feature Interactions for Recommender Systems[J]. arXiv preprint arXiv:1803.05170, 2018.] (https://arxiv.org/pdf/1803.05170.pdf)
     """
 
-    def __init__(self, field_size, layer_size=(128, 128), activation=F.relu, split_half=True, l2_reg=1e-5, seed=1024, device='cpu'):
+    def __init__(self, field_size, layer_size=(128, 128), activation=F.relu, split_half=True, l2_reg=1e-5, seed=1024,
+                 device='cpu'):
         super(CIN, self).__init__()
         if len(layer_size) == 0:
             raise ValueError(
@@ -196,8 +198,8 @@ class CIN(nn.Module):
             else:
                 self.field_nums.append(size)
 
-    #         for tensor in self.conv1ds:
-    #             nn.init.normal_(tensor.weight, mean=0, std=init_std)
+        #         for tensor in self.conv1ds:
+        #             nn.init.normal_(tensor.weight, mean=0, std=init_std)
         self.to(device)
 
     def forward(self, inputs):
@@ -571,25 +573,29 @@ class OutterProductLayer(nn.Module):
 
         return kp
 
+
 class ConvLayer(nn.Module):
-    """Conv Layer used in CCPM.This implemention is
-    adapted from code that the author of the paper published on http://ir.ia.ac.cn/bitstream/173211/12337/1/A%20Convolutional%20Click%20Prediction%20Model.pdf.
+    """Conv Layer used in CCPM.
+
       Input shape
             - A list of N 3D tensor with shape: ``(batch_size,1,filed_size,embedding_size)``.
       Output shape
             - A list of N 3D tensor with shape: ``(batch_size,last_filters,pooling_size,embedding_size)``.
       Arguments
+            - **filed_size** : Positive integer, number of feature groups.
             - **conv_kernel_width**: list. list of positive integer or empty list,the width of filter in each conv layer.
             - **conv_filters**: list. list of positive integer or empty list,the number of filters in each conv layer.
       Reference:
             - Liu Q, Yu F, Wu S, et al. A convolutional click prediction model[C]//Proceedings of the 24th ACM International on Conference on Information and Knowledge Management. ACM, 2015: 1743-1746.(http://ir.ia.ac.cn/bitstream/173211/12337/1/A%20Convolutional%20Click%20Prediction%20Model.pdf)
     """
-    def __init__(self, filed_size, conv_kernel_width, conv_filters, device='cpu'):
+
+    def __init__(self, field_size, conv_kernel_width, conv_filters, device='cpu'):
         super(ConvLayer, self).__init__()
         self.device = device
         module_list = []
-        n = filed_size
+        n = int(field_size)
         l = len(conv_filters)
+        filed_shape = n
         for i in range(1, l + 1):
             if i == 1:
                 in_channels = 1
@@ -599,15 +605,15 @@ class ConvLayer(nn.Module):
             width = conv_kernel_width[i - 1]
             k = max(1, int((1 - pow(i / l, l - i)) * n)) if i < l else 3
             module_list.append(Conv2dSame(in_channels=in_channels, out_channels=out_channels, kernel_size=(width, 1),
-                                        stride=1).to(self.device))
+                                          stride=1).to(self.device))
             module_list.append(torch.nn.Tanh().to(self.device))
-            # KMaxPooling ,extract top_k, returns two tensors [values, indices]
-            if i == 1:
-                k = min(k, n)
-            module_list.append(KMaxPooling(k = k, axis = 2, device = self.device).to(self.device))
-    
+
+            # KMaxPooling, extract top_k, returns tensors values
+            module_list.append(KMaxPooling(k = min(k, filed_shape), axis = 2, device = self.device).to(self.device))
+            filed_shape = min(k, filed_shape)
         self.conv_layer = nn.Sequential(*module_list)
         self.to(device)
+        self.filed_shape = filed_shape
     
     def forward(self, inputs):
         return self.conv_layer(inputs)

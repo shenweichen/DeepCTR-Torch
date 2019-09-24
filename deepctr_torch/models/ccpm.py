@@ -59,8 +59,9 @@ class CCPM(BaseModel):
                 "conv_kernel_width must have same element with conv_filters")
         
         filed_size = self.compute_input_dim(dnn_feature_columns, embedding_size, include_dense=False, feature_group=True)
-        self.conv_layer = ConvLayer(filed_size=filed_size, conv_kernel_width=conv_kernel_width, conv_filters=conv_filters, device=device)
-        self.dnn_input_dim = 3 * embedding_size * conv_filters[-1]
+        self.conv_layer = ConvLayer(field_size=filed_size, conv_kernel_width=conv_kernel_width, conv_filters=conv_filters, device=device)
+        
+        self.dnn_input_dim = self.conv_layer.filed_shape * embedding_size * conv_filters[-1]
         self.dnn = DNN(self.dnn_input_dim, dnn_hidden_units,
                            activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
                            init_std=init_std, device=device)
@@ -75,7 +76,9 @@ class CCPM(BaseModel):
     def forward(self, X):
         linear_logit = self.linear_model(X)
         sparse_embedding_list, _ = self.input_from_feature_columns(X, self.dnn_feature_columns,
-                                                                   self.embedding_dict, support_dense=True)
+                                                                   self.embedding_dict, support_dense=False)
+        if len(sparse_embedding_list) == 0:
+            raise ValueError("must have the embedding feature,now the embedding feature is None!")
         conv_input = concat_fun(sparse_embedding_list, axis=1)
         conv_input_concact = torch.unsqueeze(conv_input, 1)
         pooling_result = self.conv_layer(conv_input_concact)

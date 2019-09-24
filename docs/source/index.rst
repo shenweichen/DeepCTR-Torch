@@ -34,6 +34,8 @@ You can read the latest code at https://github.com/shenweichen/DeepCTR-Torch and
 
 News
 -----
+09/24/2019 : Add `CCPM <./Features.html#ccpm-convolutional-click-prediction-model>`_ . `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.1.1>`_
+
 09/22/2019 : DeepCTR-Torch first version v0.1.0  is released on `PyPi <https://pypi.org/project/deepctr-torch/>`_ !
 
 
