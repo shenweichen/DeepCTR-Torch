@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 import pytest
 import sys
-sys.path.append('/home/SENSETIME/zengkai/final_deepCTR/DeepCTR-Torch')
 from deepctr_torch.models import CCPM
 from tests.utils import get_test_data, SAMPLE_SIZE, check_model
 
 
 @pytest.mark.parametrize(
     'sparse_feature_num,dense_feature_num',
-    [(200, 100), (50, 20), (30, 12), (30,5), (3000, 0), (20, 3000),(2,0),(3,0)
+    [(2,0),(3,0)
      ]
 )
 def test_CCPM(sparse_feature_num, dense_feature_num):
@@ -24,4 +23,4 @@ def test_CCPM(sparse_feature_num, dense_feature_num):
 
 
 if __name__ == "__main__":
-    pytest.main(["-s", "/home/SENSETIME/zengkai/final_deepCTR/DeepCTR-Torch/tests/models/CCPM_test.py"])
+   pass

@@ -582,17 +582,18 @@ class ConvLayer(nn.Module):
       Output shape
             - A list of N 3D tensor with shape: ``(batch_size,last_filters,pooling_size,embedding_size)``.
       Arguments
+            - **filed_size** : Positive integer, number of feature groups.
             - **conv_kernel_width**: list. list of positive integer or empty list,the width of filter in each conv layer.
             - **conv_filters**: list. list of positive integer or empty list,the number of filters in each conv layer.
       Reference:
             - Liu Q, Yu F, Wu S, et al. A convolutional click prediction model[C]//Proceedings of the 24th ACM International on Conference on Information and Knowledge Management. ACM, 2015: 1743-1746.(http://ir.ia.ac.cn/bitstream/173211/12337/1/A%20Convolutional%20Click%20Prediction%20Model.pdf)
     """
 
-    def __init__(self, filed_size, conv_kernel_width, conv_filters, device='cpu'):
+    def __init__(self, field_size, conv_kernel_width, conv_filters, device='cpu'):
         super(ConvLayer, self).__init__()
         self.device = device
         module_list = []
-        n = int(filed_size)
+        n = int(field_size)
         l = len(conv_filters)
         filed_shape = n
         for i in range(1, l + 1):
