@@ -34,7 +34,7 @@ You can read the latest code at https://github.com/shenweichen/DeepCTR-Torch and
 
 News
 -----
-09/28/2019 : Add `sequence(multi-value) input support <./Examples.html#multi-value-input-movielens`_ . `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.1.2)`_
+09/28/2019 : Add `sequence(multi-value) input support <./Examples.html#multi-value-input-movielens>`_ . `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.1.2)>`_
 
 09/24/2019 : Add `CCPM <./Features.html#ccpm-convolutional-click-prediction-model>`_ . `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.1.1>`_
 
