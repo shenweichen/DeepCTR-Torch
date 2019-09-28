@@ -189,8 +189,8 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from tensorflow.python.keras.preprocessing.sequence import pad_sequences
 
-from deepctr.models import DeepFM
-from deepctr.inputs import SparseFeat, VarLenSparseFeat,get_fixlen_feature_names,get_varlen_feature_names
+from deepctr_torch.models import DeepFM
+from deepctr_torch.inputs import SparseFeat, VarLenSparseFeat,get_fixlen_feature_names,get_varlen_feature_names
 
 
 def split(x):
