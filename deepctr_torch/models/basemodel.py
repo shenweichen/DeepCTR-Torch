@@ -18,7 +18,7 @@ from sklearn.metrics import *
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from ..inputs import build_input_features, SparseFeat, DenseFeat
+from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat
 from ..layers import PredictionLayer
 from ..layers.utils import slice_arrays
 
@@ -45,11 +45,12 @@ class Linear(nn.Module):
             nn.init.normal_(tensor.weight, mean=0, std=init_std)
 
         if len(self.dense_feature_columns) > 0:
-            self.weight = nn.Parameter(torch.Tensor(len(self.dense_feature_columns), 1)).to(
+            self.weight = nn.Parameter(torch.Tensor(sum(fc.dimension for fc in self.dense_feature_columns), 1)).to(
                 device)
             torch.nn.init.normal_(self.weight, mean=0, std=init_std)
 
     def forward(self, X):
+
         sparse_embedding_list = [self.embedding_dict[feat.embedding_name](
             X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()) for
             feat in self.sparse_feature_columns]
@@ -70,7 +71,7 @@ class Linear(nn.Module):
             linear_logit = torch.cat(
                 dense_value_list, dim=-1).matmul(self.weight)
         else:
-            linear_logit = torch.zeros([X.shape[0],1])
+            linear_logit = torch.zeros([X.shape[0], 1])
         return linear_logit
 
     def create_embedding_matrix(self, feature_columns, embedding_size, init_std=0.0001, sparse=False):
@@ -173,10 +174,13 @@ class BaseModel(nn.Module):
         else:
             val_x = []
             val_y = []
+        for i in range(len(x)):
+            if len(x[i].shape) == 1:
+                x[i] = np.expand_dims(x[i], axis=1)
 
         train_tensor_data = Data.TensorDataset(
             torch.from_numpy(
-                np.hstack(list(map(lambda x: np.expand_dims(x, axis=1), x)))),
+                np.concatenate(x, axis=-1)),
             torch.from_numpy(y))
         if batch_size is None:
             batch_size = 256
@@ -268,8 +272,12 @@ class BaseModel(nn.Module):
         :return: Numpy array(s) of predictions.
         """
         model = self.eval()
-        x = np.hstack(list(map(lambda x: np.expand_dims(x, axis=1), x)))
-        tensor_data = Data.TensorDataset(torch.from_numpy(x))
+        for i in range(len(x)):
+            if len(x[i].shape) == 1:
+                x[i] = np.expand_dims(x[i], axis=1)
+
+        tensor_data = Data.TensorDataset(
+            torch.from_numpy(np.concatenate(x, axis=-1)))
         test_loader = DataLoader(
             dataset=tensor_data, shuffle=False, batch_size=batch_size)
 
@@ -284,10 +292,14 @@ class BaseModel(nn.Module):
         return np.concatenate(pred_ans)
 
     def input_from_feature_columns(self, X, feature_columns, embedding_dict, support_dense=True):
+
         sparse_feature_columns = list(
             filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
         dense_feature_columns = list(
             filter(lambda x: isinstance(x, DenseFeat), feature_columns)) if len(feature_columns) else []
+
+        varlen_sparse_feature_columns = list(
+            filter(lambda x: isinstance(x, VarLenSparseFeat), feature_columns)) if feature_columns else []
 
         if not support_dense and len(dense_feature_columns) > 0:
             raise ValueError(
@@ -296,20 +308,34 @@ class BaseModel(nn.Module):
         sparse_embedding_list = [embedding_dict[feat.embedding_name](
             X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()) for
             feat in sparse_feature_columns]
+        varlen_sparse_embedding_list = [embedding_dict[feat.embedding_name](
+            X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()) for
+            feat in varlen_sparse_feature_columns]
+        varlen_sparse_embedding_list = list(
+            map(lambda x: x.unsqueeze(dim=1), varlen_sparse_embedding_list))
+
         dense_value_list = [X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]] for feat in
                             dense_feature_columns]
 
-        return sparse_embedding_list, dense_value_list
+        return sparse_embedding_list + varlen_sparse_embedding_list, dense_value_list
 
     def create_embedding_matrix(self, feature_columns, embedding_size, init_std=0.0001, sparse=False):
 
         sparse_feature_columns = list(
             filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
 
+        varlen_sparse_feature_columns = list(
+            filter(lambda x: isinstance(x, VarLenSparseFeat), feature_columns)) if len(feature_columns) else []
+
         embedding_dict = nn.ModuleDict(
             {feat.embedding_name: nn.Embedding(feat.dimension, embedding_size, sparse=sparse) for feat in
              sparse_feature_columns}
         )
+
+        for feat in varlen_sparse_feature_columns:
+            embedding_dict[feat.embedding_name] = nn.EmbeddingBag(
+                feat.dimension, embedding_size, sparse=sparse, mode=feat.combiner)
+
         for tensor in embedding_dict.values():
             nn.init.normal_(tensor.weight, mean=0, std=init_std)
 
@@ -317,15 +343,16 @@ class BaseModel(nn.Module):
 
     def compute_input_dim(self, feature_columns, embedding_size=1, include_sparse=True, include_dense=True, feature_group=False):
         sparse_feature_columns = list(
-            filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
+            filter(lambda x: isinstance(x, (SparseFeat, VarLenSparseFeat)), feature_columns)) if len(feature_columns) else []
         dense_feature_columns = list(
             filter(lambda x: isinstance(x, DenseFeat), feature_columns)) if len(feature_columns) else []
 
-        dense_input_dim = sum(map(lambda x: x.dimension, dense_feature_columns))
+        dense_input_dim = sum(
+            map(lambda x: x.dimension, dense_feature_columns))
         if feature_group:
             sparse_input_dim = len(sparse_feature_columns)
         else:
-            sparse_input_dim = len(sparse_feature_columns)* embedding_size
+            sparse_input_dim = len(sparse_feature_columns) * embedding_size
         input_dim = 0
         if include_sparse:
             input_dim += sparse_input_dim
@@ -353,7 +380,6 @@ class BaseModel(nn.Module):
         :param loss: String (name of objective function) or objective function. See [losses](https://pytorch.org/docs/stable/nn.functional.html#loss-functions).
         :param metrics: List of metrics to be evaluated by the model during training and testing. Typically you will use `metrics=['accuracy']`.
         """
-
 
         self.optim = self._get_optim(optimizer)
         self.loss_func = self._get_loss_func(loss)
@@ -399,6 +425,7 @@ class BaseModel(nn.Module):
                     metrics_[metric] = roc_auc_score
                 if metric == "mse":
                     metrics_[metric] = mean_squared_error
-                if metric == "accuracy" or metric =="acc":
-                    metrics_[metric] = lambda y_true,y_pred: accuracy_score(y_true,np.where(y_pred > 0.5, 1, 0))
+                if metric == "accuracy" or metric == "acc":
+                    metrics_[metric] = lambda y_true, y_pred: accuracy_score(
+                        y_true, np.where(y_pred > 0.5, 1, 0))
         return metrics_

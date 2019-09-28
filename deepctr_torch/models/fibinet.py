@@ -11,7 +11,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from .basemodel import BaseModel
-from ..inputs import combined_dnn_input, SparseFeat, DenseFeat
+from ..inputs import combined_dnn_input, SparseFeat, DenseFeat, VarLenSparseFeat
 from ..layers import SENETLayer,BilinearInteraction,DNN
 
 
@@ -61,7 +61,7 @@ class FiBiNET(BaseModel):
 
     def compute_input_dim(self, feature_columns, embedding_size, include_sparse=True, include_dense=True):
         sparse_feature_columns = list(
-            filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
+            filter(lambda x: isinstance(x, (SparseFeat,VarLenSparseFeat)), feature_columns)) if len(feature_columns) else []
         dense_feature_columns = list(
             filter(lambda x: isinstance(x, DenseFeat), feature_columns)) if len(feature_columns) else []
         field_size = len(sparse_feature_columns)
