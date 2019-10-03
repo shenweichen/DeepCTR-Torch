@@ -4,12 +4,12 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 REQUIRED_PACKAGES = [
-    'torch>=1.1.0','deepctr','tqdm','sklearn'
+    'torch>=1.1.0','tqdm','sklearn'
 ]
 
 setuptools.setup(
     name="deepctr-torch",
-    version="0.1.2",
+    version="0.1.3",
     author="Weichen Shen",
     author_email="wcshen1994@163.com",
     description="Easy-to-use,Modular and Extendible package of deep learning based CTR(Click Through Rate) prediction models with PyTorch",
