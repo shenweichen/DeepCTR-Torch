@@ -42,28 +42,17 @@ class VarLenSparseFeat(namedtuple('VarLenFeat',
 
 
 def get_feature_names(feature_columns):
-    features = build_input_features(
-        feature_columns, include_varlen=True, include_fixlen=True)
+    features = build_input_features(feature_columns)
     return list(features.keys())
-
-
-# def get_varlen_feature_names(feature_columns):
-#     features = build_input_features(
-#         feature_columns, include_varlen=True, include_fixlen=False)
-#     return list(features.keys())
-
 
 def get_inputs_list(inputs):
     return list(chain(*list(map(lambda x: x.values(), filter(lambda x: x is not None, inputs)))))
 
 
-def build_input_features(feature_columns, include_varlen=True, mask_zero=True, prefix='', include_fixlen=True):
-    input_features = OrderedDict()
+def build_input_features(feature_columns):
     features = OrderedDict()
 
     start = 0
-
-    #if include_fixlen:
     for feat in feature_columns:
         feat_name = feat.name
         if feat_name in features:
@@ -79,15 +68,6 @@ def build_input_features(feature_columns, include_varlen=True, mask_zero=True, p
             start += feat.maxlen
         else:
             raise TypeError("Invalid feature column type,got",type(feat))
-    #if include_varlen:
-        # for feat in feature_columns:
-        #     feat_name = feat.name
-        #     if feat_name in features:
-        #         continue
-        #     if isinstance(feat, VarLenSparseFeat):
-        #         features[feat_name] = (start, start + feat.maxlen)
-        #         start += feat.maxlen
-
     return features
 
 
