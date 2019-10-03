@@ -4,7 +4,7 @@ from sklearn.metrics import log_loss, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 from deepctr_torch.models import *
-from deepctr_torch.inputs import SparseFeat, DenseFeat, get_fixlen_feature_names
+from deepctr_torch.inputs import SparseFeat, DenseFeat, get_feature_names
 import torch
 
 
@@ -34,14 +34,15 @@ if __name__ == "__main__":
     dnn_feature_columns = fixlen_feature_columns
     linear_feature_columns = fixlen_feature_columns
 
-    fixlen_feature_names = get_fixlen_feature_names(
+    feature_names = get_feature_names(
         linear_feature_columns + dnn_feature_columns)
 
     # 3.generate input data for model
 
     train, test = train_test_split(data, test_size=0.2)
-    train_model_input = [train[name] for name in fixlen_feature_names]
-    test_model_input = [test[name] for name in fixlen_feature_names]
+
+    train_model_input = {name:train[name] for name in feature_names}
+    test_model_input = {name:test[name] for name in feature_names}
 
     # 4.Define Model,train,predict and evaluate
 
@@ -57,7 +58,7 @@ if __name__ == "__main__":
     model.compile("adagrad", "binary_crossentropy",
                   metrics=["binary_crossentropy", "auc"],)
     model.fit(train_model_input, train[target].values,
-              batch_size=32, epochs=10, validation_split=0.2, verbose=2)
+              batch_size=32, epochs=10, validation_split=0.0, verbose=2)
 
     pred_ans = model.predict(test_model_input, 256)
     print("")

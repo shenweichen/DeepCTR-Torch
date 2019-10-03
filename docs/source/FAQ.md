@@ -23,19 +23,18 @@ model = torch.load('DeepFM.h5')
 ## 2. How to add a long dense feature vector as a input to the model?
 ```python
 from deepctr_torch.models import DeepFM
-from deepctr_torch.inputs import DenseFeat,SparseFeat,get_fixlen_feature_names
+from deepctr_torch.inputs import DenseFeat,SparseFeat,get_feature_names
 import numpy as np
 
 feature_columns = [SparseFeat('user_id',120,),SparseFeat('item_id',60,),DenseFeat("pic_vec",5)]
-fixlen_feature_names = get_fixlen_feature_names(feature_columns)
+fixlen_feature_names = get_feature_names(feature_columns)
 
 user_id = np.array([[1],[0],[1]])
 item_id = np.array([[30],[20],[10]])
 pic_vec = np.array([[0.1,0.5,0.4,0.3,0.2],[0.1,0.5,0.4,0.3,0.2],[0.1,0.5,0.4,0.3,0.2]])
 label = np.array([1,0,1])
 
-input_dict = {'user_id':user_id,'item_id':item_id,'pic_vec':pic_vec}
-model_input = [input_dict[name] for name in fixlen_feature_names]
+model_input = {'user_id':user_id,'item_id':item_id,'pic_vec':pic_vec}
 
 model = DeepFM(feature_columns,feature_columns)
 model.compile('adagrad','binary_crossentropy')

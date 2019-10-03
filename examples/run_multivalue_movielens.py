@@ -4,7 +4,7 @@ from sklearn.preprocessing import LabelEncoder
 from tensorflow.python.keras.preprocessing.sequence import pad_sequences
 
 from deepctr_torch.models import DeepFM
-from deepctr_torch.inputs import SparseFeat, VarLenSparseFeat,get_fixlen_feature_names,get_varlen_feature_names
+from deepctr_torch.inputs import SparseFeat, VarLenSparseFeat,get_feature_names
 
 
 def split(x):
@@ -43,15 +43,12 @@ varlen_feature_columns = [VarLenSparseFeat('genres', len(
 
 linear_feature_columns = fixlen_feature_columns + varlen_feature_columns
 dnn_feature_columns = fixlen_feature_columns + varlen_feature_columns
-fixlen_feature_names = get_fixlen_feature_names(linear_feature_columns + dnn_feature_columns)
-varlen_feature_names = get_varlen_feature_names(linear_feature_columns+dnn_feature_columns)
+feature_names = get_feature_names(linear_feature_columns + dnn_feature_columns)
 
 
 # 3.generate input data for model
-fixlen_input = [data[name].values for name in fixlen_feature_names]
-varlen_input = [genres_list]#varlen_feature_names[0]
-
-model_input = fixlen_input + varlen_input # make sure the order is right
+model_input = {name:data[name] for name in feature_names}
+model_input['genres'] = genres_list
 
 # 4.Define Model,compile and train
 model = DeepFM(linear_feature_columns,dnn_feature_columns,task='regression')

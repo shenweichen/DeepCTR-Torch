@@ -146,6 +146,8 @@ class BaseModel(nn.Module):
         :param shuffle: Boolean. Whether to shuffle the order of the batches at the beginning of each epoch.
 
         """
+        if isinstance(x,dict):
+            x = [x[feature] for feature in self.feature_index]
         if validation_data:
             if len(validation_data) == 2:
                 val_x, val_y = validation_data
@@ -160,6 +162,8 @@ class BaseModel(nn.Module):
                     'or alternatively it could be a dataset or a '
                     'dataset or a dataset iterator. '
                     'However we received `validation_data=%s`' % validation_data)
+            if isinstance(val_x, dict):
+                val_x = [val_x[feature] for feature in self.feature_index]
 
         elif validation_split and 0. < validation_split < 1.:
             if hasattr(x[0], 'shape'):
@@ -191,16 +195,18 @@ class BaseModel(nn.Module):
         model = self.train()
         loss_func = self.loss_func
         optim = self.optim
-        print("Train on {0} samples, validate on {1} samples".format(
-            len(train_tensor_data), len(val_y)))
+
+        sample_num = len(train_tensor_data)
+        steps_per_epoch = (sample_num - 1) // batch_size + 1
+
+        print("Train on {0} samples, validate on {1} samples, {2} steps per epoch".format(
+            len(train_tensor_data), len(val_y),steps_per_epoch))
         for epoch in range(initial_epoch, epochs):
             start_time = time.time()
             loss_epoch = 0
             total_loss_epoch = 0
             # if abs(loss_last - loss_now) < 0.0
-            sample_num = len(train_tensor_data)
             train_result = {}
-            steps_per_epoch = (sample_num - 1) // batch_size + 1
             try:
                 with tqdm(enumerate(train_loader), disable=verbose != 1) as t:
                     for index, (x_train, y_train) in t:
@@ -272,6 +278,8 @@ class BaseModel(nn.Module):
         :return: Numpy array(s) of predictions.
         """
         model = self.eval()
+        if isinstance(x, dict):
+            x = [x[feature] for feature in self.feature_index]
         for i in range(len(x)):
             if len(x[i].shape) == 1:
                 x[i] = np.expand_dims(x[i], axis=1)
