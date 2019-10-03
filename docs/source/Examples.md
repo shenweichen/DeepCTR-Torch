@@ -30,7 +30,7 @@ from sklearn.metrics import log_loss, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 from deepctr_torch.models import *
-from deepctr_torch.inputs import SparseFeat, DenseFeat, get_fixlen_feature_names
+from deepctr_torch.inputs import SparseFeat, DenseFeat, get_feature_names
 import torch
 
 if __name__ == "__main__":
@@ -59,14 +59,14 @@ if __name__ == "__main__":
     dnn_feature_columns = fixlen_feature_columns
     linear_feature_columns = fixlen_feature_columns
 
-    fixlen_feature_names = get_fixlen_feature_names(
+    feature_names = get_feature_names(
         linear_feature_columns + dnn_feature_columns)
 
     # 3.generate input data for model
 
     train, test = train_test_split(data, test_size=0.2)
-    train_model_input = [train[name] for name in fixlen_feature_names]
-    test_model_input = [test[name] for name in fixlen_feature_names]
+    train_model_input = {name:train[name] for name in feature_names}
+    test_model_input = {name:test[name] for name in feature_names}
 
     # 4.Define Model,train,predict and evaluate
 
@@ -111,7 +111,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
 from deepctr_torch.models import DeepFM
-from deepctr_torch.inputs import SparseFeat,get_fixlen_feature_names
+from deepctr_torch.inputs import SparseFeat,get_feature_names
 
 if __name__ == "__main__":
 
@@ -129,12 +129,12 @@ if __name__ == "__main__":
                               for feat in sparse_features]
     linear_feature_columns = fixlen_feature_columns
     dnn_feature_columns = fixlen_feature_columns
-    fixlen_feature_names = get_fixlen_feature_names(linear_feature_columns + dnn_feature_columns)
+    feature_names = get_feature_names(linear_feature_columns + dnn_feature_columns)
 
     # 3.generate input data for model
     train, test = train_test_split(data, test_size=0.2)
-    train_model_input = [train[name].values for name in fixlen_feature_names]
-    test_model_input = [test[name].values for name in fixlen_feature_names]
+    train_model_input = {name:train[name] for name in feature_names}
+    test_model_input = {name:test[name] for name in feature_names}
     # 4.Define Model,train,predict and evaluate
 
     device = 'cpu'
@@ -190,7 +190,7 @@ from sklearn.preprocessing import LabelEncoder
 from tensorflow.python.keras.preprocessing.sequence import pad_sequences
 
 from deepctr_torch.models import DeepFM
-from deepctr_torch.inputs import SparseFeat, VarLenSparseFeat,get_fixlen_feature_names,get_varlen_feature_names
+from deepctr_torch.inputs import SparseFeat, VarLenSparseFeat,get_feature_names,get_varlen_feature_names
 
 
 def split(x):
@@ -229,14 +229,13 @@ varlen_feature_columns = [VarLenSparseFeat('genres', len(
 
 linear_feature_columns = fixlen_feature_columns + varlen_feature_columns
 dnn_feature_columns = fixlen_feature_columns + varlen_feature_columns
-fixlen_feature_names = get_fixlen_feature_names(linear_feature_columns + dnn_feature_columns)
-varlen_feature_names = get_varlen_feature_names(linear_feature_columns+dnn_feature_columns)
+feature_names = get_feature_names(linear_feature_columns + dnn_feature_columns)
 
 
 # 3.generate input data for model
-fixlen_input = [data[name].values for name in fixlen_feature_names]
-varlen_input = [genres_list]#varlen_feature_names[0]
-model_input = fixlen_input + varlen_input # make sure the order is right
+model_input = {name:data[name] for name in feature_names}
+model_input['genres'] = genres_list
+
 
 # 4.Define Model,compile and train
 model = DeepFM(linear_feature_columns,dnn_feature_columns,task='regression')

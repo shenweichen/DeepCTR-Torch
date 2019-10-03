@@ -41,70 +41,33 @@ class VarLenSparseFeat(namedtuple('VarLenFeat',
                                                     embedding_name, embedding)
 
 
-def get_fixlen_feature_names(feature_columns):
-    features = build_input_features(
-        feature_columns, include_varlen=False, include_fixlen=True)
+def get_feature_names(feature_columns):
+    features = build_input_features(feature_columns)
     return list(features.keys())
-
-
-def get_varlen_feature_names(feature_columns):
-    features = build_input_features(
-        feature_columns, include_varlen=True, include_fixlen=False)
-    return list(features.keys())
-
 
 def get_inputs_list(inputs):
     return list(chain(*list(map(lambda x: x.values(), filter(lambda x: x is not None, inputs)))))
 
 
-def build_input_features(feature_columns, include_varlen=True, mask_zero=True, prefix='', include_fixlen=True):
-    input_features = OrderedDict()
+def build_input_features(feature_columns):
     features = OrderedDict()
 
     start = 0
-
-    if include_fixlen:
-        for feat in feature_columns:
-            feat_name = feat.name
-            if feat_name in features:
-                continue
-            if isinstance(feat, SparseFeat):
-                features[feat_name] = (start, start + 1)
-                start += 1
-            elif isinstance(feat, DenseFeat):
-                features[feat_name] = (start, start + feat.dimension)
-                start += feat.dimension
-    if include_varlen:
-        for feat in feature_columns:
-            feat_name = feat.name
-            if feat_name in features:
-                continue
-            if isinstance(feat, VarLenSparseFeat):
-                features[feat_name] = (start, start + feat.maxlen)
-                start += feat.maxlen
-
-    # if include_fixlen:
-    #     for fc in feature_columns:
-    #         if isinstance(fc, SparseFeat):
-    #             input_features[fc.name] = 1
-    #             # Input( shape=(1,), name=prefix+fc.name, dtype=fc.dtype)
-    #         elif isinstance(fc, DenseFeat):
-    #             input_features[fc.name] = 1
-    #             # Input(
-    #             # shape=(fc.dimension,), name=prefix + fc.name, dtype=fc.dtype)
-    # if include_varlen:
-    #     for fc in feature_columns:
-    #         if isinstance(fc, VarLenSparseFeat):
-    #             input_features[fc.name] = 1
-    #             # Input(shape=(fc.maxlen,), name=prefix + 'seq_' + fc.name,
-    #             #                                   dtype=fc.dtype)
-    #     if not mask_zero:
-    #         for fc in feature_columns:
-    #             input_features[fc.name + "_seq_length"] = 1
-    #             # Input(shape=(
-    #             # 1,), name=prefix + 'seq_length_' + fc.name)
-    #             input_features[fc.name + "_seq_max_length"] = 1  # fc.maxlen
-
+    for feat in feature_columns:
+        feat_name = feat.name
+        if feat_name in features:
+            continue
+        if isinstance(feat, SparseFeat):
+            features[feat_name] = (start, start + 1)
+            start += 1
+        elif isinstance(feat, DenseFeat):
+            features[feat_name] = (start, start + feat.dimension)
+            start += feat.dimension
+        elif isinstance(feat,VarLenSparseFeat):
+            features[feat_name] = (start, start + feat.maxlen)
+            start += feat.maxlen
+        else:
+            raise TypeError("Invalid feature column type,got",type(feat))
     return features
 
 
