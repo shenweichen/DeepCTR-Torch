@@ -3,8 +3,9 @@ import torch
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-
-from deepctr_torch.models import DeepFM
+import sys
+sys.path.append('/home/zhangwutong/DeepCTR-Torch')
+from deepctr_torch.models import DeepFM,FGCNN
 from deepctr_torch.inputs import SparseFeat,get_fixlen_feature_names
 
 if __name__ == "__main__":
@@ -36,8 +37,9 @@ if __name__ == "__main__":
     if use_cuda and torch.cuda.is_available():
         print('cuda ready...')
         device = 'cuda:0'
-
-    model = DeepFM(linear_feature_columns, dnn_feature_columns, task='regression',device=device)
+    model = FGCNN( dnn_feature_columns=dnn_feature_columns, task='regression',
+                   l2_reg_embedding=1e-5, device=device)
+    # model = DeepFM(linear_feature_columns, dnn_feature_columns, task='regression',device=device)
     model.compile("adam", "mse", metrics=['mse'],)
 
     history = model.fit(train_model_input, train[target].values,

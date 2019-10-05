@@ -11,7 +11,6 @@ import torch
 
 if __name__ == "__main__":
     data = pd.read_csv('./criteo_sample.txt')
-
     sparse_features = ['C' + str(i) for i in range(1, 27)]
     dense_features = ['I' + str(i) for i in range(1, 14)]
 
@@ -51,9 +50,11 @@ if __name__ == "__main__":
     if use_cuda and torch.cuda.is_available():
         print('cuda ready...')
         device = 'cuda:0'
-
-    model = FGCNN( dnn_feature_columns=dnn_feature_columns, task='binary',
-                   l2_reg_embedding=1e-5, device=device)
+    # model = PNN(dnn_feature_columns, task='binary', device=device)
+    model = FGCNN( dnn_feature_columns=dnn_feature_columns, task='binary', device=device)
+    # model = DeepFM(linear_feature_columns=linear_feature_columns, dnn_feature_columns=dnn_feature_columns,
+    #                task='binary',
+    #                l2_reg_embedding=1e-5, device=device)
 
     model.compile("adagrad", "binary_crossentropy",
                   metrics=["binary_crossentropy", "auc"],)

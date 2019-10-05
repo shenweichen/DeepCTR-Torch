@@ -564,7 +564,8 @@ class OutterProductLayer(nn.Module):
             # p q # b * p * k
 
         return kp
-
+import pdb
+import time
 class FGCNNLayer(nn.Module):
     """Feature Generation Layer used in FGCNN,including Convolution,MaxPooling and Recombination.
       Input shape
@@ -574,7 +575,7 @@ class FGCNNLayer(nn.Module):
       References
         - [Liu B, Tang R, Chen Y, et al. Feature Generation by Convolutional Neural Network for Click-Through Rate Prediction[J]. arXiv preprint arXiv:1904.04447, 2019.](https://arxiv.org/pdf/1904.04447)
     """
-    def __init__(self, field_size, embedding_size, filters=(14, 16,), kernel_width=(7, 7,), new_maps=(3, 3,), pooling_width=(2, 2)):
+    def __init__(self, field_size, embedding_size, filters=(14, 16,), kernel_width=(7, 7,), new_maps=(3, 3,), pooling_width=(2, 2), device='cpu'):
         super(FGCNNLayer, self).__init__()
         if not (len(filters) == len(kernel_width) == len(new_maps) == len(pooling_width)):
             raise ValueError("length of argument must be equal")
@@ -590,7 +591,7 @@ class FGCNNLayer(nn.Module):
         self.new_feture_num = sum([self.pooling_shape[i] * self.new_maps[i] for i in range(len(self.filters))])
         self.conv_pooling = nn.ModuleList([nn.Sequential(
                 nn.Conv2d(in_channels=self.in_channels_size[i], out_channels=self.filters[i], kernel_size=(self.kernel_width[i], 1),
-                          padding=(self.padding_size[i], 0)),
+                          padding=(self.padding_size[i], 0), stride=(1,1)),
                 nn.Tanh(),
                 nn.MaxPool2d(kernel_size=(self.pooling_width[i], 1), stride=(self.pooling_width[i], 1)),
             ) for i in range(len(self.filters))])
@@ -600,6 +601,12 @@ class FGCNNLayer(nn.Module):
                           bias=True),
                 nn.Tanh()
             ) for i in range(len(self.filters))])
+        # self.conv2 = nn.ModuleList([
+        #     nn.Conv2d(in_channels=self.in_channels_size[i], out_channels=self.filters[i],
+        #               kernel_size=(self.kernel_width[i], 1),
+        #               padding=(self.padding_size[i], 0), stride=(1, 1))
+        #     for i in range(len(self.filters))])
+        self.to(device)
 
     def compute_padding_size(self):
         padding_size = []
@@ -620,12 +627,12 @@ class FGCNNLayer(nn.Module):
         if len(inputs.shape) != 3:
             raise ValueError(
                 "Unexpected inputs dimensions %d, expect to be 3 dimensions" % (len(inputs.shape)))
-        batch_size = inputs.shape[0]
         feature = inputs.unsqueeze(1)
         result_list = []
         for i in range(0, len(self.filters)):
+            # feature = F.max_pool2d(torch.tanh(self.conv2[i](feature)), (self.pooling_width[i], 1))
             feature = self.conv_pooling[i](feature)
             result = self.recombination[i](torch.flatten(feature,start_dim=1))
             result_list.append(
-                torch.reshape(result, (batch_size, -1, self.embedding_size)))
+                torch.reshape(result, (-1, self.pooling_shape[i] * self.new_maps[i] , self.embedding_size)))
         return torch.cat(result_list, dim=1)

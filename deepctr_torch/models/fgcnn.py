@@ -9,7 +9,8 @@ Reference:
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+import pdb
+import time
 from .basemodel import BaseModel
 from ..layers import FGCNNLayer, DNN, InnerProductLayer
 class FGCNN(BaseModel):
@@ -45,11 +46,19 @@ class FGCNN(BaseModel):
         self.conv_kernel_width = conv_kernel_width
         self.new_maps = new_maps
         self.pooling_width = pooling_width
-        self.field_size = len(self.embedding_dict)
         self.embedding_size = embedding_size
+        self.fg_embedding_dict = self.create_embedding_matrix(dnn_feature_columns, embedding_size, init_std,
+                                                           sparse=False).to(device)
+        self.deep_embedding_dict = self.create_embedding_matrix(dnn_feature_columns, embedding_size, init_std,
+                                                           sparse=False).to(device)
+        self.add_regularization_loss(
+            self.fg_embedding_dict.parameters(), l2_reg_embedding)
+        self.add_regularization_loss(
+            self.deep_embedding_dict.parameters(), l2_reg_embedding)
+        self.field_size = len(self.fg_embedding_dict)
         self.fgcnn = FGCNNLayer(self.field_size, self.embedding_size,
-                                self.conv_filters, self.conv_kernel_width, self.new_maps, self.pooling_width)
-        self.innerproduct = InnerProductLayer()
+                                self.conv_filters, self.conv_kernel_width, self.new_maps, self.pooling_width, device=device)
+        self.innerproduct = InnerProductLayer(device=device)
         self.combined_feture_num = self.fgcnn.new_feture_num + self.field_size
         self.dnn_input_dim = self.combined_feture_num * (self.combined_feture_num - 1) // 2\
                                 + self.combined_feture_num * self.embedding_size
@@ -64,10 +73,12 @@ class FGCNN(BaseModel):
 
     def forward(self, X):
 
-        sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
-                                                                                  self.embedding_dict)
-        fg_input = torch.cat(sparse_embedding_list, dim=1)
-        origin_input = torch.cat(sparse_embedding_list, dim=1)
+        fg_sparse_embedding_list, fg_dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
+                                                                     self.fg_embedding_dict)
+        deep_sparse_embedding_list, deep_dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
+                                                                     self.deep_embedding_dict)
+        fg_input = torch.cat(fg_sparse_embedding_list, dim=1)
+        origin_input = torch.cat(deep_sparse_embedding_list, dim=1)
         if len(self.conv_filters) > 0:
             new_features = self.fgcnn(fg_input)
             combined_input = torch.cat([origin_input, new_features], dim=1)
