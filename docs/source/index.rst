@@ -6,7 +6,7 @@
 Welcome to DeepCTR-Torch's documentation!
 ===================================
 
-|Downloads|_ |Stars|_ |Forks|_ |PyPi|_ |Issues|_ |Gitter|_
+|Downloads|_ |Stars|_ |Forks|_ |PyPi|_ |Issues|_ |Chat|_
 
 .. |Downloads| image:: https://pepy.tech/badge/deepctr-torch
 .. _Downloads: https://pepy.tech/project/deepctr-torch
@@ -24,7 +24,7 @@ Welcome to DeepCTR-Torch's documentation!
 .. _Issues: https://github.com/shenweichen/deepctr-torch/issues
 
 .. |Chat| image:: https://img.shields.io/badge/chat-wechat-brightgreen?style=flat
-.. _Chat: ./#DisscussionGroup
+.. _Chat: ./#disscussiongroup
 
 DeepCTR-Torch is a **Easy-to-use** , **Modular** and **Extendible** package of deep-learning based CTR models along with lots of core components layer  which can be used to build your own custom model easily.It is compatible with **PyTorch**.You can use any complex model with ``model.fit()`` and ``model.predict()``.
 
@@ -43,7 +43,7 @@ News
 DisscussionGroup
 -----------------------
 
-* 公众号：浅梦的学习笔记  wechat ID: deepctrbot
+公众号：**浅梦的学习笔记**  wechat ID: **deepctrbot**
 
 .. image:: ../pics/weichennote.png
 
