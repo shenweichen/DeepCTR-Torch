@@ -3,7 +3,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from ..layers.activation import Dice
 
 class DNN(nn.Module):
     """The Multi Layer Percetron
@@ -33,8 +33,7 @@ class DNN(nn.Module):
     def __init__(self, inputs_dim, hidden_units, activation=F.relu, l2_reg=0, dropout_rate=0, use_bn=False,
                  init_std=0.0001, seed=1024, device='cpu'):
         super(DNN, self).__init__()
-        self.activation = activation
-        self.dropout_rate = dropout_rate
+        self.flag_list = 0
         self.dropout = nn.Dropout(dropout_rate)
         self.seed = seed
         self.l2_reg = l2_reg
@@ -42,6 +41,23 @@ class DNN(nn.Module):
         if len(hidden_units) == 0:
             raise ValueError("hidden_units is empty!!")
         hidden_units = [inputs_dim] + list(hidden_units)
+
+        if isinstance(activation, str):
+            if activation.lower() == 'dice':
+                self.flag_list = 1
+                self.activation = nn.ModuleList(Dice(hidden_units[i + 1], device=device, dim=2) for i in range(len(hidden_units) - 1))
+            elif activation.lower() == 'relu':
+                self.activation = F.relu
+            elif activation.lower() == 'tanh':
+                self.activation = F.tanh
+            elif activation.lower() == 'prelu':
+                self.activation = F.prelu   
+            else:        
+                raise ValueError('[dice, relu, tanh, prelu] is only supported activation list')
+        else:
+            self.activation = activation
+            if isinstance(self.activation, nn.ModuleList):
+                self.flag_list = 1
 
         self.linears = nn.ModuleList(
             [nn.Linear(hidden_units[i], hidden_units[i + 1]) for i in range(len(hidden_units) - 1)])
@@ -65,7 +81,11 @@ class DNN(nn.Module):
             if self.use_bn:
                 fc = self.bn[i](fc)
 
-            fc = self.activation(fc)
+            if self.flag_list:
+
+                fc = self.activation[i](fc)
+            else:
+                fc = self.activation(fc)
 
             fc = self.dropout(fc)
             deep_input = fc

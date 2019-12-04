@@ -342,8 +342,10 @@ class BaseModel(nn.Module):
         )
 
         for feat in varlen_sparse_feature_columns:
-            embedding_dict[feat.embedding_name] = nn.EmbeddingBag(
-                feat.dimension, embedding_size, sparse=sparse, mode=feat.combiner)
+            # history features
+            if feat.embedding_name not in embedding_dict:
+                embedding_dict[feat.embedding_name] = nn.EmbeddingBag(
+                    feat.dimension, embedding_size, sparse=sparse, mode=feat.combiner)
 
         for tensor in embedding_dict.values():
             nn.init.normal_(tensor.weight, mean=0, std=init_std)
