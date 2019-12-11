@@ -132,7 +132,8 @@ class BaseModel(nn.Module):
             initial_epoch=0,
             validation_split=0.,
             validation_data=None,
-            shuffle=True, ):
+            shuffle=True, 
+            use_double=False,):
         """
 
         :param x: Numpy array of training data (if the model has a single input), or list of Numpy arrays (if the model has multiple inputs).If input layers in the model are named, you can also pass a
@@ -230,8 +231,13 @@ class BaseModel(nn.Module):
                             for name, metric_fun in self.metrics.items():
                                 if name not in train_result:
                                     train_result[name] = []
-                                train_result[name].append(metric_fun(
-                                    y.cpu().data.numpy(), y_pred.cpu().data.numpy()))
+
+                                if use_double:
+                                    train_result[name].append(metric_fun(
+                                        y.cpu().data.numpy(), y_pred.cpu().data.numpy().astype("float64")))
+                                else:
+                                    train_result[name].append(metric_fun(
+                                        y.cpu().data.numpy(), y_pred.cpu().data.numpy()))
 
             except KeyboardInterrupt:
                 t.close()
@@ -271,7 +277,7 @@ class BaseModel(nn.Module):
             eval_result[name] = metric_fun(y, pred_ans)
         return eval_result
 
-    def predict(self, x, batch_size=256):
+    def predict(self, x, batch_size=256, use_double=False):
         """
 
         :param x: The input data, as a Numpy array (or list of Numpy arrays if the model has multiple inputs).
@@ -298,7 +304,11 @@ class BaseModel(nn.Module):
 
                 y_pred = model(x).cpu().data.numpy()  # .squeeze()
                 pred_ans.append(y_pred)
-        return np.concatenate(pred_ans)
+
+        if use_double:
+            return np.concatenate(pred_ans).astype("float64")
+        else:
+            return np.concatenate(pred_ans)
 
     def input_from_feature_columns(self, X, feature_columns, embedding_dict, support_dense=True):
 
@@ -424,12 +434,24 @@ class BaseModel(nn.Module):
             loss_func = loss
         return loss_func
 
-    def _get_metrics(self, metrics):
+    def _log_loss(self, y_true, y_pred, eps=1e-7, normalize=True, sample_weight=None, labels=None):
+        # change eps to improve calculation accuracy
+        return log_loss(y_true,
+                        y_pred,
+                        eps,
+                        normalize,
+                        sample_weight,
+                        labels)
+
+    def _get_metrics(self, metrics, set_eps=False):
         metrics_ = {}
         if metrics:
             for metric in metrics:
                 if metric == "binary_crossentropy" or metric == "logloss":
-                    metrics_[metric] = log_loss
+                    if set_eps:
+                        metrics_[metric] = self._log_loss
+                    else:
+                        metrics_[metric] = log_loss
                 if metric == "auc":
                     metrics_[metric] = roc_auc_score
                 if metric == "mse":
