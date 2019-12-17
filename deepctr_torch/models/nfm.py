@@ -38,7 +38,7 @@ class NFM(BaseModel):
     def __init__(self,
                  linear_feature_columns, dnn_feature_columns, embedding_size=8, dnn_hidden_units=(128, 128),
                  l2_reg_embedding=1e-5, l2_reg_linear=1e-5, l2_reg_dnn=0, init_std=0.0001, seed=1024, bi_dropout=0,
-                 dnn_dropout=0, dnn_activation=F.relu, task='binary', device='cpu'):
+                 dnn_dropout=0, dnn_activation='relu', task='binary', device='cpu'):
         super(NFM, self).__init__(linear_feature_columns, dnn_feature_columns, embedding_size=embedding_size,
                                   dnn_hidden_units=dnn_hidden_units,
                                   l2_reg_linear=l2_reg_linear,
