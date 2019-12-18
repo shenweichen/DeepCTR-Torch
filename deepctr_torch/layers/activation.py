@@ -44,13 +44,52 @@ import torch.nn as nn
 #         return out
 
 class Identity(nn.Module):
-
-
     def __init__(self, **kwargs):
         super(Identity, self).__init__()
 
     def forward(self, X):
         return X
+
+class Dice(nn.Module):
+    """The Data Adaptive Activation Function in DIN,which can be viewed as a generalization of PReLu and can adaptively adjust the rectified point according to distribution of input data.
+
+    Input shape:
+        - 2 dims: [batch_size, embedding_size(features)]
+        - 3 dims: [batch_size, num_features, embedding_size(features)]
+
+    Output shape:
+        - Same shape as the input.
+    
+    References
+        - [Zhou G, Zhu X, Song C, et al. Deep interest network for click-through rate prediction[C]//Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining. ACM, 2018: 1059-1068.](https://arxiv.org/pdf/1706.06978.pdf)
+        - https://github.com/zhougr1993/DeepInterestNetwork, https://github.com/fanoping/DIN-pytorch
+    """
+    def __init__(self, num_features, dim=2, epsilon=1e-9):
+        super(Dice, self).__init__()
+        assert dim == 2 or dim == 3
+        self.bn = nn.BatchNorm1d(num_features, eps=epsilon)
+        self.sigmoid = nn.Sigmoid()
+        self.dim = dim
+
+        if self.dim == 2:
+            self.alpha = torch.zeros((num_features,)).to(device)
+        else:
+            self.alpha = torch.zeros((num_features, 1)).to(device)
+
+    def forward(self, x):
+        # x shape: [batch_size, num_features, embedding_size(features)]
+        assert x.dim() == 2 or x.dim() == 3
+
+        if self.dim == 2:
+            x_p = self.sigmoid(self.bn(x))
+            out = self.alpha * (1 - x_p) * x + x_p * x
+        else:
+            x = torch.transpose(x, 1, 2)
+            x_p = self.sigmoid(self.bn(x))
+            out = self.alpha * (1 - x_p) * x + x_p * x
+            out = torch.transpose(out, 1, 2)
+        
+        return out
 
 
 def activation_layer(act_name, hidden_size=None, dice_dim=2):
