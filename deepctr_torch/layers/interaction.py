@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from ..layers.activation import activation_layer
 from ..layers.core import Conv2dSame
 from ..layers.sequence import KMaxPooling
-
+from ..layers.activation import activation_layer
 
 class FM(nn.Module):
     """Factorization Machine models pairwise (order-2) feature interactions
