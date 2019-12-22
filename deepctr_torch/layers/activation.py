@@ -56,22 +56,22 @@ class Dice(nn.Module):
         return out
 
 
-def activation_layer(activation, hidden_size=None, dice_dim=2):
+def activation_layer(act_name, hidden_size=None, dice_dim=2):
     """Construct activation layers
 
     Args:
-        activation: str, name of activation function
+        act_name: str, name of activation function
         hidden_size: int, used for Dice activation
         dice_dim: int, used for Dice activation
     Return:
         act_layer: activation layer
     """
-    if activation.lower() == 'relu':
+    if act_name.lower() == 'relu':
         act_layer = nn.ReLU(inplace=True)
-    elif activation.lower() == 'dice':
+    elif act_name.lower() == 'dice':
         assert dice_dim
         act_layer = Dice(hidden_size, dice_dim)
-    elif activation.lower() == 'prelu':
+    elif act_name.lower() == 'prelu':
         act_layer = nn.PReLU()
     else:
         raise NotImplementedError
