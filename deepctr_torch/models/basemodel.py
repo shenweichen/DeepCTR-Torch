@@ -332,6 +332,9 @@ class BaseModel(nn.Module):
         return sparse_embedding_list + varlen_sparse_embedding_list, dense_value_list
 
     def compute_input_dim(self, feature_columns, include_sparse=True, include_dense=True, feature_group=False):
+        # Return nn.ModuleDict: for sparse features, {embedding_name: nn.Embedding}
+        # for varlen sparse features, {embedding_name: nn.EmbeddingBag}
+
         sparse_feature_columns = list(
             filter(lambda x: isinstance(x, (SparseFeat, VarLenSparseFeat)), feature_columns)) if len(
             feature_columns) else []
