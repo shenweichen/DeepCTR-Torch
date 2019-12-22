@@ -4,21 +4,26 @@ Author:
     Weichen Shen,wcshen1994@163.com
 """
 
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict, namedtuple, defaultdict
 from itertools import chain
 
 import torch
+import torch.nn as nn
 
 from .layers.utils import concat_fun
+from .layers.sequence import SequencePoolingLayer
+
+DEFAULT_GROUP_NAME = "default_group"
 
 
-class SparseFeat(namedtuple('SparseFeat', ['name', 'dimension', 'use_hash', 'dtype', 'embedding_name', 'embedding'])):
+class SparseFeat(namedtuple('SparseFeat', ['name', 'dimension', 'use_hash', 'dtype', 'embedding_name', 'embedding', 'group_name'])):
     __slots__ = ()
 
-    def __new__(cls, name, dimension, use_hash=False, dtype="int32", embedding_name=None, embedding=True):
+    def __new__(cls, name, dimension, use_hash=False, dtype="int32",
+                embedding_name=None, embedding=True, group_name=DEFAULT_GROUP_NAME):
         if embedding and embedding_name is None:
             embedding_name = name
-        return super(SparseFeat, cls).__new__(cls, name, dimension, use_hash, dtype, embedding_name, embedding)
+        return super(SparseFeat, cls).__new__(cls, name, dimension, use_hash, dtype, embedding_name, embedding, group_name)
 
 
 class DenseFeat(namedtuple('DenseFeat', ['name', 'dimension', 'dtype'])):
@@ -30,15 +35,15 @@ class DenseFeat(namedtuple('DenseFeat', ['name', 'dimension', 'dtype'])):
 
 class VarLenSparseFeat(namedtuple('VarLenFeat',
                                   ['name', 'dimension', 'maxlen', 'combiner', 'use_hash', 'dtype', 'embedding_name',
-                                   'embedding'])):
+                                   'embedding', 'group_name'])):
     __slots__ = ()
 
     def __new__(cls, name, dimension, maxlen, combiner="mean", use_hash=False, dtype="float32", embedding_name=None,
-                embedding=True):
+                embedding=True, group_name=DEFAULT_GROUP_NAME):
         if embedding_name is None:
             embedding_name = name
         return super(VarLenSparseFeat, cls).__new__(cls, name, dimension, maxlen, combiner, use_hash, dtype,
-                                                    embedding_name, embedding)
+                                                    embedding_name, embedding, group_name)
 
 
 def get_feature_names(feature_columns):
