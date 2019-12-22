@@ -4,13 +4,15 @@ Author:
     Weichen Shen,wcshen1994@163.com
 """
 
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict, namedtuple, defaultdict
+from itertools import chain
 
 import torch
 import torch.nn as nn
 
 from .layers.sequence import SequencePoolingLayer
 from .layers.utils import concat_fun
+from .layers.sequence import SequencePoolingLayer
 
 DEFAULT_GROUP_NAME = "default_group"
 
