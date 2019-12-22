@@ -10,7 +10,7 @@ from ..utils import get_test_data, SAMPLE_SIZE, check_model
     [((), (), True, 'linear', 1, 2),
         ((8,), (), True, 'linear', 1, 1),
         ((), (8,), True, 'linear', 2, 2),
-        ((8,), (8,), False, F.relu, 2, 0)]
+        ((8,), (8,), False, 'relu', 2, 0)]
 )
 def test_xDeepFM(dnn_hidden_units, cin_layer_size, cin_split_half, cin_activation, sparse_feature_num, dense_feature_dim):
 
