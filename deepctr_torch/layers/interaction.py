@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 from ..layers.core import Conv2dSame
 from ..layers.sequence import KMaxPooling
-
+from ..layers.activation import activation_layer
 
 class FM(nn.Module):
     """Factorization Machine models pairwise (order-2) feature interactions
@@ -163,14 +163,14 @@ class CIN(nn.Module):
       Arguments
         - **filed_size** : Positive integer, number of feature groups.
         - **layer_size** : list of int.Feature maps in each layer.
-        - **activation** : activation function used on feature maps.
+        - **activation** : activation function name used on feature maps.
         - **split_half** : bool.if set to False, half of the feature maps in each hidden will connect to output unit.
         - **seed** : A Python integer to use as random seed.
       References
         - [Lian J, Zhou X, Zhang F, et al. xDeepFM: Combining Explicit and Implicit Feature Interactions for Recommender Systems[J]. arXiv preprint arXiv:1803.05170, 2018.] (https://arxiv.org/pdf/1803.05170.pdf)
     """
 
-    def __init__(self, field_size, layer_size=(128, 128), activation=F.relu, split_half=True, l2_reg=1e-5, seed=1024,
+    def __init__(self, field_size, layer_size=(128, 128), activation='relu', split_half=True, l2_reg=1e-5, seed=1024,
                  device='cpu'):
         super(CIN, self).__init__()
         if len(layer_size) == 0:
@@ -180,7 +180,7 @@ class CIN(nn.Module):
         self.layer_size = layer_size
         self.field_nums = [field_size]
         self.split_half = split_half
-        self.activation = activation
+        self.activation = activation_layer(activation)
         self.l2_reg = l2_reg
         self.seed = seed
 

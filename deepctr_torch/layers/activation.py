@@ -66,7 +66,7 @@ def activation_layer(act_name, hidden_size=None, dice_dim=2):
     Return:
         act_layer: activation layer
     """
-    if act_name.lower() == 'relu':
+    if act_name.lower() == 'relu' or 'linear':
         act_layer = nn.ReLU(inplace=True)
     elif act_name.lower() == 'dice':
         assert dice_dim
