@@ -40,19 +40,22 @@ def activation_layer(activation, hidden_size=None, dice_dim=2):
     """Construct activation layers
 
     Args:
-        activation: str, name of activation function
+        activation: str or nn.Module, name of activation function
         hidden_size: int, used for Dice activation
         dice_dim: int, used for Dice activation
     Return:
         act_layer: activation layer
     """
-    if activation.lower() == 'relu':
-        act_layer = nn.ReLU(inplace=True)
-    elif activation.lower() == 'dice':
-        assert dice_dim
-        act_layer = Dice(hidden_size)
-    elif activation.lower() == 'prelu':
-        act_layer = nn.PReLU()
+    if isinstance(activation, str):
+        if activation.lower() == 'relu' or 'linear':
+            act_layer = nn.ReLU(inplace=True)
+        elif activation.lower() == 'dice':
+            assert dice_dim
+            act_layer = Dice(hidden_size)
+        elif activation.lower() == 'prelu':
+            act_layer = nn.PReLU()
+    elif issubclass(activation, nn.Module):
+        act_layer = activation()
     else:
         raise NotImplementedError
 
