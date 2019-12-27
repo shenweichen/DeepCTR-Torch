@@ -4,6 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from .activation import activation_layer
+
 
 class DNN(nn.Module):
     """The Multi Layer Percetron
@@ -30,7 +32,7 @@ class DNN(nn.Module):
         - **seed**: A Python integer to use as random seed.
     """
 
-    def __init__(self, inputs_dim, hidden_units, activation=F.relu, l2_reg=0, dropout_rate=0, use_bn=False,
+    def __init__(self, inputs_dim, hidden_units, activation='relu', l2_reg=0, dropout_rate=0, use_bn=False,
                  init_std=0.0001, seed=1024, device='cpu'):
         super(DNN, self).__init__()
         self.activation = activation
@@ -49,6 +51,10 @@ class DNN(nn.Module):
         if self.use_bn:
             self.bn = nn.ModuleList(
                 [nn.BatchNorm1d(hidden_units[i + 1]) for i in range(len(hidden_units) - 1)])
+        
+        self.activation_layers = nn.ModuleList(
+            [activation_layer(self.activation, hidden_units[i + 1]) for i in range(len(hidden_units) - 1)])
+
         for name, tensor in self.linears.named_parameters():
             if 'weight' in name:
                 nn.init.normal_(tensor, mean=0, std=init_std)
@@ -65,7 +71,7 @@ class DNN(nn.Module):
             if self.use_bn:
                 fc = self.bn[i](fc)
 
-            fc = self.activation(fc)
+            fc = self.activation_layers[i](fc)
 
             fc = self.dropout(fc)
             deep_input = fc

@@ -37,7 +37,7 @@ class PNN(BaseModel):
     """
 
     def __init__(self, dnn_feature_columns, embedding_size=8, dnn_hidden_units=(128, 128), l2_reg_embedding=1e-5, l2_reg_dnn=0,
-                 init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation=F.relu, use_inner=True, use_outter=False,
+                 init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation='relu', use_inner=True, use_outter=False,
                  kernel_type='mat', task='binary', device='cpu',):
 
         super(PNN, self).__init__([], dnn_feature_columns, embedding_size=embedding_size,
