@@ -42,7 +42,7 @@ class AFM(BaseModel):
                                   l2_reg_linear=l2_reg_linear,
                                   l2_reg_embedding=l2_reg_embedding, l2_reg_dnn=0, init_std=init_std,
                                   seed=seed,
-                                  dnn_dropout=0, dnn_activation=F.relu,
+                                  dnn_dropout=0, dnn_activation='relu',
                                   task=task, device=device)
 
         self.use_attention = use_attention

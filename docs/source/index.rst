@@ -40,13 +40,13 @@ News
 
 09/24/2019 : Add `CCPM <./Features.html#ccpm-convolutional-click-prediction-model>`_ . `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.1.1>`_
 
+
 DisscussionGroup
 -----------------------
 
 公众号：**浅梦的学习笔记**  wechat ID: **deepctrbot**
 
 .. image:: ../pics/weichennote.png
-
 
 .. toctree::
    :maxdepth: 2
