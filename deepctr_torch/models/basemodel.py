@@ -339,7 +339,8 @@ class BaseModel(nn.Module):
         return sparse_embedding_list + varlen_sparse_embedding_list, dense_value_list
 
     def create_embedding_matrix(self, feature_columns, embedding_size, init_std=0.0001, sparse=False):
-
+        # Return nn.ModuleDict: for sparse features, {embedding_name: nn.Embedding}
+        # for varlen sparse features, {embedding_name: nn.EmbeddingBag}
         sparse_feature_columns = list(
             filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
 
