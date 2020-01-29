@@ -54,6 +54,7 @@ if __name__ == "__main__":
     # 4.Define Model,compile and train
     model = DeepFM(linear_feature_columns,dnn_feature_columns,task='regression')
 
+
     model.compile("adam", "mse", metrics=['mse'], )
     history = model.fit(model_input, data[target].values,
                         batch_size=256, epochs=10, verbose=2, validation_split=0.2, )

@@ -6,7 +6,7 @@
 Welcome to DeepCTR-Torch's documentation!
 ===================================
 
-|Downloads|_ |Stars|_ |Forks|_ |PyPi|_ |Issues|_ |Gitter|_
+|Downloads|_ |Stars|_ |Forks|_ |PyPi|_ |Issues|_ |Chat|_
 
 .. |Downloads| image:: https://pepy.tech/badge/deepctr-torch
 .. _Downloads: https://pepy.tech/project/deepctr-torch
@@ -23,8 +23,8 @@ Welcome to DeepCTR-Torch's documentation!
 .. |Issues| image:: https://img.shields.io/github/issues/shenweichen/deepctr-torch.svg
 .. _Issues: https://github.com/shenweichen/deepctr-torch/issues
 
-.. |Gitter| image:: https://badges.gitter.im/DeepCTR/community.svg
-.. _Gitter: https://gitter.im/DeepCTR/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
+.. |Chat| image:: https://img.shields.io/badge/chat-wechat-brightgreen?style=flat
+.. _Chat: ./#disscussiongroup
 
 DeepCTR-Torch is a **Easy-to-use** , **Modular** and **Extendible** package of deep-learning based CTR models along with lots of core components layer  which can be used to build your own custom model easily.It is compatible with **PyTorch**.You can use any complex model with ``model.fit()`` and ``model.predict()``.
 
@@ -40,6 +40,13 @@ News
 
 09/24/2019 : Add `CCPM <./Features.html#ccpm-convolutional-click-prediction-model>`_ . `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.1.1>`_
 
+
+DisscussionGroup
+-----------------------
+
+公众号：**浅梦的学习笔记**  wechat ID: **deepctrbot**
+
+.. image:: ../pics/weichennote.png
 
 .. toctree::
    :maxdepth: 2
