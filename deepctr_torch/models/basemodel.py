@@ -20,6 +20,7 @@ from tqdm import tqdm
 
 from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat
 from ..layers import PredictionLayer
+from ..layers.sequence import SequencePoolingLayer
 from ..layers.utils import slice_arrays
 
 
@@ -327,11 +328,33 @@ class BaseModel(nn.Module):
         sparse_embedding_list = [embedding_dict[feat.embedding_name](
             X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()) for
             feat in sparse_feature_columns]
-        varlen_sparse_embedding_list = [embedding_dict[feat.embedding_name](
-            X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()) for
-            feat in varlen_sparse_feature_columns]
-        varlen_sparse_embedding_list = list(
-            map(lambda x: x.unsqueeze(dim=1), varlen_sparse_embedding_list))
+
+        varlen_sparse_embedding_list = []
+        for feat in varlen_sparse_feature_columns:
+            seq_emb = embedding_dict[feat.embedding_name](
+                X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long())
+            if feat.length_name is None:
+                seq_mask = X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()!=0
+
+                emb = SequencePoolingLayer(supports_masking=True)([seq_emb,seq_mask])
+            else:
+                seq_length = X[:, self.feature_index[feat.length_name][0]:self.feature_index[feat.length_name][1]].long()
+                emb = SequencePoolingLayer(supports_masking=False)([seq_emb,seq_length])
+            varlen_sparse_embedding_list.append(emb)
+
+
+        # varlen_sparse_embedding_list = [embedding_dict[feat.embedding_name](
+        #     X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()) for
+        #     feat in varlen_sparse_feature_columns]
+        # varlen_sparse_embedding_list_mask = [
+        #     X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()!=0 for
+        #     feat in varlen_sparse_feature_columns]
+        #print(varlen_sparse_embedding_list_mask)
+
+        #varlen_sparse_embedding_list = list(
+        #    map(lambda x: x.unsqueeze(dim=1), varlen_sparse_embedding_list))
+
+        #varlen_sparse_embedding_list = [SequencePoolingLayer(supports_masking=True)([a,b]) for a,b in zip(varlen_sparse_embedding_list,varlen_sparse_embedding_list_mask)]
 
         dense_value_list = [X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]] for feat in
                             dense_feature_columns]
@@ -349,12 +372,12 @@ class BaseModel(nn.Module):
 
         embedding_dict = nn.ModuleDict(
             {feat.embedding_name: nn.Embedding(feat.dimension, embedding_size, sparse=sparse) for feat in
-             sparse_feature_columns}
+             sparse_feature_columns + varlen_sparse_feature_columns}
         )
 
-        for feat in varlen_sparse_feature_columns:
-            embedding_dict[feat.embedding_name] = nn.EmbeddingBag(
-                feat.dimension, embedding_size, sparse=sparse, mode=feat.combiner)
+        # for feat in varlen_sparse_feature_columns:
+        #     embedding_dict[feat.embedding_name] = nn.EmbeddingBag(
+        #         feat.dimension, embedding_size, sparse=sparse, mode=feat.combiner)
 
         for tensor in embedding_dict.values():
             nn.init.normal_(tensor.weight, mean=0, std=init_std)
