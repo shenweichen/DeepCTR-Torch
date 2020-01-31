@@ -34,11 +34,11 @@ You can read the latest code at https://github.com/shenweichen/DeepCTR-Torch and
 
 News
 -----
+01/31/2020 : Refactor `feature columns <./Features.html#feature-columns>`_ . Different features can use different `embedding_dim` .`Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.0>`_
+
 10/03/2019 : Simplify the input logic(`examples <./Examples.html#classification-criteo>`_). `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.1.3>`_
 
 09/28/2019 : Add `sequence(multi-value) input support <./Examples.html#multi-value-input-movielens>`_ . `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.1.2)>`_
-
-09/24/2019 : Add `CCPM <./Features.html#ccpm-convolutional-click-prediction-model>`_ . `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.1.1>`_
 
 
 DisscussionGroup

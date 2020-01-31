@@ -14,18 +14,20 @@ $ pip install -U deepctr-torch
 
 ```python
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+import torch
+from sklearn.metrics import log_loss, roc_auc_score
 from sklearn.model_selection import train_test_split
-from deepctr_torch.models import DeepFM
-from deepctr_torch.inputs import  SparseFeat, DenseFeat,get_feature_names
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+
+from deepctr_torch.inputs import SparseFeat, DenseFeat, get_feature_names
 
 data = pd.read_csv('./criteo_sample.txt')
 
 sparse_features = ['C' + str(i) for i in range(1, 27)]
-dense_features = ['I'+str(i) for i in range(1, 14)]
+dense_features = ['I' + str(i) for i in range(1, 14)]
 
 data[sparse_features] = data[sparse_features].fillna('-1', )
-data[dense_features] = data[dense_features].fillna(0,)
+data[dense_features] = data[dense_features].fillna(0, )
 target = ['label']
 ```
     
@@ -59,16 +61,15 @@ For dense numerical features, we concatenate them to the input tensors of fully 
 
 - Label Encoding
 ```python
-sparse_feature_columns = [SparseFeat(feat, data[feat].nunique())
-                        for feat in sparse_features]
-dense_feature_columns = [DenseFeat(feat, 1)
+fixlen_feature_columns = [SparseFeat(feat, vocabulary_size=data[feat].nunique(),embedding_dim=4)
+                       for i,feat in enumerate(sparse_features)] + [DenseFeat(feat, 1,)
                       for feat in dense_features]
 ```
 - Feature Hashing on the fly【currently not supported】
 ```python
-sparse_feature_columns = [SparseFeat(feat, dimension=1e6,use_hash=True) for feat in sparse_features]#The dimension can be set according to data
-dense_feature_columns = [DenseFeat(feat, 1)
-                      for feat in dense_features]
+fixlen_feature_columns = [SparseFeat(feat, vocabulary_size=1e6,embedding_dim=4, use_hash=True, dtype='string')  # since the input is string
+                              for feat in sparse_features] + [DenseFeat(feat, 1, )
+                          for feat in dense_features]
 ```
 - generate feature columns
 ```python
