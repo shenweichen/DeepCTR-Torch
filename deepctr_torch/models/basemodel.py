@@ -18,7 +18,7 @@ from sklearn.metrics import *
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat
+from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat, get_varlen_pooling_list,create_embedding_matrix
 from ..layers import PredictionLayer
 from ..layers.utils import slice_arrays
 
@@ -27,14 +27,16 @@ class Linear(nn.Module):
     def __init__(self, feature_columns, feature_index, init_std=0.0001, device='cpu'):
         super(Linear, self).__init__()
         self.feature_index = feature_index
-
+        self.device = device
         self.sparse_feature_columns = list(
             filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
         self.dense_feature_columns = list(
             filter(lambda x: isinstance(x, DenseFeat), feature_columns)) if len(feature_columns) else []
 
-        self.embedding_dict = self.create_embedding_matrix(self.sparse_feature_columns, 1, init_std, sparse=False).to(
-            device)
+        self.varlen_sparse_feature_columns = list(
+            filter(lambda x: isinstance(x, VarLenSparseFeat), feature_columns)) if len(feature_columns) else []
+
+        self.embedding_dict = create_embedding_matrix(feature_columns,init_std,linear=True,sparse=False,device=device)
 
         #         nn.ModuleDict(
         #             {feat.embedding_name: nn.Embedding(feat.dimension, 1, sparse=True) for feat in
@@ -58,6 +60,11 @@ class Linear(nn.Module):
         dense_value_list = [X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]] for feat in
                             self.dense_feature_columns]
 
+        varlen_embedding_list = get_varlen_pooling_list(self.embedding_dict, X, self.feature_index,
+                                                        self.varlen_sparse_feature_columns, self.device)
+
+        sparse_embedding_list += varlen_embedding_list
+
         if len(sparse_embedding_list) > 0 and len(dense_value_list) > 0:
             linear_sparse_logit = torch.sum(
                 torch.cat(sparse_embedding_list, dim=-1), dim=-1, keepdim=False)
@@ -74,30 +81,18 @@ class Linear(nn.Module):
             linear_logit = torch.zeros([X.shape[0], 1])
         return linear_logit
 
-    def create_embedding_matrix(self, feature_columns, embedding_size, init_std=0.0001, sparse=False):
-
-        sparse_feature_columns = list(
-            filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
-
-        embedding_dict = nn.ModuleDict(
-            {feat.embedding_name: nn.Embedding(feat.dimension, embedding_size, sparse=sparse) for feat in
-             sparse_feature_columns}
-        )
-        for tensor in embedding_dict.values():
-            nn.init.normal_(tensor.weight, mean=0, std=init_std)
-
-        return embedding_dict
-
 
 class BaseModel(nn.Module):
 
     def __init__(self,
-                 linear_feature_columns, dnn_feature_columns, embedding_size=8, dnn_hidden_units=(128, 128),
+                 linear_feature_columns, dnn_feature_columns, dnn_hidden_units=(128, 128),
                  l2_reg_linear=1e-5,
                  l2_reg_embedding=1e-5, l2_reg_dnn=0, init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation='relu',
                  task='binary', device='cpu'):
 
         super(BaseModel, self).__init__()
+
+        self.dnn_feature_columns = dnn_feature_columns
 
         self.reg_loss = torch.zeros((1,), device=device)
         self.device = device  # device
@@ -106,8 +101,7 @@ class BaseModel(nn.Module):
             linear_feature_columns + dnn_feature_columns)
         self.dnn_feature_columns = dnn_feature_columns
 
-        self.embedding_dict = self.create_embedding_matrix(dnn_feature_columns, embedding_size, init_std,
-                                                           sparse=False).to(device)
+        self.embedding_dict = create_embedding_matrix(dnn_feature_columns,init_std,sparse=False,device=device)
         #         nn.ModuleDict(
         #             {feat.embedding_name: nn.Embedding(feat.dimension, embedding_size, sparse=True) for feat in
         #              self.dnn_feature_columns}
@@ -121,7 +115,7 @@ class BaseModel(nn.Module):
         self.add_regularization_loss(
             self.linear_model.parameters(), l2_reg_linear)
 
-        self.out = PredictionLayer(task, )
+        self.out = PredictionLayer(task,)
         self.to(device)
 
     def fit(self, x=None,
@@ -132,8 +126,8 @@ class BaseModel(nn.Module):
             initial_epoch=0,
             validation_split=0.,
             validation_data=None,
-            shuffle=True, 
-            use_double=False,):
+            shuffle=True,
+            use_double=False ):
         """
 
         :param x: Numpy array of training data (if the model has a single input), or list of Numpy arrays (if the model has multiple inputs).If input layers in the model are named, you can also pass a
@@ -146,9 +140,10 @@ class BaseModel(nn.Module):
         :param validation_split: Float between 0 and 1. Fraction of the training data to be used as validation data. The model will set apart this fraction of the training data, will not train on it, and will evaluate the loss and any model metrics on this data at the end of each epoch. The validation data is selected from the last samples in the `x` and `y` data provided, before shuffling.
         :param validation_data: tuple `(x_val, y_val)` or tuple `(x_val, y_val, val_sample_weights)` on which to evaluate the loss and any model metrics at the end of each epoch. The model will not be trained on this data. `validation_data` will override `validation_split`.
         :param shuffle: Boolean. Whether to shuffle the order of the batches at the beginning of each epoch.
+        :param use_double: Boolean. Whether to use double precision in metric calculation.
 
         """
-        if isinstance(x,dict):
+        if isinstance(x, dict):
             x = [x[feature] for feature in self.feature_index]
         if validation_data:
             if len(validation_data) == 2:
@@ -202,7 +197,7 @@ class BaseModel(nn.Module):
         steps_per_epoch = (sample_num - 1) // batch_size + 1
 
         print("Train on {0} samples, validate on {1} samples, {2} steps per epoch".format(
-            len(train_tensor_data), len(val_y),steps_per_epoch))
+            len(train_tensor_data), len(val_y), steps_per_epoch))
         for epoch in range(initial_epoch, epochs):
             start_time = time.time()
             loss_epoch = 0
@@ -253,14 +248,14 @@ class BaseModel(nn.Module):
 
                 for name, result in train_result.items():
                     eval_str += " - " + name + \
-                        ": {0: .4f}".format(np.sum(result) / steps_per_epoch)
+                                ": {0: .4f}".format(np.sum(result) / steps_per_epoch)
 
                 if len(val_x) and len(val_y):
                     eval_result = self.evaluate(val_x, val_y, batch_size)
 
                     for name, result in eval_result.items():
                         eval_str += " - val_" + name + \
-                            ": {0: .4f}".format(result)
+                                    ": {0: .4f}".format(result)
                 print(eval_str)
 
     def evaluate(self, x, y, batch_size=256):
@@ -327,43 +322,19 @@ class BaseModel(nn.Module):
         sparse_embedding_list = [embedding_dict[feat.embedding_name](
             X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()) for
             feat in sparse_feature_columns]
-        varlen_sparse_embedding_list = [embedding_dict[feat.embedding_name](
-            X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()) for
-            feat in varlen_sparse_feature_columns]
-        varlen_sparse_embedding_list = list(
-            map(lambda x: x.unsqueeze(dim=1), varlen_sparse_embedding_list))
+
+        varlen_sparse_embedding_list = get_varlen_pooling_list(self.embedding_dict, X, self.feature_index,
+                                                               varlen_sparse_feature_columns, self.device)
 
         dense_value_list = [X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]] for feat in
                             dense_feature_columns]
 
         return sparse_embedding_list + varlen_sparse_embedding_list, dense_value_list
 
-    def create_embedding_matrix(self, feature_columns, embedding_size, init_std=0.0001, sparse=False):
-        # Return nn.ModuleDict: for sparse features, {embedding_name: nn.Embedding}
-        # for varlen sparse features, {embedding_name: nn.EmbeddingBag}
+    def compute_input_dim(self, feature_columns, include_sparse=True, include_dense=True, feature_group=False):
         sparse_feature_columns = list(
-            filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
-
-        varlen_sparse_feature_columns = list(
-            filter(lambda x: isinstance(x, VarLenSparseFeat), feature_columns)) if len(feature_columns) else []
-
-        embedding_dict = nn.ModuleDict(
-            {feat.embedding_name: nn.Embedding(feat.dimension, embedding_size, sparse=sparse) for feat in
-             sparse_feature_columns}
-        )
-
-        for feat in varlen_sparse_feature_columns:
-            embedding_dict[feat.embedding_name] = nn.EmbeddingBag(
-                feat.dimension, embedding_size, sparse=sparse, mode=feat.combiner)
-
-        for tensor in embedding_dict.values():
-            nn.init.normal_(tensor.weight, mean=0, std=init_std)
-
-        return embedding_dict
-
-    def compute_input_dim(self, feature_columns, embedding_size=1, include_sparse=True, include_dense=True, feature_group=False):
-        sparse_feature_columns = list(
-            filter(lambda x: isinstance(x, (SparseFeat, VarLenSparseFeat)), feature_columns)) if len(feature_columns) else []
+            filter(lambda x: isinstance(x, (SparseFeat, VarLenSparseFeat)), feature_columns)) if len(
+            feature_columns) else []
         dense_feature_columns = list(
             filter(lambda x: isinstance(x, DenseFeat), feature_columns)) if len(feature_columns) else []
 
@@ -372,7 +343,7 @@ class BaseModel(nn.Module):
         if feature_group:
             sparse_input_dim = len(sparse_feature_columns)
         else:
-            sparse_input_dim = len(sparse_feature_columns) * embedding_size
+            sparse_input_dim = sum(feat.embedding_dim for feat in sparse_feature_columns)
         input_dim = 0
         if include_sparse:
             input_dim += sparse_input_dim
@@ -461,3 +432,14 @@ class BaseModel(nn.Module):
                     metrics_[metric] = lambda y_true, y_pred: accuracy_score(
                         y_true, np.where(y_pred > 0.5, 1, 0))
         return metrics_
+
+    @property
+    def embedding_size(self, ):
+        feature_columns = self.dnn_feature_columns
+        sparse_feature_columns = list(
+            filter(lambda x: isinstance(x, (SparseFeat, VarLenSparseFeat)), feature_columns)) if len(
+            feature_columns) else []
+        embedding_size_set = set([feat.embedding_dim for feat in sparse_feature_columns])
+        if len(embedding_size_set) > 1:
+            raise ValueError("embedding_dim of SparseFeat and VarlenSparseFeat must be same in this model!")
+        return list(embedding_size_set)[0]

@@ -4,9 +4,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from ..layers.activation import activation_layer
 from ..layers.core import Conv2dSame
 from ..layers.sequence import KMaxPooling
-from ..layers.activation import activation_layer
+
 
 class FM(nn.Module):
     """Factorization Machine models pairwise (order-2) feature interactions
@@ -609,11 +610,11 @@ class ConvLayer(nn.Module):
             module_list.append(torch.nn.Tanh().to(self.device))
 
             # KMaxPooling, extract top_k, returns tensors values
-            module_list.append(KMaxPooling(k = min(k, filed_shape), axis = 2, device = self.device).to(self.device))
+            module_list.append(KMaxPooling(k=min(k, filed_shape), axis=2, device=self.device).to(self.device))
             filed_shape = min(k, filed_shape)
         self.conv_layer = nn.Sequential(*module_list)
         self.to(device)
         self.filed_shape = filed_shape
-    
+
     def forward(self, inputs):
         return self.conv_layer(inputs)

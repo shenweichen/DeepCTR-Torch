@@ -21,6 +21,34 @@ DNN based CTR estimation models consists of the following 4 modules:
 
  > High-order Extractor learns feature combination through complex neural network functions like MLP,Cross Net,etc.
 
+## Feature Columns
+### SparseFeat
+``SparseFeat`` is a namedtuple with signature ``SparseFeat(name, vocabulary_size, embedding_dim, use_hash, dtype,embedding_name, group_name)``
+
+- name : feature name
+- vocabulary_size : number of unique feature values for sprase feature or hashing space when `use_hash=True`
+- embedding_dim : embedding dimension
+- use_hash : defualt `False`.If `True` the input will be hashed to space of size `vocabulary_size`.
+- dtype : default `float32`.dtype of input tensor.
+- embedding_name : default `None`. If None, the embedding_name will be same as `name`.
+- group_name : feature group of this feature.
+
+### DenseFeat
+``DenseFeat`` is a namedtuple with signature ``DenseFeat(name, dimension, dtype)``
+
+- name : feature name
+- dimension : dimension of dense feature vector.
+- dtype : default `float32`.dtype of input tensor.
+
+### VarLenSparseFeat
+
+``VarLenSparseFeat`` is a namedtuple with signature ``VarLenSparseFeat(sparsefeat, maxlen, combiner, length_name)``
+
+- sparsefeat : a instance of `SparseFeat`
+- maxlen : maximum length of this feature for all samples
+- combiner : pooling method,can be ``sum``,``mean`` or ``max``
+- length_name : feature length name,if `None`, value 0 in feature is for padding.
+
 ## Models
 
 

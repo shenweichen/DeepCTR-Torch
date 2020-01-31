@@ -7,7 +7,6 @@ Reference:
 """
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
@@ -19,7 +18,6 @@ class NFM(BaseModel):
 
     :param linear_feature_columns: An iterable containing all the features used by linear part of the model.
     :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
-    :param embedding_size: positive integer,sparse feature embedding_size
     :param dnn_hidden_units: list,list of positive integer or empty list, the layer number and units in each layer of deep net
     :param l2_reg_embedding: float. L2 regularizer strength applied to embedding vector
     :param l2_reg_linear: float. L2 regularizer strength applied to linear part.
@@ -36,10 +34,10 @@ class NFM(BaseModel):
     """
 
     def __init__(self,
-                 linear_feature_columns, dnn_feature_columns, embedding_size=8, dnn_hidden_units=(128, 128),
+                 linear_feature_columns, dnn_feature_columns, dnn_hidden_units=(128, 128),
                  l2_reg_embedding=1e-5, l2_reg_linear=1e-5, l2_reg_dnn=0, init_std=0.0001, seed=1024, bi_dropout=0,
                  dnn_dropout=0, dnn_activation='relu', task='binary', device='cpu'):
-        super(NFM, self).__init__(linear_feature_columns, dnn_feature_columns, embedding_size=embedding_size,
+        super(NFM, self).__init__(linear_feature_columns, dnn_feature_columns,
                                   dnn_hidden_units=dnn_hidden_units,
                                   l2_reg_linear=l2_reg_linear,
                                   l2_reg_embedding=l2_reg_embedding, l2_reg_dnn=l2_reg_dnn, init_std=init_std,
@@ -47,7 +45,7 @@ class NFM(BaseModel):
                                   dnn_dropout=dnn_dropout, dnn_activation=dnn_activation,
                                   task=task, device=device)
 
-        self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, embedding_size, include_sparse=False) + embedding_size,
+        self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, include_sparse=False) + self.embedding_size,
                        dnn_hidden_units,
                        activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=False,
                        init_std=init_std, device=device)

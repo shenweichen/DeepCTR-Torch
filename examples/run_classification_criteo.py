@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
+import torch
 from sklearn.metrics import log_loss, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
-from deepctr_torch.models import *
-from deepctr_torch.inputs import SparseFeat, DenseFeat, get_feature_names
-import torch
 
+from deepctr_torch.inputs import SparseFeat, DenseFeat, get_feature_names
+from deepctr_torch.models import *
 
 if __name__ == "__main__":
     data = pd.read_csv('./criteo_sample.txt')
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     # 2.count #unique features for each sparse field,and record dense feature field name
 
     fixlen_feature_columns = [SparseFeat(feat, data[feat].nunique())
-                              for feat in sparse_features] + [DenseFeat(feat, 1,)
+                              for feat in sparse_features] + [DenseFeat(feat, 1, )
                                                               for feat in dense_features]
 
     dnn_feature_columns = fixlen_feature_columns
@@ -41,8 +41,8 @@ if __name__ == "__main__":
 
     train, test = train_test_split(data, test_size=0.2)
 
-    train_model_input = {name:train[name] for name in feature_names}
-    test_model_input = {name:test[name] for name in feature_names}
+    train_model_input = {name: train[name] for name in feature_names}
+    test_model_input = {name: test[name] for name in feature_names}
 
     # 4.Define Model,train,predict and evaluate
 
@@ -52,11 +52,12 @@ if __name__ == "__main__":
         print('cuda ready...')
         device = 'cuda:0'
 
-    model = DeepFM(linear_feature_columns=linear_feature_columns, dnn_feature_columns=dnn_feature_columns, task='binary',
+    model = DeepFM(linear_feature_columns=linear_feature_columns, dnn_feature_columns=dnn_feature_columns,
+                   task='binary',
                    l2_reg_embedding=1e-5, device=device)
 
     model.compile("adagrad", "binary_crossentropy",
-                  metrics=["binary_crossentropy", "auc"],)
+                  metrics=["binary_crossentropy", "auc"], )
     model.fit(train_model_input, train[target].values,
               batch_size=32, epochs=10, validation_split=0.0, verbose=2)
 
