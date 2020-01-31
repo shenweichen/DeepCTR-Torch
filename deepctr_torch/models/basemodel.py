@@ -81,7 +81,7 @@ class Linear(nn.Module):
             filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
 
         embedding_dict = nn.ModuleDict(
-            {feat.embedding_name: nn.Embedding(feat.dimension, embedding_size, sparse=sparse) for feat in
+            {feat.embedding_name: nn.Embedding(feat.vocabulary_size, feat.embedding_dim, sparse=sparse) for feat in
              sparse_feature_columns}
         )
         for tensor in embedding_dict.values():
@@ -93,12 +93,14 @@ class Linear(nn.Module):
 class BaseModel(nn.Module):
 
     def __init__(self,
-                 linear_feature_columns, dnn_feature_columns, embedding_size=8, dnn_hidden_units=(128, 128),
+                 linear_feature_columns, dnn_feature_columns, dnn_hidden_units=(128, 128),
                  l2_reg_linear=1e-5,
                  l2_reg_embedding=1e-5, l2_reg_dnn=0, init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation='relu',
                  task='binary', device='cpu'):
 
         super(BaseModel, self).__init__()
+
+        self.dnn_feature_columns = dnn_feature_columns
 
         self.reg_loss = torch.zeros((1,), device=device)
         self.device = device  # device
@@ -107,8 +109,7 @@ class BaseModel(nn.Module):
             linear_feature_columns + dnn_feature_columns)
         self.dnn_feature_columns = dnn_feature_columns
 
-        self.embedding_dict = self.create_embedding_matrix(dnn_feature_columns, embedding_size, init_std,
-                                                           sparse=False).to(device)
+        self.embedding_dict = self.create_embedding_matrix(dnn_feature_columns, init_std, sparse=False).to(device)
         #         nn.ModuleDict(
         #             {feat.embedding_name: nn.Embedding(feat.dimension, embedding_size, sparse=True) for feat in
         #              self.dnn_feature_columns}
@@ -361,7 +362,7 @@ class BaseModel(nn.Module):
 
         return sparse_embedding_list + varlen_sparse_embedding_list, dense_value_list
 
-    def create_embedding_matrix(self, feature_columns, embedding_size, init_std=0.0001, sparse=False):
+    def create_embedding_matrix(self, feature_columns, init_std=0.0001, sparse=False):
         # Return nn.ModuleDict: for sparse features, {embedding_name: nn.Embedding}
         # for varlen sparse features, {embedding_name: nn.EmbeddingBag}
         sparse_feature_columns = list(
@@ -371,7 +372,7 @@ class BaseModel(nn.Module):
             filter(lambda x: isinstance(x, VarLenSparseFeat), feature_columns)) if len(feature_columns) else []
 
         embedding_dict = nn.ModuleDict(
-            {feat.embedding_name: nn.Embedding(feat.dimension, embedding_size, sparse=sparse) for feat in
+            {feat.embedding_name: nn.Embedding(feat.vocabulary_size, feat.embedding_dim, sparse=sparse) for feat in
              sparse_feature_columns + varlen_sparse_feature_columns}
         )
 
@@ -384,7 +385,7 @@ class BaseModel(nn.Module):
 
         return embedding_dict
 
-    def compute_input_dim(self, feature_columns, embedding_size=1, include_sparse=True, include_dense=True, feature_group=False):
+    def compute_input_dim(self, feature_columns, include_sparse=True, include_dense=True, feature_group=False):
         sparse_feature_columns = list(
             filter(lambda x: isinstance(x, (SparseFeat, VarLenSparseFeat)), feature_columns)) if len(feature_columns) else []
         dense_feature_columns = list(
@@ -395,7 +396,7 @@ class BaseModel(nn.Module):
         if feature_group:
             sparse_input_dim = len(sparse_feature_columns)
         else:
-            sparse_input_dim = len(sparse_feature_columns) * embedding_size
+            sparse_input_dim = sum(feat.embedding_dim for feat in sparse_feature_columns)
         input_dim = 0
         if include_sparse:
             input_dim += sparse_input_dim
@@ -484,3 +485,13 @@ class BaseModel(nn.Module):
                     metrics_[metric] = lambda y_true, y_pred: accuracy_score(
                         y_true, np.where(y_pred > 0.5, 1, 0))
         return metrics_
+
+    @property
+    def embedding_size(self,):
+        feature_columns = self.dnn_feature_columns
+        sparse_feature_columns = list(
+            filter(lambda x: isinstance(x, (SparseFeat,VarLenSparseFeat)), feature_columns)) if len(feature_columns) else []
+        embedding_size_set = set([feat.embedding_dim for feat in sparse_feature_columns])
+        if len(embedding_size_set) > 1:
+            raise ValueError("embedding_dim of SparseFeat and VarlenSparseFeat must be same in this model!")
+        return list(embedding_size_set)[0]

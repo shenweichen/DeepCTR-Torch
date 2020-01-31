@@ -15,7 +15,7 @@ def test_DeepFM(use_fm, hidden_size, sparse_feature_num):
     model_name = "DeepFM"
     sample_size = SAMPLE_SIZE
     x, y, feature_columns = get_test_data(
-        sample_size, sparse_feature_num, sparse_feature_num)
+        sample_size, sparse_feature_num=sparse_feature_num, dense_feature_num=sparse_feature_num)
 
     model = DeepFM(feature_columns, feature_columns, use_fm=use_fm,
                    dnn_hidden_units=hidden_size, dnn_dropout=0.5)

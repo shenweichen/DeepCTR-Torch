@@ -21,7 +21,6 @@ class FiBiNET(BaseModel):
 
     :param linear_feature_columns: An iterable containing all the features used by linear part of the model.
     :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
-    :param embedding_size: positive integer,sparse feature embedding_size
     :param bilinear_type: str,bilinear function type used in Bilinear Interaction Layer,can be ``'all'`` , ``'each'`` or ``'interaction'``
     :param reduction_ratio: integer in [1,inf), reduction ratio used in SENET Layer
     :param dnn_hidden_units: list,list of positive integer or empty list, the layer number and units in each layer of DNN
@@ -38,11 +37,11 @@ class FiBiNET(BaseModel):
     
     """
 
-    def __init__(self, linear_feature_columns, dnn_feature_columns, embedding_size=8, bilinear_type='interaction',
+    def __init__(self, linear_feature_columns, dnn_feature_columns, bilinear_type='interaction',
                  reduction_ratio=3, dnn_hidden_units=(128, 128), l2_reg_linear=1e-5,
                  l2_reg_embedding=1e-5, l2_reg_dnn=0, init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation='relu',
                  task='binary', device='cpu'):
-        super(FiBiNET, self).__init__(linear_feature_columns, dnn_feature_columns, embedding_size=embedding_size,
+        super(FiBiNET, self).__init__(linear_feature_columns, dnn_feature_columns,
                                       dnn_hidden_units=dnn_hidden_units,
                                       l2_reg_linear=l2_reg_linear,
                                       l2_reg_embedding=l2_reg_embedding, l2_reg_dnn=l2_reg_dnn, init_std=init_std,
@@ -53,13 +52,13 @@ class FiBiNET(BaseModel):
         self.dnn_feature_columns = dnn_feature_columns
         self.filed_size = len(self.embedding_dict)
         self.SE = SENETLayer(self.filed_size, reduction_ratio, seed, device)
-        self.Bilinear = BilinearInteraction(self.filed_size,embedding_size, bilinear_type, seed, device)
-        self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, embedding_size), dnn_hidden_units,
+        self.Bilinear = BilinearInteraction(self.filed_size,self.embedding_size, bilinear_type, seed, device)
+        self.dnn = DNN(self.compute_input_dim(dnn_feature_columns), dnn_hidden_units,
                        activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=False,
                        init_std=init_std, device=device)
         self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False).to(device)
 
-    def compute_input_dim(self, feature_columns, embedding_size, include_sparse=True, include_dense=True):
+    def compute_input_dim(self, feature_columns, include_sparse=True, include_dense=True):
         sparse_feature_columns = list(
             filter(lambda x: isinstance(x, (SparseFeat,VarLenSparseFeat)), feature_columns)) if len(feature_columns) else []
         dense_feature_columns = list(
@@ -67,6 +66,7 @@ class FiBiNET(BaseModel):
         field_size = len(sparse_feature_columns)
 
         dense_input_dim = sum(map(lambda x: x.dimension, dense_feature_columns))
+        embedding_size = sparse_feature_columns[0].embedding_dim
         sparse_input_dim = field_size * (field_size - 1) * embedding_size
         input_dim = 0
 

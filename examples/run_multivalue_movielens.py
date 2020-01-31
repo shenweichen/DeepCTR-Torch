@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from tensorflow.python.keras.preprocessing.sequence import pad_sequences
+import torch
 
 from deepctr_torch.models import DeepFM
 from deepctr_torch.inputs import SparseFeat, VarLenSparseFeat,get_feature_names
@@ -16,7 +17,6 @@ def split(x):
     return list(map(lambda x: key2index[x], key_ans))
 
 if __name__ == "__main__":
-
     data = pd.read_csv("./movielens_sample.txt")
     sparse_features = ["movie_id", "user_id",
                        "gender", "age", "occupation", "zip", ]
@@ -37,23 +37,33 @@ if __name__ == "__main__":
 
     # 2.count #unique features for each sparse field and generate feature config for sequence feature
 
-    fixlen_feature_columns = [SparseFeat(feat, data[feat].nunique())
+    fixlen_feature_columns = [SparseFeat(feat, data[feat].nunique(),embedding_dim=4)
                         for feat in sparse_features]
-    varlen_feature_columns = [VarLenSparseFeat('genres', len(
-        key2index) + 1, max_len, 'mean')]  # Notice : value 0 is for padding for sequence input feature
+
+
+    varlen_feature_columns = [VarLenSparseFeat(SparseFeat('genres',vocabulary_size= len(
+        key2index) + 1,embedding_dim=4), maxlen=max_len, combiner='mean',weight_name=None)]  # Notice : value 0 is for padding for sequence input feature
 
     linear_feature_columns = fixlen_feature_columns + varlen_feature_columns
     dnn_feature_columns = fixlen_feature_columns + varlen_feature_columns
-    feature_names = get_feature_names(linear_feature_columns + dnn_feature_columns)
+
+    feature_names = get_feature_names(linear_feature_columns+dnn_feature_columns)
 
 
     # 3.generate input data for model
-    model_input = {name:data[name] for name in feature_names}
-    model_input['genres'] = genres_list
+    model_input = {name:data[name] for name in sparse_features}#
+    model_input["genres"] = genres_list
+
 
     # 4.Define Model,compile and train
-    model = DeepFM(linear_feature_columns,dnn_feature_columns,task='regression')
 
+    device = 'cpu'
+    use_cuda = True
+    if use_cuda and torch.cuda.is_available():
+        print('cuda ready...')
+        device = 'cuda:0'
+
+    model = DeepFM(linear_feature_columns,dnn_feature_columns,task='regression')
 
     model.compile("adam", "mse", metrics=['mse'], )
     history = model.fit(model_input, data[target].values,

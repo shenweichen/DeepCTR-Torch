@@ -14,41 +14,52 @@ def gen_sequence(dim, max_len, sample_size):
                                                                                                          sample_size)
 
 
-def get_test_data(sample_size=1000, sparse_feature_num=1, dense_feature_num=1, sequence_feature=('sum', 'mean', 'max'),
-                  classification=True, include_length=False, hash_flag=False, prefix=''):
+def get_test_data(sample_size=1000, embedding_size=4, sparse_feature_num=1, dense_feature_num=1,
+                  sequence_feature=['sum', 'mean', 'max',], classification=True, include_length=False,
+                  hash_flag=False, prefix=''):
+
+
     feature_columns = []
     model_input = {}
 
+
+    if 'weight'  in sequence_feature:
+        feature_columns.append(VarLenSparseFeat(SparseFeat(prefix+"weighted_seq",vocabulary_size=2,embedding_dim=embedding_size),maxlen=3,length_name=prefix+"weighted_seq"+"_seq_length",weight_name=prefix+"weight"))
+        s_input, s_len_input = gen_sequence(
+            2, 3, sample_size)
+
+        model_input[prefix+"weighted_seq"] = s_input
+        model_input[prefix+'weight'] = np.random.randn(sample_size,3,1)
+        model_input[prefix+"weighted_seq"+"_seq_length"] = s_len_input
+        sequence_feature.pop(sequence_feature.index('weight'))
+
+
     for i in range(sparse_feature_num):
         dim = np.random.randint(1, 10)
-        feature_columns.append(SparseFeat(
-            prefix + 'sparse_feature_' + str(i), dim, hash_flag, torch.int32))
+        feature_columns.append(SparseFeat(prefix+'sparse_feature_'+str(i), dim,embedding_size,dtype=torch.int32))
     for i in range(dense_feature_num):
-        feature_columns.append(
-            DenseFeat(prefix + 'dense_feature_' + str(i), 1, torch.float32))
+        feature_columns.append(DenseFeat(prefix+'dense_feature_'+str(i), 1,dtype=torch.float32))
     for i, mode in enumerate(sequence_feature):
         dim = np.random.randint(1, 10)
         maxlen = np.random.randint(1, 10)
         feature_columns.append(
-            VarLenSparseFeat(prefix + 'sequence_' + str(i), dim, maxlen, mode))
+            VarLenSparseFeat(SparseFeat(prefix +'sequence_' + mode,vocabulary_size=dim,  embedding_dim=embedding_size), maxlen=maxlen, combiner=mode))
 
     for fc in feature_columns:
-        if isinstance(fc, SparseFeat):
-            model_input[fc.name] = np.random.randint(0, fc.dimension, sample_size)
-        elif isinstance(fc, DenseFeat):
+        if isinstance(fc,SparseFeat):
+            model_input[fc.name]= np.random.randint(0, fc.vocabulary_size, sample_size)
+        elif isinstance(fc,DenseFeat):
             model_input[fc.name] = np.random.random(sample_size)
         else:
             s_input, s_len_input = gen_sequence(
-                fc.dimension, fc.maxlen, sample_size)
+                fc.vocabulary_size, fc.maxlen, sample_size)
             model_input[fc.name] = s_input
             if include_length:
-                fc.length_name = prefix + "sequence_" + str(i) + '_seq_length'
-                model_input[prefix + "sequence_" + str(i) + '_seq_length'] = s_len_input
+                fc.length_name = prefix+"sequence_"+str(i)+'_seq_length'
+                model_input[prefix+"sequence_"+str(i)+'_seq_length'] = s_len_input
 
     if classification:
         y = np.random.randint(0, 2, sample_size)
-        while sum(y) < 0.3 * sample_size:
-            y = np.random.randint(0, 2, sample_size)
     else:
         y = np.random.random(sample_size)
 

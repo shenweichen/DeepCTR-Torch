@@ -14,7 +14,7 @@ def test_CCPM(sparse_feature_num, dense_feature_num):
 
     sample_size = SAMPLE_SIZE
     x, y, feature_columns = get_test_data(
-        sample_size, sparse_feature_num, dense_feature_num)
+        sample_size, sparse_feature_num=sparse_feature_num,dense_feature_num= dense_feature_num)
 
     model = CCPM(feature_columns,feature_columns, conv_kernel_width=(3, 2), conv_filters=(
         2, 1), dnn_hidden_units=[32, ], dnn_dropout=0.5)
@@ -32,7 +32,7 @@ def test_CCPM_without_seq(sparse_feature_num, dense_feature_num):
 
     sample_size = SAMPLE_SIZE
     x, y, feature_columns = get_test_data(
-        sample_size, sparse_feature_num, dense_feature_num, sequence_feature=())
+        sample_size, sparse_feature_num=sparse_feature_num, dense_feature_num=dense_feature_num, sequence_feature=())
 
     model = CCPM(feature_columns, feature_columns,conv_kernel_width=(3, 2), conv_filters=(
         2, 1), dnn_hidden_units=[32, ], dnn_dropout=0.5)
