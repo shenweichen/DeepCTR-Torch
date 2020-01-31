@@ -83,8 +83,8 @@ def get_feature_names(feature_columns):
     return list(features.keys())
 
 
-def get_inputs_list(inputs):
-    return list(chain(*list(map(lambda x: x.values(), filter(lambda x: x is not None, inputs)))))
+# def get_inputs_list(inputs):
+#     return list(chain(*list(map(lambda x: x.values(), filter(lambda x: x is not None, inputs)))))
 
 
 def build_input_features(feature_columns):
