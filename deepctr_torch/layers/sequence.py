@@ -61,68 +61,69 @@ class SequencePoolingLayer(nn.Module):
 
         if self.mode == 'max':
             hist = uiseq_embed_list - (1 - mask) * 1e9
-            return torch.max(hist, dim=1, keepdim=True)
-
+            hist = torch.max(hist, dim=1, keepdim=True)[0]
+            return hist
         hist = torch.sum(uiseq_embed_list * mask, dim=1, keepdim=False)
+
         if self.mode == 'mean':
             hist = torch.div(hist, user_behavior_length.type(torch.float32) + self.eps)
-            hist = torch.unsqueeze(hist, dim=1)
 
+        hist = torch.unsqueeze(hist, dim=1)
         return hist
 
 
-class AttentionSequencePoolingLayer(nn.Module):
-    """The Attentional sequence pooling operation used in DIN.
-
-      Input shape
-        - A list of three tensor: [query,keys,keys_length]
-
-        - query is a 3D tensor with shape:  ``(batch_size, 1, embedding_size)``
-
-        - keys is a 3D tensor with shape:   ``(batch_size, T, embedding_size)``
-
-        - keys_length is a 2D tensor with shape: ``(batch_size, 1)``
-
-      Output shape
-        - 3D tensor with shape: ``(batch_size, 1, embedding_size)``
-
-      Arguments
-        - **att_hidden_units**: List of positive integer, the attention net layer number and units in each layer.
-
-        - **embedding_dim**: Dimension of the input embeddings.
-
-        - **activation**: Activation function to use in attention net.
-
-        - **weight_normalization**: bool.Whether normalize the attention score of local activation unit.
-
-      References
-        - [Zhou G, Zhu X, Song C, et al. Deep interest network for click-through rate prediction[C]//Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining. ACM, 2018: 1059-1068.](https://arxiv.org/pdf/1706.06978.pdf)
-    """
-
-    def __init__(self, att_hidden_units=[80, 40], embedding_dim=4, activation='Dice', weight_normalization=False):
-        super(AttentionSequencePoolingLayer, self).__init__()
-
-        self.local_att = LocalActivationUnit(hidden_units=att_hidden_units, embedding_dim=embedding_dim,
-                                             activation=activation)
-
-    def forward(self, query, keys, keys_length):
-        # query: [B, 1, E], keys: [B, T, E], keys_length: [B, 1]
-        # TODO: Mini-batch aware regularization in originial paper [Zhou G, et al. 2018] is not implemented here. As the authors mentioned 
-        #       it is not a must for small dataset as the open-sourced ones.
-        attention_score = self.local_att(query, keys)
-        attention_score = torch.transpose(attention_score, 1, 2)  # B * 1 * T
-
-        # define mask by length
-        keys_length = keys_length.type(torch.LongTensor)
-        mask = torch.arange(keys.size(1))[None, :] < keys_length[:, None]  # [1, T] < [B, 1, 1]  -> [B, 1, T]
-
-        # mask
-        output = torch.mul(attention_score, mask.type(torch.FloatTensor))  # [B, 1, T]
-
-        # multiply weight
-        output = torch.matmul(output, keys)  # [B, 1, E]
-
-        return output
+# class AttentionSequencePoolingLayer(nn.Module):
+#     """The Attentional sequence pooling operation used in DIN.
+#
+#       Input shape
+#         - A list of three tensor: [query,keys,keys_length]
+#
+#         - query is a 3D tensor with shape:  ``(batch_size, 1, embedding_size)``
+#
+#         - keys is a 3D tensor with shape:   ``(batch_size, T, embedding_size)``
+#
+#         - keys_length is a 2D tensor with shape: ``(batch_size, 1)``
+#
+#       Output shape
+#         - 3D tensor with shape: ``(batch_size, 1, embedding_size)``
+#
+#       Arguments
+#         - **att_hidden_units**: List of positive integer, the attention net layer number and units in each layer.
+#
+#         - **embedding_dim**: Dimension of the input embeddings.
+#
+#         - **activation**: Activation function to use in attention net.
+#
+#         - **weight_normalization**: bool.Whether normalize the attention score of local activation unit.
+#
+#       References
+#         - [Zhou G, Zhu X, Song C, et al. Deep interest network for click-through rate prediction[C]//Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining. ACM, 2018: 1059-1068.](https://arxiv.org/pdf/1706.06978.pdf)
+#     """
+#
+#     def __init__(self, att_hidden_units=[80, 40], embedding_dim=4, activation='Dice', weight_normalization=False):
+#         super(AttentionSequencePoolingLayer, self).__init__()
+#
+#         self.local_att = LocalActivationUnit(hidden_units=att_hidden_units, embedding_dim=embedding_dim,
+#                                              activation=activation)
+#
+#     def forward(self, query, keys, keys_length):
+#         # query: [B, 1, E], keys: [B, T, E], keys_length: [B, 1]
+#         # TODO: Mini-batch aware regularization in originial paper [Zhou G, et al. 2018] is not implemented here. As the authors mentioned
+#         #       it is not a must for small dataset as the open-sourced ones.
+#         attention_score = self.local_att(query, keys)
+#         attention_score = torch.transpose(attention_score, 1, 2)  # B * 1 * T
+#
+#         # define mask by length
+#         keys_length = keys_length.type(torch.LongTensor)
+#         mask = torch.arange(keys.size(1))[None, :] < keys_length[:, None]  # [1, T] < [B, 1, 1]  -> [B, 1, T]
+#
+#         # mask
+#         output = torch.mul(attention_score, mask.type(torch.FloatTensor))  # [B, 1, T]
+#
+#         # multiply weight
+#         output = torch.matmul(output, keys)  # [B, 1, E]
+#
+#         return output
 
 
 class KMaxPooling(nn.Module):

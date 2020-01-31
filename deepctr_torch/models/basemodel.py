@@ -134,8 +134,8 @@ class BaseModel(nn.Module):
             initial_epoch=0,
             validation_split=0.,
             validation_data=None,
-            shuffle=True, 
-            use_double=False,):
+            shuffle=True,
+            use_double=False, ):
         """
 
         :param x: Numpy array of training data (if the model has a single input), or list of Numpy arrays (if the model has multiple inputs).If input layers in the model are named, you can also pass a
@@ -150,7 +150,7 @@ class BaseModel(nn.Module):
         :param shuffle: Boolean. Whether to shuffle the order of the batches at the beginning of each epoch.
 
         """
-        if isinstance(x,dict):
+        if isinstance(x, dict):
             x = [x[feature] for feature in self.feature_index]
         if validation_data:
             if len(validation_data) == 2:
@@ -204,7 +204,7 @@ class BaseModel(nn.Module):
         steps_per_epoch = (sample_num - 1) // batch_size + 1
 
         print("Train on {0} samples, validate on {1} samples, {2} steps per epoch".format(
-            len(train_tensor_data), len(val_y),steps_per_epoch))
+            len(train_tensor_data), len(val_y), steps_per_epoch))
         for epoch in range(initial_epoch, epochs):
             start_time = time.time()
             loss_epoch = 0
@@ -255,14 +255,14 @@ class BaseModel(nn.Module):
 
                 for name, result in train_result.items():
                     eval_str += " - " + name + \
-                        ": {0: .4f}".format(np.sum(result) / steps_per_epoch)
+                                ": {0: .4f}".format(np.sum(result) / steps_per_epoch)
 
                 if len(val_x) and len(val_y):
                     eval_result = self.evaluate(val_x, val_y, batch_size)
 
                     for name, result in eval_result.items():
                         eval_str += " - val_" + name + \
-                            ": {0: .4f}".format(result)
+                                    ": {0: .4f}".format(result)
                 print(eval_str)
 
     def evaluate(self, x, y, batch_size=256):
@@ -335,14 +335,14 @@ class BaseModel(nn.Module):
             seq_emb = embedding_dict[feat.embedding_name](
                 X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long())
             if feat.length_name is None:
-                seq_mask = X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()!=0
+                seq_mask = X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long() != 0
 
-                emb = SequencePoolingLayer(supports_masking=True)([seq_emb,seq_mask])
+                emb = SequencePoolingLayer(mode=feat.combiner, supports_masking=True)([seq_emb, seq_mask])
             else:
-                seq_length = X[:, self.feature_index[feat.length_name][0]:self.feature_index[feat.length_name][1]].long()
-                emb = SequencePoolingLayer(supports_masking=False)([seq_emb,seq_length])
+                seq_length = X[:,
+                             self.feature_index[feat.length_name][0]:self.feature_index[feat.length_name][1]].long()
+                emb = SequencePoolingLayer(mode=feat.combiner, supports_masking=False)([seq_emb, seq_length])
             varlen_sparse_embedding_list.append(emb)
-
 
         # varlen_sparse_embedding_list = [embedding_dict[feat.embedding_name](
         #     X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()) for
@@ -350,12 +350,12 @@ class BaseModel(nn.Module):
         # varlen_sparse_embedding_list_mask = [
         #     X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()!=0 for
         #     feat in varlen_sparse_feature_columns]
-        #print(varlen_sparse_embedding_list_mask)
+        # print(varlen_sparse_embedding_list_mask)
 
-        #varlen_sparse_embedding_list = list(
+        # varlen_sparse_embedding_list = list(
         #    map(lambda x: x.unsqueeze(dim=1), varlen_sparse_embedding_list))
 
-        #varlen_sparse_embedding_list = [SequencePoolingLayer(supports_masking=True)([a,b]) for a,b in zip(varlen_sparse_embedding_list,varlen_sparse_embedding_list_mask)]
+        # varlen_sparse_embedding_list = [SequencePoolingLayer(supports_masking=True)([a,b]) for a,b in zip(varlen_sparse_embedding_list,varlen_sparse_embedding_list_mask)]
 
         dense_value_list = [X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]] for feat in
                             dense_feature_columns]
@@ -387,7 +387,8 @@ class BaseModel(nn.Module):
 
     def compute_input_dim(self, feature_columns, include_sparse=True, include_dense=True, feature_group=False):
         sparse_feature_columns = list(
-            filter(lambda x: isinstance(x, (SparseFeat, VarLenSparseFeat)), feature_columns)) if len(feature_columns) else []
+            filter(lambda x: isinstance(x, (SparseFeat, VarLenSparseFeat)), feature_columns)) if len(
+            feature_columns) else []
         dense_feature_columns = list(
             filter(lambda x: isinstance(x, DenseFeat), feature_columns)) if len(feature_columns) else []
 
@@ -487,10 +488,11 @@ class BaseModel(nn.Module):
         return metrics_
 
     @property
-    def embedding_size(self,):
+    def embedding_size(self, ):
         feature_columns = self.dnn_feature_columns
         sparse_feature_columns = list(
-            filter(lambda x: isinstance(x, (SparseFeat,VarLenSparseFeat)), feature_columns)) if len(feature_columns) else []
+            filter(lambda x: isinstance(x, (SparseFeat, VarLenSparseFeat)), feature_columns)) if len(
+            feature_columns) else []
         embedding_size_set = set([feat.embedding_dim for feat in sparse_feature_columns])
         if len(embedding_size_set) > 1:
             raise ValueError("embedding_dim of SparseFeat and VarlenSparseFeat must be same in this model!")

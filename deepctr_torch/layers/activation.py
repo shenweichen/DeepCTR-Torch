@@ -1,11 +1,4 @@
 # -*- coding:utf-8 -*-
-"""
-
-Author:
-    Yuef Zhang
-
-"""
-import sys
 
 import torch
 import torch.nn as nn
@@ -67,6 +60,8 @@ def activation_layer(act_name, hidden_size=None, dice_dim=2):
         act_layer: activation layer
     """
     if isinstance(act_name, str):
+        if act_name.lower() == "linear":
+            act_layer = nn
         if act_name.lower() == 'relu' or 'linear':
             act_layer = nn.ReLU(inplace=True)
         elif act_name.lower() == 'dice':
@@ -83,10 +78,11 @@ def activation_layer(act_name, hidden_size=None, dice_dim=2):
 
 
 if __name__ == "__main__":
-    torch.manual_seed(7)
-    a = Dice(3)
-    b = torch.rand((5, 3))
-    c = a(b)
-    print(c.size())
-    print('b:', b)
-    print('c:', c)
+    pass
+    # torch.manual_seed(7)
+    # a = Dice(3)
+    # b = torch.rand((5, 3))
+    # c = a(b)
+    # print(c.size())
+    # print('b:', b)
+    # print('c:', c)

@@ -15,7 +15,7 @@ def gen_sequence(dim, max_len, sample_size):
 
 
 def get_test_data(sample_size=1000, embedding_size=4, sparse_feature_num=1, dense_feature_num=1,
-                  sequence_feature=['sum', 'mean', 'max',], classification=True, include_length=False,
+                  sequence_feature=['sum', 'mean', 'max'], classification=True, include_length=False,
                   hash_flag=False, prefix=''):
 
 

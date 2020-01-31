@@ -4,14 +4,12 @@ Author:
     Weichen Shen,wcshen1994@163.com
 """
 
-from collections import OrderedDict, namedtuple, defaultdict
+from collections import OrderedDict, namedtuple
 from itertools import chain
 
 import torch
-import torch.nn as nn
 
 from .layers.utils import concat_fun
-from .layers.sequence import SequencePoolingLayer
 
 DEFAULT_GROUP_NAME = "default_group"
 
@@ -84,12 +82,12 @@ def get_feature_names(feature_columns):
     features = build_input_features(feature_columns)
     return list(features.keys())
 
+
 def get_inputs_list(inputs):
     return list(chain(*list(map(lambda x: x.values(), filter(lambda x: x is not None, inputs)))))
 
 
 def build_input_features(feature_columns):
-
     # Return OrderedDict: {feature_name:(start, start+dimension)}
 
     features = OrderedDict()
@@ -105,7 +103,7 @@ def build_input_features(feature_columns):
         elif isinstance(feat, DenseFeat):
             features[feat_name] = (start, start + feat.dimension)
             start += feat.dimension
-        elif isinstance(feat,VarLenSparseFeat):
+        elif isinstance(feat, VarLenSparseFeat):
             features[feat_name] = (start, start + feat.maxlen)
             start += feat.maxlen
             if feat.length_name is not None:
@@ -116,13 +114,13 @@ def build_input_features(feature_columns):
     return features
 
 
-def get_dense_input(features, feature_columns):
-    dense_feature_columns = list(filter(lambda x: isinstance(
-        x, DenseFeat), feature_columns)) if feature_columns else []
-    dense_input_list = []
-    for fc in dense_feature_columns:
-        dense_input_list.append(features[fc.name])
-    return dense_input_list
+# def get_dense_input(features, feature_columns):
+#     dense_feature_columns = list(filter(lambda x: isinstance(
+#         x, DenseFeat), feature_columns)) if feature_columns else []
+#     dense_input_list = []
+#     for fc in dense_feature_columns:
+#         dense_input_list.append(features[fc.name])
+#     return dense_input_list
 
 
 def combined_dnn_input(sparse_embedding_list, dense_value_list):
