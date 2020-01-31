@@ -27,7 +27,7 @@ class SequencePoolingLayer(nn.Module):
             raise ValueError('parameter mode should in [sum, mean, max]')
         self.supports_masking = supports_masking
         self.mode = mode
-        self.eps = torch.FloatTensor([1e-8])
+        self.eps = torch.FloatTensor([1e-8]).to(device)
         self.to(device)
 
 

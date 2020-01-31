@@ -92,3 +92,10 @@ def check_model(model, model_name, x, y, check_model_io=True):
         os.remove(model_name + '.h5')
         print(model_name + 'test save load model pass!')
     print(model_name + 'test pass!')
+
+def get_device(use_cuda = True):
+    device = 'cpu'
+    if use_cuda and torch.cuda.is_available():
+        print('cuda ready...')
+        device = 'cuda:0'
+    return device
