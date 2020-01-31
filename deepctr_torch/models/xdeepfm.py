@@ -8,11 +8,11 @@ Reference:
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
 from ..layers import DNN, CIN
+
 
 class xDeepFM(BaseModel):
     """Instantiates the xDeepFM architecture.
@@ -72,10 +72,10 @@ class xDeepFM(BaseModel):
             else:
                 self.featuremap_num = sum(cin_layer_size)
             self.cin = CIN(field_num, cin_layer_size,
-                           cin_activation, cin_split_half, l2_reg_cin, seed,device=device)
+                           cin_activation, cin_split_half, l2_reg_cin, seed, device=device)
             self.cin_linear = nn.Linear(self.featuremap_num, 1, bias=False).to(device)
             self.add_regularization_loss(
-            filter(lambda x: 'weight' in x[0], self.cin.named_parameters()), l2_reg_cin)
+                filter(lambda x: 'weight' in x[0], self.cin.named_parameters()), l2_reg_cin)
 
         self.to(device)
 

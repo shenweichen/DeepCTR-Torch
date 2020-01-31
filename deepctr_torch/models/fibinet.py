@@ -8,12 +8,10 @@ Reference:
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input, SparseFeat, DenseFeat, VarLenSparseFeat
-from ..layers import SENETLayer,BilinearInteraction,DNN
-
+from ..layers import SENETLayer, BilinearInteraction, DNN
 
 
 class FiBiNET(BaseModel):
@@ -52,7 +50,7 @@ class FiBiNET(BaseModel):
         self.dnn_feature_columns = dnn_feature_columns
         self.filed_size = len(self.embedding_dict)
         self.SE = SENETLayer(self.filed_size, reduction_ratio, seed, device)
-        self.Bilinear = BilinearInteraction(self.filed_size,self.embedding_size, bilinear_type, seed, device)
+        self.Bilinear = BilinearInteraction(self.filed_size, self.embedding_size, bilinear_type, seed, device)
         self.dnn = DNN(self.compute_input_dim(dnn_feature_columns), dnn_hidden_units,
                        activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=False,
                        init_std=init_std, device=device)
@@ -60,7 +58,8 @@ class FiBiNET(BaseModel):
 
     def compute_input_dim(self, feature_columns, include_sparse=True, include_dense=True):
         sparse_feature_columns = list(
-            filter(lambda x: isinstance(x, (SparseFeat,VarLenSparseFeat)), feature_columns)) if len(feature_columns) else []
+            filter(lambda x: isinstance(x, (SparseFeat, VarLenSparseFeat)), feature_columns)) if len(
+            feature_columns) else []
         dense_feature_columns = list(
             filter(lambda x: isinstance(x, DenseFeat), feature_columns)) if len(feature_columns) else []
         field_size = len(sparse_feature_columns)
@@ -87,7 +86,7 @@ class FiBiNET(BaseModel):
         bilinear_out = self.Bilinear(sparse_embedding_input)
 
         linear_logit = self.linear_model(X)
-        temp = torch.split(torch.cat((senet_bilinear_out,bilinear_out), dim = 1), 1, dim = 1)
+        temp = torch.split(torch.cat((senet_bilinear_out, bilinear_out), dim=1), 1, dim=1)
         dnn_input = combined_dnn_input(temp, dense_value_list)
         dnn_output = self.dnn(dnn_input)
         dnn_logit = self.dnn_linear(dnn_output)
@@ -104,4 +103,3 @@ class FiBiNET(BaseModel):
         y_pred = self.out(final_logit)
 
         return y_pred
-

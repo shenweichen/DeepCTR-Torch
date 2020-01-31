@@ -7,14 +7,13 @@ Reference:
 """
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
 from ..layers import CrossNet, DNN
 
-class DCN(BaseModel):
 
+class DCN(BaseModel):
     """Instantiates the Deep&Cross Network architecture.
 
     :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.

@@ -48,6 +48,15 @@ class Dice(nn.Module):
         
         return out
 
+class Identity(nn.Module):
+
+
+    def __init__(self, **kwargs):
+        super(Identity, self).__init__()
+
+    def forward(self, X):
+        return X
+
 
 def activation_layer(act_name, hidden_size=None, dice_dim=2):
     """Construct activation layers
@@ -60,9 +69,9 @@ def activation_layer(act_name, hidden_size=None, dice_dim=2):
         act_layer: activation layer
     """
     if isinstance(act_name, str):
-        if act_name.lower() == "linear":
-            act_layer = nn
-        if act_name.lower() == 'relu' or 'linear':
+        if act_name.lower() == 'linear':
+            act_layer = Identity()
+        if act_name.lower() == 'relu':
             act_layer = nn.ReLU(inplace=True)
         elif act_name.lower() == 'dice':
             assert dice_dim

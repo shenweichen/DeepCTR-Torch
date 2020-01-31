@@ -1,8 +1,6 @@
 import torch
 import torch.nn as nn
 
-from .core import LocalActivationUnit
-
 
 class SequencePoolingLayer(nn.Module):
     """The SequencePoolingLayer is used to apply pooling operation(sum,mean,max) on variable-length sequence feature/multi-value feature.

@@ -33,6 +33,7 @@ class Interac(nn.Module):
         y = first_emb * second_emb  # core code
         return y
 
+
 class ONN(BaseModel):
     """Instantiates the Operation-aware Neural Networks  architecture.
 
@@ -52,6 +53,7 @@ class ONN(BaseModel):
     :return: A PyTorch model instance.
     
     """
+
     def __init__(self, linear_feature_columns, dnn_feature_columns,
                  dnn_hidden_units=(128, 128),
                  l2_reg_embedding=1e-5, l2_reg_linear=1e-5, l2_reg_dnn=0,
@@ -114,9 +116,9 @@ class ONN(BaseModel):
                 second_order_embedding_list.append(
                     second_order_embedding_dict[first_name + "+" + second_name](
                         X[:, self.feature_index[first_name][0]
-                            :self.feature_index[first_name][1]].long(),
+                             :self.feature_index[first_name][1]].long(),
                         X[:, self.feature_index[second_name][0]
-                            :self.feature_index[second_name][1]].long()
+                             :self.feature_index[second_name][1]].long()
                     )
                 )
         return second_order_embedding_list
@@ -131,7 +133,8 @@ class ONN(BaseModel):
                 first_name = sparse_feature_columns[first_index].embedding_name
                 second_name = sparse_feature_columns[second_index].embedding_name
                 temp_dict[first_name + "+" + second_name] = Interac(sparse_feature_columns[first_index].vocabulary_size,
-                                                                    sparse_feature_columns[second_index].vocabulary_size,
+                                                                    sparse_feature_columns[
+                                                                        second_index].vocabulary_size,
                                                                     emb_size=embedding_size,
                                                                     init_std=init_std,
                                                                     sparse=sparse)
@@ -157,5 +160,3 @@ class ONN(BaseModel):
         y_pred = self.out(final_logit)
 
         return y_pred
-
-

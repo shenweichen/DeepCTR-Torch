@@ -7,14 +7,12 @@ Reference:
     (https://arxiv.org/abs/1708.04617)
 """
 import torch
-import torch.nn.functional as F
 
 from .basemodel import BaseModel
 from ..layers import FM, AFMLayer
 
 
 class AFM(BaseModel):
-
     """Instantiates the Attentional Factorization Machine architecture.
 
     :param linear_feature_columns: An iterable containing all the features used by linear part of the model.
@@ -33,7 +31,7 @@ class AFM(BaseModel):
 
     """
 
-    def __init__(self,linear_feature_columns, dnn_feature_columns, use_attention=True, attention_factor=8,
+    def __init__(self, linear_feature_columns, dnn_feature_columns, use_attention=True, attention_factor=8,
                  l2_reg_linear=1e-5, l2_reg_embedding=1e-5, l2_reg_att=1e-5, afm_dropout=0, init_std=0.0001, seed=1024,
                  task='binary', device='cpu'):
         super(AFM, self).__init__(linear_feature_columns, dnn_feature_columns,
@@ -45,7 +43,6 @@ class AFM(BaseModel):
                                   task=task, device=device)
 
         self.use_attention = use_attention
-
 
         if use_attention:
             self.fm = AFMLayer(self.embedding_size, attention_factor, l2_reg_att, afm_dropout,
@@ -59,7 +56,7 @@ class AFM(BaseModel):
     def forward(self, X):
 
         sparse_embedding_list, _ = self.input_from_feature_columns(X, self.dnn_feature_columns,
-                                                                                  self.embedding_dict,support_dense=False)
+                                                                   self.embedding_dict, support_dense=False)
         logit = self.linear_model(X)
         if len(sparse_embedding_list) > 0:
             if self.use_attention:

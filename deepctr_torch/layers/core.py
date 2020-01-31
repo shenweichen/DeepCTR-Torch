@@ -37,12 +37,12 @@ class LocalActivationUnit(nn.Module):
     def __init__(self, hidden_units=[80, 40], embedding_dim=4, activation='Dice', dropout_rate=0, use_bn=False):
         super(LocalActivationUnit, self).__init__()
 
-        self.dnn1 = DNN(inputs_dim=4*embedding_dim,
-                       hidden_units=hidden_units,
-                       activation=activation,
-                       dropout_rate=0.5,
-                       use_bn=use_bn,
-                       dice_dim=3)
+        self.dnn1 = DNN(inputs_dim=4 * embedding_dim,
+                        hidden_units=hidden_units,
+                        activation=activation,
+                        dropout_rate=0.5,
+                        use_bn=use_bn,
+                        dice_dim=3)
 
         # self.dnn2 = DNN(inputs_dim=hidden_units[-1],
         #                  hidden_units=[1],
@@ -59,7 +59,7 @@ class LocalActivationUnit(nn.Module):
         user_behavior_len = user_behavior.size(1)
         queries = torch.cat([query for _ in range(user_behavior_len)], dim=1)
 
-        attention_input = torch.cat([queries, user_behavior, queries-user_behavior, queries*user_behavior], dim=-1)
+        attention_input = torch.cat([queries, user_behavior, queries - user_behavior, queries * user_behavior], dim=-1)
         attention_output = self.dnn1(attention_input)
         attention_output = self.dense(attention_output)
 
@@ -109,7 +109,7 @@ class DNN(nn.Module):
         if self.use_bn:
             self.bn = nn.ModuleList(
                 [nn.BatchNorm1d(hidden_units[i + 1]) for i in range(len(hidden_units) - 1)])
-        
+
         self.activation_layers = nn.ModuleList(
             [activation_layer(activation, hidden_units[i + 1], dice_dim) for i in range(len(hidden_units) - 1)])
 

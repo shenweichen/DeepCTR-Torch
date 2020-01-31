@@ -7,7 +7,6 @@ Reference:
 """
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
@@ -34,6 +33,7 @@ class DeepFM(BaseModel):
     :return: A PyTorch model instance.
     
     """
+
     def __init__(self,
                  linear_feature_columns, dnn_feature_columns, use_fm=True,
                  dnn_hidden_units=(256, 128),
@@ -57,7 +57,8 @@ class DeepFM(BaseModel):
 
         if self.use_dnn:
             self.dnn = DNN(self.compute_input_dim(dnn_feature_columns), dnn_hidden_units,
-                           activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn, init_std=init_std, device=device)
+                           activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
+                           init_std=init_std, device=device)
             self.dnn_linear = nn.Linear(
                 dnn_hidden_units[-1], 1, bias=False).to(device)
 
@@ -77,7 +78,6 @@ class DeepFM(BaseModel):
             logit += self.fm(fm_input)
 
         if self.use_dnn:
-
             dnn_input = combined_dnn_input(
                 sparse_embedding_list, dense_value_list)
             dnn_output = self.dnn(dnn_input)

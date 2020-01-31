@@ -7,7 +7,6 @@ Reference:
 """
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
@@ -57,7 +56,7 @@ class AutoInt(BaseModel):
 
         if len(dnn_hidden_units) and att_layer_num > 0:
             dnn_linear_in_feature = dnn_hidden_units[-1] + \
-                field_num * att_embedding_size * att_head_num
+                                    field_num * att_embedding_size * att_head_num
         elif len(dnn_hidden_units) > 0:
             dnn_linear_in_feature = dnn_hidden_units[-1]
         elif att_layer_num > 0:
@@ -74,10 +73,9 @@ class AutoInt(BaseModel):
                            init_std=init_std, device=device)
             self.add_regularization_loss(
                 filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
-        self.int_layers = nn.ModuleList([InteractingLayer(self.embedding_size if i == 0 else att_embedding_size*att_head_num,
-                                                          att_embedding_size, att_head_num, att_res, device=device) for i in range(att_layer_num)])
-
-
+        self.int_layers = nn.ModuleList(
+            [InteractingLayer(self.embedding_size if i == 0 else att_embedding_size * att_head_num,
+                              att_embedding_size, att_head_num, att_res, device=device) for i in range(att_layer_num)])
 
         self.to(device)
 

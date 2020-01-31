@@ -8,7 +8,6 @@ Reference:
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
@@ -37,7 +36,7 @@ class PNN(BaseModel):
 
     def __init__(self, dnn_feature_columns, dnn_hidden_units=(128, 128), l2_reg_embedding=1e-5, l2_reg_dnn=0,
                  init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation='relu', use_inner=True, use_outter=False,
-                 kernel_type='mat', task='binary', device='cpu',):
+                 kernel_type='mat', task='binary', device='cpu', ):
 
         super(PNN, self).__init__([], dnn_feature_columns,
                                   dnn_hidden_units=dnn_hidden_units,
