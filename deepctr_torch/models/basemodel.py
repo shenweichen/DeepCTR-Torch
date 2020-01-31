@@ -337,11 +337,13 @@ class BaseModel(nn.Module):
             if feat.length_name is None:
                 seq_mask = X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long() != 0
 
-                emb = SequencePoolingLayer(mode=feat.combiner, supports_masking=True)([seq_emb, seq_mask])
+                emb = SequencePoolingLayer(mode=feat.combiner, supports_masking=True, device=self.device)(
+                    [seq_emb, seq_mask])
             else:
                 seq_length = X[:,
                              self.feature_index[feat.length_name][0]:self.feature_index[feat.length_name][1]].long()
-                emb = SequencePoolingLayer(mode=feat.combiner, supports_masking=False)([seq_emb, seq_length])
+                emb = SequencePoolingLayer(mode=feat.combiner, supports_masking=False, device=self.device)(
+                    [seq_emb, seq_length])
             varlen_sparse_embedding_list.append(emb)
 
         # varlen_sparse_embedding_list = [embedding_dict[feat.embedding_name](

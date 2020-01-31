@@ -20,15 +20,16 @@ class SequencePoolingLayer(nn.Module):
 
     """
 
-    def __init__(self, mode='mean', supports_masking=False):
+    def __init__(self, mode='mean', supports_masking=False, device='cpu'):
 
+        super(SequencePoolingLayer, self).__init__()
         if mode not in ['sum', 'mean', 'max']:
             raise ValueError('parameter mode should in [sum, mean, max]')
         self.supports_masking = supports_masking
         self.mode = mode
         self.eps = torch.FloatTensor([1e-8])
+        self.to(device)
 
-        super(SequencePoolingLayer, self).__init__()
 
     def _sequence_mask(self, lengths, maxlen=None, dtype=torch.bool):
         # Returns a mask tensor representing the first N positions of each cell.
