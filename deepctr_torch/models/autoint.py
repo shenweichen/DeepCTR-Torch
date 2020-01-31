@@ -16,6 +16,7 @@ from ..layers import DNN, concat_fun, InteractingLayer
 class AutoInt(BaseModel):
     """Instantiates the AutoInt Network architecture.
 
+    :param linear_feature_columns: An iterable containing all the features used by linear part of the model.
     :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
     :param att_layer_num: int.The InteractingLayer number to be used.
     :param att_embedding_size: int.The embedding size in multi-head self-attention network.
@@ -35,13 +36,13 @@ class AutoInt(BaseModel):
     
     """
 
-    def __init__(self, dnn_feature_columns, att_layer_num=3, att_embedding_size=8, att_head_num=2,
+    def __init__(self, linear_feature_columns, dnn_feature_columns, att_layer_num=3, att_embedding_size=8, att_head_num=2,
                  att_res=True,
                  dnn_hidden_units=(256, 128), dnn_activation='relu',
                  l2_reg_dnn=0, l2_reg_embedding=1e-5, dnn_use_bn=False, dnn_dropout=0, init_std=0.0001, seed=1024,
                  task='binary', device='cpu'):
 
-        super(AutoInt, self).__init__([], dnn_feature_columns,
+        super(AutoInt, self).__init__(linear_feature_columns, dnn_feature_columns,
                                       dnn_hidden_units=dnn_hidden_units,
                                       l2_reg_linear=0,
                                       l2_reg_embedding=l2_reg_embedding, l2_reg_dnn=l2_reg_dnn, init_std=init_std,
@@ -83,6 +84,7 @@ class AutoInt(BaseModel):
 
         sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
                                                                                   self.embedding_dict)
+        logit = self.linear_model(X)
 
         att_input = concat_fun(sparse_embedding_list, axis=1)
 
@@ -96,15 +98,15 @@ class AutoInt(BaseModel):
         if len(self.dnn_hidden_units) > 0 and self.att_layer_num > 0:  # Deep & Interacting Layer
             deep_out = self.dnn(dnn_input)
             stack_out = concat_fun([att_output, deep_out])
-            final_logit = self.dnn_linear(stack_out)
+            logit += self.dnn_linear(stack_out)
         elif len(self.dnn_hidden_units) > 0:  # Only Deep
             deep_out = self.dnn(dnn_input)
-            final_logit = self.dnn_linear(deep_out)
+            logit += self.dnn_linear(deep_out)
         elif self.att_layer_num > 0:  # Only Interacting Layer
-            final_logit = self.dnn_linear(att_output)
+            logit += self.dnn_linear(att_output)
         else:  # Error
-            raise NotImplementedError
+            pass
 
-        y_pred = self.out(final_logit)
+        y_pred = self.out(logit)
 
         return y_pred

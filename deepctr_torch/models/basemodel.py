@@ -322,16 +322,6 @@ class BaseModel(nn.Module):
             X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()) for
             feat in sparse_feature_columns]
 
-        # varlen_sparse_embedding_list = [embedding_dict[feat.embedding_name](
-        #     X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()) for
-        #     feat in varlen_sparse_feature_columns]
-        # varlen_sparse_embedding_list_mask = [
-        #     X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()!=0 for
-        #     feat in varlen_sparse_feature_columns]
-        # print(varlen_sparse_embedding_list_mask)
-
-        # varlen_sparse_embedding_list = list(
-        #    map(lambda x: x.unsqueeze(dim=1), varlen_sparse_embedding_list))
         varlen_sparse_embedding_list = get_varlen_pooling_list(self.embedding_dict, X, self.feature_index,
                                                                varlen_sparse_feature_columns, self.device)
 

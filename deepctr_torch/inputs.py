@@ -207,8 +207,7 @@ def combined_dnn_input(sparse_embedding_list, dense_value_list):
 
 def get_varlen_pooling_list(embedding_dict, features, feature_index, varlen_sparse_feature_columns, device):
     varlen_sparse_embedding_list = []
-    print(embedding_dict)
-    print(varlen_sparse_feature_columns)
+
     for feat in varlen_sparse_feature_columns:
         seq_emb = embedding_dict[feat.embedding_name](
             features[:, feature_index[feat.name][0]:feature_index[feat.name][1]].long())

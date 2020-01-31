@@ -16,6 +16,7 @@ from ..layers import CrossNet, DNN
 class DCN(BaseModel):
     """Instantiates the Deep&Cross Network architecture.
 
+    :param linear_feature_columns: An iterable containing all the features used by linear part of the model.
     :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
     :param cross_num: positive integet,cross layer number
     :param dnn_hidden_units: list,list of positive integer or empty list, the layer number and units in each layer of DNN
@@ -33,7 +34,7 @@ class DCN(BaseModel):
     
     """
 
-    def __init__(self,
+    def __init__(self,linear_feature_columns,
                  dnn_feature_columns, cross_num=2,
                  dnn_hidden_units=(128, 128), l2_reg_linear=0.00001,
                  l2_reg_embedding=0.00001, l2_reg_cross=0.00001, l2_reg_dnn=0, init_std=0.0001, seed=1024,
@@ -71,6 +72,7 @@ class DCN(BaseModel):
 
     def forward(self, X):
 
+        logit = self.linear_model(X)
         sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
                                                                                   self.embedding_dict)
 
@@ -80,15 +82,14 @@ class DCN(BaseModel):
             deep_out = self.dnn(dnn_input)
             cross_out = self.crossnet(dnn_input)
             stack_out = torch.cat((cross_out, deep_out), dim=-1)
-            final_logit = self.dnn_linear(stack_out)
+            logit += self.dnn_linear(stack_out)
         elif len(self.dnn_hidden_units) > 0:  # Only Deep
             deep_out = self.dnn(dnn_input)
-            final_logit = self.dnn_linear(deep_out)
+            logit += self.dnn_linear(deep_out)
         elif self.cross_num > 0:  # Only Cross
             cross_out = self.crossnet(dnn_input)
-            final_logit = self.dnn_linear(cross_out)
+            logit += self.dnn_linear(cross_out)
         else:  # Error
-            raise NotImplementedError
-
-        y_pred = self.out(final_logit)
+            pass
+        y_pred = self.out(logit)
         return y_pred
