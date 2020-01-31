@@ -18,9 +18,8 @@ from sklearn.metrics import *
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat
+from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat, get_varlen_pooling_list,create_embedding_matrix
 from ..layers import PredictionLayer
-from ..layers.sequence import SequencePoolingLayer
 from ..layers.utils import slice_arrays
 
 
@@ -28,14 +27,16 @@ class Linear(nn.Module):
     def __init__(self, feature_columns, feature_index, init_std=0.0001, device='cpu'):
         super(Linear, self).__init__()
         self.feature_index = feature_index
-
+        self.device = device
         self.sparse_feature_columns = list(
             filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
         self.dense_feature_columns = list(
             filter(lambda x: isinstance(x, DenseFeat), feature_columns)) if len(feature_columns) else []
 
-        self.embedding_dict = self.create_embedding_matrix(self.sparse_feature_columns, 1, init_std, sparse=False).to(
-            device)
+        self.varlen_sparse_feature_columns = list(
+            filter(lambda x: isinstance(x, VarLenSparseFeat), feature_columns)) if len(feature_columns) else []
+
+        self.embedding_dict = create_embedding_matrix(feature_columns,init_std,linear=True,sparse=False,device=device)
 
         #         nn.ModuleDict(
         #             {feat.embedding_name: nn.Embedding(feat.dimension, 1, sparse=True) for feat in
@@ -59,6 +60,11 @@ class Linear(nn.Module):
         dense_value_list = [X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]] for feat in
                             self.dense_feature_columns]
 
+        varlen_embedding_list = get_varlen_pooling_list(self.embedding_dict, X, self.feature_index,
+                                                        self.varlen_sparse_feature_columns, self.device)
+
+        sparse_embedding_list += varlen_embedding_list
+
         if len(sparse_embedding_list) > 0 and len(dense_value_list) > 0:
             linear_sparse_logit = torch.sum(
                 torch.cat(sparse_embedding_list, dim=-1), dim=-1, keepdim=False)
@@ -74,20 +80,6 @@ class Linear(nn.Module):
         else:
             linear_logit = torch.zeros([X.shape[0], 1])
         return linear_logit
-
-    def create_embedding_matrix(self, feature_columns, embedding_size, init_std=0.0001, sparse=False):
-
-        sparse_feature_columns = list(
-            filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
-
-        embedding_dict = nn.ModuleDict(
-            {feat.embedding_name: nn.Embedding(feat.vocabulary_size, feat.embedding_dim, sparse=sparse) for feat in
-             sparse_feature_columns}
-        )
-        for tensor in embedding_dict.values():
-            nn.init.normal_(tensor.weight, mean=0, std=init_std)
-
-        return embedding_dict
 
 
 class BaseModel(nn.Module):
@@ -109,7 +101,7 @@ class BaseModel(nn.Module):
             linear_feature_columns + dnn_feature_columns)
         self.dnn_feature_columns = dnn_feature_columns
 
-        self.embedding_dict = self.create_embedding_matrix(dnn_feature_columns, init_std, sparse=False).to(device)
+        self.embedding_dict = create_embedding_matrix(dnn_feature_columns,init_std,sparse=False,device=device)
         #         nn.ModuleDict(
         #             {feat.embedding_name: nn.Embedding(feat.dimension, embedding_size, sparse=True) for feat in
         #              self.dnn_feature_columns}
@@ -123,7 +115,7 @@ class BaseModel(nn.Module):
         self.add_regularization_loss(
             self.linear_model.parameters(), l2_reg_linear)
 
-        self.out = PredictionLayer(task, )
+        self.out = PredictionLayer(task,)
         self.to(device)
 
     def fit(self, x=None,
@@ -330,22 +322,6 @@ class BaseModel(nn.Module):
             X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()) for
             feat in sparse_feature_columns]
 
-        varlen_sparse_embedding_list = []
-        for feat in varlen_sparse_feature_columns:
-            seq_emb = embedding_dict[feat.embedding_name](
-                X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long())
-            if feat.length_name is None:
-                seq_mask = X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long() != 0
-
-                emb = SequencePoolingLayer(mode=feat.combiner, supports_masking=True, device=self.device)(
-                    [seq_emb, seq_mask])
-            else:
-                seq_length = X[:,
-                             self.feature_index[feat.length_name][0]:self.feature_index[feat.length_name][1]].long()
-                emb = SequencePoolingLayer(mode=feat.combiner, supports_masking=False, device=self.device)(
-                    [seq_emb, seq_length])
-            varlen_sparse_embedding_list.append(emb)
-
         # varlen_sparse_embedding_list = [embedding_dict[feat.embedding_name](
         #     X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()) for
         #     feat in varlen_sparse_feature_columns]
@@ -356,36 +332,13 @@ class BaseModel(nn.Module):
 
         # varlen_sparse_embedding_list = list(
         #    map(lambda x: x.unsqueeze(dim=1), varlen_sparse_embedding_list))
-
-        # varlen_sparse_embedding_list = [SequencePoolingLayer(supports_masking=True)([a,b]) for a,b in zip(varlen_sparse_embedding_list,varlen_sparse_embedding_list_mask)]
+        varlen_sparse_embedding_list = get_varlen_pooling_list(self.embedding_dict, X, self.feature_index,
+                                                               varlen_sparse_feature_columns, self.device)
 
         dense_value_list = [X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]] for feat in
                             dense_feature_columns]
 
         return sparse_embedding_list + varlen_sparse_embedding_list, dense_value_list
-
-    def create_embedding_matrix(self, feature_columns, init_std=0.0001, sparse=False):
-        # Return nn.ModuleDict: for sparse features, {embedding_name: nn.Embedding}
-        # for varlen sparse features, {embedding_name: nn.EmbeddingBag}
-        sparse_feature_columns = list(
-            filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
-
-        varlen_sparse_feature_columns = list(
-            filter(lambda x: isinstance(x, VarLenSparseFeat), feature_columns)) if len(feature_columns) else []
-
-        embedding_dict = nn.ModuleDict(
-            {feat.embedding_name: nn.Embedding(feat.vocabulary_size, feat.embedding_dim, sparse=sparse) for feat in
-             sparse_feature_columns + varlen_sparse_feature_columns}
-        )
-
-        # for feat in varlen_sparse_feature_columns:
-        #     embedding_dict[feat.embedding_name] = nn.EmbeddingBag(
-        #         feat.dimension, embedding_size, sparse=sparse, mode=feat.combiner)
-
-        for tensor in embedding_dict.values():
-            nn.init.normal_(tensor.weight, mean=0, std=init_std)
-
-        return embedding_dict
 
     def compute_input_dim(self, feature_columns, include_sparse=True, include_dense=True, feature_group=False):
         sparse_feature_columns = list(
