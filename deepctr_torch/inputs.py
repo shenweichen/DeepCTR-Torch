@@ -26,6 +26,8 @@ class SparseFeat(namedtuple('SparseFeat',
             embedding_name = name
         if embedding_dim == "auto":
             embedding_dim = 6 * int(pow(vocabulary_size, 0.25))
+        if use_hash:
+            print("Notice! Feature Hashing on the fly currently is not supported in torch version,you can use tensorflow version!")
         return super(SparseFeat, cls).__new__(cls, name, vocabulary_size, embedding_dim, use_hash, dtype,
                                               embedding_name, group_name)
 
