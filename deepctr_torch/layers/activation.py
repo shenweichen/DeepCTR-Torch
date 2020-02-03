@@ -128,6 +128,6 @@ if __name__ == "__main__":
     # a = Dice(3)
     # b = torch.rand((5, 3))
     # c = a(b)
-    # print(c.size())
+    # print(c.size())   # [5, 3]
     # print('b:', b)
     # print('c:', c)
