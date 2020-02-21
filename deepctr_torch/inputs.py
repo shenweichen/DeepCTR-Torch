@@ -43,7 +43,7 @@ class VarLenSparseFeat(namedtuple('VarLenFeat',
         if embedding_name is None:
             embedding_name = name
         return super(VarLenSparseFeat, cls).__new__(cls, name, dimension, maxlen, combiner, use_hash, dtype,
-                                                    embedding_name, embedding, group_name)
+                                                    embedding_name, embedding)
 
 
 def get_feature_names(feature_columns):
@@ -55,7 +55,6 @@ def get_inputs_list(inputs):
 
 
 def build_input_features(feature_columns):
-    # Return OrderedDict: {feature_name:(start, start+dimension)}
     features = OrderedDict()
 
     start = 0
