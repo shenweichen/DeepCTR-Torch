@@ -10,7 +10,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from .basemodel import BaseModel
-from ..inputs import create_embedding_matrix, get_varlen_pooling_list, embedding_lookup, get_dense_input, varlen_embedding_lookup, SparseFeat, DenseFeat, VarLenSparseFeat, combined_dnn_input
+from ..inputs import get_varlen_pooling_list, embedding_lookup, get_dense_input, varlen_embedding_lookup, SparseFeat, DenseFeat, VarLenSparseFeat, combined_dnn_input
 from ..layers import FM, DNN
 from ..layers.sequence import AttentionSequencePoolingLayer
 
