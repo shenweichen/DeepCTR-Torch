@@ -20,6 +20,15 @@ DEFAULT_GROUP_NAME = "default_group"
 class SparseFeat(namedtuple('SparseFeat',
                             ['name', 'vocabulary_size', 'embedding_dim', 'use_hash', 'dtype', 'embedding_name',
                              'group_name'])):
+    """
+        Args:
+            name : feature name
+            vocabulary_size : number of unique feature values for sprase feature,hashing space when hash_flag=True, any value for dense feature.
+            use_hash : defualt `False`.If `True` the input will be hashed to space of size `dimension`.
+            dtype : default `float32`.dtype of input tensor.
+            embedding_name : default `None`. If None, the `embedding_name` will be same as `name`.
+            embedding : default `True`.If `False`, the feature will not be embeded to a dense vector.    
+    """
     __slots__ = ()
 
     def __new__(cls, name, vocabulary_size, embedding_dim=4, use_hash=False, dtype="int32", embedding_name=None,
@@ -39,6 +48,18 @@ class SparseFeat(namedtuple('SparseFeat',
 
 class VarLenSparseFeat(namedtuple('VarLenSparseFeat',
                                   ['sparsefeat', 'maxlen', 'combiner', 'length_name'])):
+    """
+        Args:
+            name : feature name, if it is already used in sparse_feature_dim, then a shared embedding mechanism will be used.
+            dimension : number of unique feature values
+            maxlen : maximum length of this feature for all samples
+            combiner : pooling method,can be ``sum``,``mean`` or ``max``
+            use_hash : defualt `False`.if `True` the input will be hashed to space of size `dimension`.
+            dtype : default `float32`.dtype of input tensor.
+            embedding_name : default `None`. If None, the embedding_name` will be same as `name`.
+            embedding : default `True`.If `False`, the feature will not be embeded to a dense vector.
+    """
+    
     __slots__ = ()
 
     def __new__(cls, sparsefeat, maxlen, combiner="mean", length_name=None):
@@ -73,6 +94,12 @@ class VarLenSparseFeat(namedtuple('VarLenSparseFeat',
 
 
 class DenseFeat(namedtuple('DenseFeat', ['name', 'dimension', 'dtype'])):
+    """
+        Args:
+            name : feature name
+            dimension : dimension of dense feature vector.
+            dtype : default `float32`.dtype of input tensor.
+    """
     __slots__ = ()
 
     def __new__(cls, name, dimension=1, dtype="float32"):
@@ -93,6 +120,12 @@ def get_feature_names(feature_columns):
 
 def build_input_features(feature_columns):
     # Return OrderedDict: {feature_name:(start, start+dimension)}
+    """Return a dictionary contains feature's (start idx, end idx) 
+        Args:
+            feature_columns: list, features
+        Return:
+            feature: defaultdict(list)
+    """
     features = OrderedDict()
 
     start = 0
@@ -116,15 +149,20 @@ def build_input_features(feature_columns):
             raise TypeError("Invalid feature column type,got", type(feat))
     return features
 
-
-# def get_dense_input(features, feature_columns):
-#     dense_feature_columns = list(filter(lambda x: isinstance(
-#         x, DenseFeat), feature_columns)) if feature_columns else []
-#     dense_input_list = []
-#     for fc in dense_feature_columns:
-#         dense_input_list.append(features[fc.name])
-#     return dense_input_list
-
+def get_dense_input(features, feature_columns):
+    """get list of dense features
+        Args:
+            features:
+            feature_columns:
+        Return:
+            dense_input_list: list
+    """
+    dense_feature_columns = list(filter(lambda x: isinstance(
+        x, DenseFeat), feature_columns)) if feature_columns else []
+    dense_input_list = []
+    for fc in dense_feature_columns:
+        dense_input_list.append(features[fc.name])
+    return dense_input_list
 
 def combined_dnn_input(sparse_embedding_list, dense_value_list):
     if len(sparse_embedding_list) > 0 and len(dense_value_list) > 0:

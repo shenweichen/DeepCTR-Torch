@@ -104,8 +104,8 @@ class AttentionSequencePoolingLayer(nn.Module):
         # query: [B, 1, E], keys: [B, T, E], keys_length: [B, 1]
         # TODO: Mini-batch aware regularization in originial paper [Zhou G, et al. 2018] is not implemented here. As the authors mentioned 
         #       it is not a must for small dataset as the open-sourced ones.
-        attention_score = self.local_att(query, keys)
-        attention_score = torch.transpose(attention_score, 1, 2)          # B * 1 * T
+        attention_score = self.local_att(query, keys)                     # [B, T, 1]
+        attention_score = torch.transpose(attention_score, 1, 2)          # [B, 1, T]
         
         # define mask by length
         keys_length = keys_length.type(torch.LongTensor)

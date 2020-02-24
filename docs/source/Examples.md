@@ -12,6 +12,14 @@ click-through rate. It has 13 integer features and
 In this example,we simply normailize the dense feature between 0 and 1,you
 can try other transformation technique like log normalization or discretization.Then we use [SparseFeat](./Features.html#sparsefeat) and [DenseFeat](./Features.html#densefeat) to generate feature columns  for sparse features and dense features.
 
+``SparseFeat`` is a namedtuple with signature ``SparseFeat(name, dimension, use_hash, dtype, embedding_name, embedding)``
+
+- name : feature name
+- dimension : number of unique feature values for sprase feature,hashing space when hash_flag=True, any value for dense feature.
+- use_hash : defualt `False`.If `True` the input will be hashed to space of size `dimension`.
+- dtype : default `float32`.dtype of input tensor.
+- embedding_name : default `None`. If None, the `embedding_name` will be same as `name`.
+- embedding : default `True`.If `False`, the feature will not be embeded to a dense vector.
 
 This example shows how to use ``DeepFM`` to solve a simple binary classification task. You can get the demo data [criteo_sample.txt](https://github.com/shenweichen/DeepCTR-Torch/tree/master/examples/criteo_sample.txt)
 and run the following codes.
@@ -162,7 +170,18 @@ Here is a small fraction of data include  sparse fields and a multivalent field.
 There are 2 additional steps to use DeepCTR with sequence feature input.
 
 1. Generate the paded and encoded sequence feature  of sequence input feature(**value 0 is for padding**).
-2. Generate config of sequence feature with [VarLenSparseFeat](./Features.html#varlensparsefeat)
+2. Generate config of sequence feature with `deepctr_torch.inputs.VarLenSparseFeat`
+
+``VarLenSparseFeat`` is a namedtuple with signature ``VarLenSparseFeat(name, dimension, maxlen, combiner, use_hash, dtype, embedding_name, embedding)``
+
+- name : feature name,if it is already used in sparse_feature_dim,then a shared embedding mechanism will be used.
+- dimension : number of unique feature values
+- maxlen : maximum length of this feature for all samples
+- combiner : pooling method,can be ``sum``,``mean`` or ``max``
+- use_hash : defualt `False`.if `True` the input will be hashed to space of size `dimension`.
+- dtype : default `float32`.dtype of input tensor.
+- embedding_name : default `None`. If None, the embedding_name` will be same as `name`.
+- embedding : default `True`.If `False`, the feature will not be embeded to a dense vector.
 
 
 This example shows how to use ``DeepFM`` with sequence(multi-value) feature. You can get the demo data 
