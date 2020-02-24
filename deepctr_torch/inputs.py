@@ -17,8 +17,17 @@ DEFAULT_GROUP_NAME = "default_group"
 
 
 class SparseFeat(namedtuple('SparseFeat', ['name', 'dimension', 'use_hash', 'dtype', 'embedding_name', 'embedding', 'group_name'])):
+    """
+        Args:
+            name : feature name
+            dimension : number of unique feature values for sprase feature,hashing space when hash_flag=True, any value for dense feature.
+            use_hash : defualt `False`.If `True` the input will be hashed to space of size `dimension`.
+            dtype : default `float32`.dtype of input tensor.
+            embedding_name : default `None`. If None, the `embedding_name` will be same as `name`.
+            embedding : default `True`.If `False`, the feature will not be embeded to a dense vector.    
+    """
     __slots__ = ()
-
+    # TODO: add embedding_dim initialization here
     def __new__(cls, name, dimension, use_hash=False, dtype="int32",
                 embedding_name=None, embedding=True, group_name=DEFAULT_GROUP_NAME):
         if embedding and embedding_name is None:
@@ -27,6 +36,12 @@ class SparseFeat(namedtuple('SparseFeat', ['name', 'dimension', 'use_hash', 'dty
 
 
 class DenseFeat(namedtuple('DenseFeat', ['name', 'dimension', 'dtype'])):
+    """
+        Args:
+            name : feature name
+            dimension : dimension of dense feature vector.
+            dtype : default `float32`.dtype of input tensor.
+    """
     __slots__ = ()
 
     def __new__(cls, name, dimension=1, dtype="float32"):
@@ -36,15 +51,26 @@ class DenseFeat(namedtuple('DenseFeat', ['name', 'dimension', 'dtype'])):
 class VarLenSparseFeat(namedtuple('VarLenFeat',
                                   ['name', 'dimension', 'maxlen', 'combiner', 'use_hash', 'dtype', 'embedding_name',
                                    'embedding', 'group_name'])):
+    """
+        Args:
+            name : feature name, if it is already used in sparse_feature_dim, then a shared embedding mechanism will be used.
+            dimension : number of unique feature values
+            maxlen : maximum length of this feature for all samples
+            combiner : pooling method,can be ``sum``,``mean`` or ``max``
+            use_hash : defualt `False`.if `True` the input will be hashed to space of size `dimension`.
+            dtype : default `float32`.dtype of input tensor.
+            embedding_name : default `None`. If None, the embedding_name` will be same as `name`.
+            embedding : default `True`.If `False`, the feature will not be embeded to a dense vector.
+    """    
     __slots__ = ()
-
+    # TODO: add embedding_dim initialization here
     def __new__(cls, name, dimension, maxlen, combiner="mean", use_hash=False, dtype="float32", embedding_name=None,
                 embedding=True, group_name=DEFAULT_GROUP_NAME):
         if embedding_name is None:
             embedding_name = name
         return super(VarLenSparseFeat, cls).__new__(cls, name, dimension, maxlen, combiner, use_hash, dtype,
-                                                    embedding_name, embedding)
-
+                                                    embedding_name, embedding, group_name)
+            
 
 def get_feature_names(feature_columns):
     features = build_input_features(feature_columns)
@@ -55,6 +81,12 @@ def get_inputs_list(inputs):
 
 
 def build_input_features(feature_columns):
+    """Return a dictionary contains feature's (start idx, end idx) 
+        Args:
+            feature_columns: list, features
+        Return:
+            feature: defaultdict(list)
+    """
     features = OrderedDict()
 
     start = 0
@@ -77,6 +109,13 @@ def build_input_features(feature_columns):
 
 
 def get_dense_input(features, feature_columns):
+    """get list of dense features
+        Args:
+            features:
+            feature_columns:
+        Return:
+            dense_input_list: list
+    """
     dense_feature_columns = list(filter(lambda x: isinstance(
         x, DenseFeat), feature_columns)) if feature_columns else []
     dense_input_list = []
@@ -100,11 +139,11 @@ def combined_dnn_input(sparse_embedding_list, dense_value_list):
         raise NotImplementedError
 
 
-def embedding_lookup(sparse_embedding_dict, sparse_input_dict, sparse_feature_columns, return_feat_list=(),
+def embedding_lookup(X, sparse_embedding_dict, sparse_input_dict, sparse_feature_columns, return_feat_list=(),
                      mask_feat_list=(), to_list=False):
     """
         Args:
-            sparse_embedding_dict: nn.ModuleDict, {embedding_name: nn.Embedding}
+            sparse_embedding_dict: nn.ModuleDict, {embedding_name: nn.Embedding / nn.EmbeddingBag}
             sparse_input_dict: OrderedDict, {feature_name:(start, start+dimension)}
             sparse_feature_columns: list, sparse features
             return_feat_list: list, names of feature to be returned, defualt () -> return all features
@@ -125,13 +164,16 @@ def embedding_lookup(sparse_embedding_dict, sparse_input_dict, sparse_feature_co
             else:
                 lookup_idx = sparse_input_dict[feature_name]
 
-            group_embedding_dict[fc.group_name].append(sparse_embedding_dict[embedding_name](lookup_idx))
+            group_embedding_dict[fc.group_name].append(sparse_embedding_dict[embedding_name](
+                X[:, lookup_idx[0]:lookup_idx[1]].long())) # (lookup_idx)
+
     if to_list:
         return list(chain.from_iterable(group_embedding_dict.values()))
+
     return group_embedding_dict
 
 
-def varlen_embedding_lookup(embedding_dict, sequence_input_dict, varlen_sparse_feature_columns):
+def varlen_embedding_lookup(X, embedding_dict, sequence_input_dict, varlen_sparse_feature_columns):
     varlen_embedding_vec_dict = {}
     for fc in varlen_sparse_feature_columns:
         feature_name = fc.name
@@ -142,7 +184,9 @@ def varlen_embedding_lookup(embedding_dict, sequence_input_dict, varlen_sparse_f
             lookup_idx = sequence_input_dict[feature_name]
         else:
             lookup_idx = sequence_input_dict[feature_name]
-        varlen_embedding_vec_dict[feature_name] = embedding_dict[embedding_name](lookup_idx)
+        varlen_embedding_vec_dict[feature_name] = embedding_dict[embedding_name](
+            X[:, lookup_idx[0]:lookup_idx[1]].long())    #(lookup_idx)
+    
     return varlen_embedding_vec_dict
 
 

@@ -95,7 +95,7 @@ class BaseModel(nn.Module):
                  linear_feature_columns, dnn_feature_columns, embedding_size=8, dnn_hidden_units=(128, 128),
                  l2_reg_linear=1e-5,
                  l2_reg_embedding=1e-5, l2_reg_dnn=0, init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation='relu',
-                 task='binary', device='cpu'):
+                 task='binary', varlen=True, device='cpu'):
 
         super(BaseModel, self).__init__()
 
@@ -107,7 +107,7 @@ class BaseModel(nn.Module):
         self.dnn_feature_columns = dnn_feature_columns
 
         self.embedding_dict = self.create_embedding_matrix(dnn_feature_columns, embedding_size, init_std,
-                                                           sparse=False).to(device)
+                                                           sparse=False, varlen=varlen).to(device)
         #         nn.ModuleDict(
         #             {feat.embedding_name: nn.Embedding(feat.dimension, embedding_size, sparse=True) for feat in
         #              self.dnn_feature_columns}
@@ -216,7 +216,6 @@ class BaseModel(nn.Module):
                         y = y_train.to(self.device).float()
 
                         y_pred = model(x).squeeze()
-
                         optim.zero_grad()
                         loss = loss_func(y_pred, y.squeeze(), reduction='sum')
 
@@ -338,9 +337,18 @@ class BaseModel(nn.Module):
 
         return sparse_embedding_list + varlen_sparse_embedding_list, dense_value_list
 
-    def create_embedding_matrix(self, feature_columns, embedding_size, init_std=0.0001, sparse=False):
-        # Return nn.ModuleDict: for sparse features, {embedding_name: nn.Embedding}
-        # for varlen sparse features, {embedding_name: nn.EmbeddingBag}
+
+    def create_embedding_matrix(self, feature_columns, embedding_size, init_std=0.0001, sparse=False, varlen=True):
+        """
+            Args:
+                feature_colums: list of features
+                embedding_size: int
+                init_std: float
+                sparse: bool, if true, embedding's weight matrix (gradient) will be a sparse tensor
+            Return:
+                embedding_dict: nn.ModuleDict, {embedding_name: nn.Embedding} for sparse features, 
+                                or {embedding_name: nn.EmbeddingBag} for varlen sparse features
+        """
         sparse_feature_columns = list(
             filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
 
@@ -353,8 +361,12 @@ class BaseModel(nn.Module):
         )
 
         for feat in varlen_sparse_feature_columns:
-            embedding_dict[feat.embedding_name] = nn.EmbeddingBag(
-                feat.dimension, embedding_size, sparse=sparse, mode=feat.combiner)
+            if varlen:
+                embedding_dict[feat.embedding_name] = nn.EmbeddingBag(
+                    feat.dimension, embedding_size, sparse=sparse, mode=feat.combiner)
+            else:
+                # for DIN
+                embedding_dict[feat.embedding_name] = nn.Embedding(feat.dimension, embedding_size, sparse=sparse)
 
         for tensor in embedding_dict.values():
             nn.init.normal_(tensor.weight, mean=0, std=init_std)

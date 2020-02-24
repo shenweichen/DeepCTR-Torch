@@ -37,7 +37,7 @@ class LocalActivationUnit(nn.Module):
     def __init__(self, hidden_units=[80, 40], embedding_dim=4, activation='Dice', dropout_rate=0, use_bn=False):
         super(LocalActivationUnit, self).__init__()
 
-        self.dnn1 = DNN(inputs_dim=4*embedding_dim,
+        self.dnn1 = DNN(inputs_dim=8*embedding_dim,
                        hidden_units=hidden_units,
                        activation=activation,
                        dropout_rate=0.5,
@@ -53,13 +53,12 @@ class LocalActivationUnit(nn.Module):
         self.dense = nn.Linear(hidden_units[-1], 1)
 
     def forward(self, query, user_behavior):
-        # query ad            : size -> batch_size * 1 * embedding_size
-        # user behavior       : size -> batch_size * time_seq_len * embedding_size
-
+        # query ad : [B, 1, E], user_behavior [B, T, E]
         user_behavior_len = user_behavior.size(1)
-        queries = torch.cat([query for _ in range(user_behavior_len)], dim=1)
+        queries = torch.cat([query for _ in range(user_behavior_len)], dim=1)   # [B, T, E]
 
-        attention_input = torch.cat([queries, user_behavior, queries-user_behavior, queries*user_behavior], dim=-1)
+        attention_input = torch.cat([queries, user_behavior, queries-user_behavior, queries*user_behavior], dim=-1) # [B, T, 4*E]
+        
         attention_output = self.dnn1(attention_input)
         attention_output = self.dense(attention_output)
 

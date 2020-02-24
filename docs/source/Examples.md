@@ -12,7 +12,7 @@ click-through rate. It has 13 integer features and
 In this example,we simply normailize the dense feature between 0 and 1,you
 can try other transformation technique like log normalization or discretization.Then we use `SparseFeat` and `DenseFeat` to generate feature columns  for sparse features and dense features.
 
-``SparseFeat`` is a namedtuple with signature ``SparseFeat(name, dimension, use_hash, dtype, embedding_name,embedding)``
+``SparseFeat`` is a namedtuple with signature ``SparseFeat(name, dimension, use_hash, dtype, embedding_name, embedding)``
 
 - name : feature name
 - dimension : number of unique feature values for sprase feature,hashing space when hash_flag=True, any value for dense feature.
@@ -168,7 +168,7 @@ There are 2 additional steps to use DeepCTR with sequence feature input.
 1. Generate the paded and encoded sequence feature  of sequence input feature(**value 0 is for padding**).
 2. Generate config of sequence feature with `deepctr_torch.inputs.VarLenSparseFeat`
 
-``VarLenSparseFeat`` is a namedtuple with signature ``VarLenSparseFeat(name, dimension, maxlen, combiner, use_hash, dtype, embedding_name,embedding)``
+``VarLenSparseFeat`` is a namedtuple with signature ``VarLenSparseFeat(name, dimension, maxlen, combiner, use_hash, dtype, embedding_name, embedding)``
 
 - name : feature name,if it is already used in sparse_feature_dim,then a shared embedding mechanism will be used.
 - dimension : number of unique feature values

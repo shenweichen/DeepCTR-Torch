@@ -53,44 +53,24 @@ class DIN(BaseModel):
                                 dnn_hidden_units=dnn_hidden_units, l2_reg_linear=0,
                                 l2_reg_dnn=l2_reg_dnn, init_std=init_std,
                                 dnn_dropout=dnn_dropout, dnn_activation=dnn_activation,
-                                task=task, device=device)
+                                task=task, varlen=False, device=device)
        
-        sparse_feature_columns = list(filter(lambda x:isinstance(x,SparseFeat),dnn_feature_columns)) if dnn_feature_columns else []
-        varlen_sparse_feature_columns = list(filter(lambda x: isinstance(x, VarLenSparseFeat), dnn_feature_columns)) if dnn_feature_columns else []
+        self.sparse_feature_columns = list(filter(lambda x:isinstance(x,SparseFeat),dnn_feature_columns)) if dnn_feature_columns else []
+        self.varlen_sparse_feature_columns = list(filter(lambda x: isinstance(x, VarLenSparseFeat), dnn_feature_columns)) if dnn_feature_columns else []
 
-        history_feature_columns = []
-        sparse_varlen_feature_columns = []
-        history_fc_names = list(map(lambda x: "hist_" + x, history_feature_list))
-        for fc in varlen_sparse_feature_columns:
-            feature_name = fc.name
-            if feature_name in history_fc_names:
-                history_feature_columns.append(fc)
-            else:
-                sparse_varlen_feature_columns.append(fc)
-
-        history_feature_columns = []
-        sparse_varlen_feature_columns = []
-        history_fc_names = list(map(lambda x: "hist_" + x, history_feature_list))
-
-        query_emb_list = embedding_lookup(self.embedding_dict, self.feature_index, sparse_feature_columns, 
-                                          history_feature_list, history_feature_list, to_list=True)
-        keys_emb_list = embedding_lookup(self.embedding_dict, self.feature_index, history_feature_columns,
-                                         history_fc_names, history_fc_names, to_list=True)
-        dnn_input_emb_list = embedding_lookup(self.embedding_dict, self.feature_index, sparse_feature_columns,
-                                              mask_feat_list=history_feature_list, to_list=True)
-
-        sequence_embed_dict = varlen_embedding_lookup(self.embedding_dict, self.feature_index, sparse_varlen_feature_columns)
-        sequence_embed_list = get_varlen_pooling_list(sequence_embed_dict, self.feature_index, sparse_varlen_feature_columns,to_list=True)
+        self.history_feature_list = history_feature_list
         
-        dnn_input_emb_list += sequence_embed_list
-
-        # concatenate
-        self.query_emb = torch.cat(query_emb_list, dim=-1)          # [B, 1, E]
-        self.keys_emb = torch.cat(keys_emb_list, dim=-1)            # [B, T, E]
-        self.keys_length = torch.ones((self.query_emb.size(0), 1))      # [B, 1]
-        self.deep_input_emb = torch.cat(dnn_input_emb_list, dim=-1)
-
-
+        self.history_feature_columns = []
+        self.sparse_varlen_feature_columns = []
+        self.history_fc_names = list(map(lambda x: "hist_" + x, history_feature_list))
+        
+        for fc in self.varlen_sparse_feature_columns:
+            feature_name = fc.name
+            if feature_name in self.history_fc_names:
+                self.history_feature_columns.append(fc)
+            else:
+                self.sparse_varlen_feature_columns.append(fc)
+ 
         self.atten = AttentionSequencePoolingLayer(att_hidden_units=att_hidden_size,
                                                    embedding_dim=embedding_size,
                                                    activation=att_activation)
@@ -107,9 +87,29 @@ class DIN(BaseModel):
         sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
                                                                                   self.embedding_dict)
 
-        hist = self.atten(self.query_emb, self.keys_emb, self.keys_length)
+        # sequence pooling part
+        query_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.sparse_feature_columns,
+                                         self.history_feature_list, self.history_feature_list, to_list=True)
+        keys_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.history_feature_columns,
+                                         self.history_fc_names, self.history_fc_names, to_list=True)
+        dnn_input_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.sparse_feature_columns,
+                                              mask_feat_list=self.history_feature_list, to_list=True)
+        
+        sequence_embed_dict = varlen_embedding_lookup(X, self.embedding_dict, self.feature_index, self.sparse_varlen_feature_columns)
+        sequence_embed_list = get_varlen_pooling_list(sequence_embed_dict, self.feature_index, self.sparse_varlen_feature_columns,to_list=True)
+        
+        dnn_input_emb_list += sequence_embed_list
 
-        deep_input_emb = torch.cat((self.deep_input_emb, hist), dim=-1)
+        # concatenate
+        query_emb = torch.cat(query_emb_list, dim=-1)          # [B, 1, E]
+        keys_emb = torch.cat(keys_emb_list, dim=-1)            # [B, T, E]
+        keys_length = torch.ones((query_emb.size(0), 1))       # [B, 1]
+        deep_input_emb = torch.cat(dnn_input_emb_list, dim=-1)
+
+        hist = self.atten(query_emb, keys_emb, keys_length)
+
+        # deep part
+        deep_input_emb = torch.cat((deep_input_emb, hist), dim=-1)
         deep_input_emb = deep_input_emb.view(deep_input_emb.size(0), -1)
 
         dnn_input = combined_dnn_input([deep_input_emb], dense_value_list)
