@@ -64,9 +64,11 @@ def activation_layer(act_name, hidden_size=None, dice_dim=2):
         act_layer: activation layer
     """
     if isinstance(act_name, str):
-        if act_name.lower() == 'linear':
+        if act_name.lower() == 'sigmoid':
+            act_layer = nn.Sigmoid()
+        elif act_name.lower() == 'linear':
             act_layer = Identity()
-        if act_name.lower() == 'relu':
+        elif act_name.lower() == 'relu':
             act_layer = nn.ReLU(inplace=True)
         elif act_name.lower() == 'dice':
             assert dice_dim

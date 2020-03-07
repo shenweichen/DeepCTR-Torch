@@ -1,5 +1,11 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
+import math
+import numpy as np
+from torch.nn.utils.rnn import PackedSequence
+from ..layers.core import DNN
 
 
 class SequencePoolingLayer(nn.Module):
@@ -29,7 +35,6 @@ class SequencePoolingLayer(nn.Module):
         self.mode = mode
         self.eps = torch.FloatTensor([1e-8]).to(device)
         self.to(device)
-
 
     def _sequence_mask(self, lengths, maxlen=None, dtype=torch.bool):
         # Returns a mask tensor representing the first N positions of each cell.
@@ -158,3 +163,215 @@ class KMaxPooling(nn.Module):
 
         out = torch.topk(input, k=self.k, dim=self.axis, sorted=True)[0]
         return out
+
+
+class AGRUCell(nn.Module):
+    """ Attention based GRU (AGRU)
+
+        Reference:
+        -  Deep Interest Evolution Network for Click-Through Rate Prediction[J]. arXiv preprint arXiv:1809.03672, 2018.
+
+    """
+    # todo check doc
+    """
+        Input shape
+        -  nD tensor with shape: ``(batch_size, ..., input_dim)``.
+
+        Output shape
+        - nD tensor with shape: ``(batch_size, ..., output_dim)``.
+
+        Arguments
+        - **inp**: positive integer, number of top elements to look for along the ``axis`` dimension.
+
+        - **axis**: positive integer, the dimension to look for elements.
+
+    """
+
+    def __init__(self, input_size, hidden_size, bias=True):
+        super(AGRUCell, self).__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.bias = bias
+        # (W_ir|W_iz|W_ih)
+        self.weight_ih = nn.Parameter(torch.Tensor(3 * hidden_size, input_size))
+        # (W_hr|W_hz|W_hh)
+        self.weight_hh = nn.Parameter(torch.Tensor(3 * hidden_size, hidden_size))
+        if bias:
+            # (b_ir|b_iz|b_ih)
+            self.bias_ih = nn.Parameter(torch.Tensor(3 * hidden_size))
+            # (b_hr|b_hz|b_hh)
+            self.bias_hh = nn.Parameter(torch.Tensor(3 * hidden_size))
+        else:
+            self.register_parameter('bias_ih', None)
+            self.register_parameter('bias_hh', None)
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        stdv = 1.0 / math.sqrt(self.hidden_size)
+        for weight in self.parameters():
+            # todo fix
+            pass
+            # init.uniforms_(weight, -stdv, stdv)
+
+    def forward(self, input, hx, att_score):
+        gi = F.linear(input, self.weight_ih, self.bias_ih)
+        gh = F.linear(hx, self.weight_hh, self.bias_hh)
+        i_r, i_z, i_n = gi.chunk(3, 1)
+        h_r, h_z, h_n = gh.chunk(3, 1)
+
+        reset_gate = torch.sigmoid(i_r + h_r)
+        # update_gate = torch.sigmoid(i_z + h_z)
+        # todo 更换激活函数为变量
+        new_state = torch.tanh(i_n + reset_gate * h_n)
+
+        att_score = att_score.view(-1, 1)
+        hy = (1. - att_score) * hx + att_score * new_state
+        return hy
+
+
+class AUGRUCell(nn.Module):
+    def __init__(self, input_size, hidden_size, bias=True):
+        super(AUGRUCell, self).__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.bias = bias
+        # (W_ir|W_iz|W_ih)
+        self.weight_ih = nn.Parameter(torch.Tensor(3 * hidden_size, input_size))
+        # (W_hr|W_hz|W_hh)
+        self.weight_hh = nn.Parameter(torch.Tensor(3 * hidden_size, hidden_size))
+        if bias:
+            # (b_ir|b_iz|b_ih)
+            self.bias_ih = nn.Parameter(torch.Tensor(3 * hidden_size))
+            # (b_hr|b_hz|b_hh)
+            self.bias_hh = nn.Parameter(torch.Tensor(3 * hidden_size))
+        else:
+            self.register_parameter('bias_ih', None)
+            self.register_parameter('bias_hh', None)
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        stdv = 1.0 / math.sqrt(self.hidden_size)
+        for weight in self.parameters():
+            # todo fix
+            pass
+            # init.uniforms_(weight, -stdv, stdv)
+
+    def forward(self, input, hx, att_score):
+        gi = F.linear(input, self.weight_ih, self.bias_ih)
+        gh = F.linear(hx, self.weight_hh, self.bias_hh)
+        i_r, i_z, i_n = gi.chunk(3, 1)
+        h_r, h_z, h_n = gh.chunk(3, 1)
+
+        reset_gate = torch.sigmoid(i_r + h_r)
+        update_gate = torch.sigmoid(i_z + h_z)
+        # todo 更换激活函数为变量
+        new_state = torch.tanh(i_n + reset_gate * h_n)
+
+        att_score = att_score.view(-1, 1)
+        update_gate = att_score * update_gate
+        hy = (1. - update_gate) * hx + update_gate * new_state
+        return hy
+
+
+class DynamicGRU(nn.Module):
+    def __init__(self, input_size, hidden_size, bias=True, gru_type='AGRU'):
+        super(DynamicGRU, self).__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+
+        if gru_type == 'AGRU':
+            self.rnn = AGRUCell(input_size, hidden_size, bias)
+        elif gru_type == 'AUGRU':
+            self.rnn = AUGRUCell(input_size, hidden_size, bias)
+
+    def forward(self, input, att_scores=None, hx=None):
+        if not isinstance(input, PackedSequence) or not isinstance(att_scores, PackedSequence):
+            raise NotImplementedError("DynamicGRU only supports packed input and att_scores")
+
+        input, batch_sizes, sorted_indices, unsorted_indices = input
+        att_scores, _, _, _ = att_scores
+
+        max_batch_size = int(batch_sizes[0])
+        if hx is None:
+            hx = torch.zeros(max_batch_size, self.hidden_size,
+                             dtype=input.dtype, device=input.device)
+
+        outputs = torch.zeros(max_batch_size, self.hidden_size,
+                              dtype=input.dtype, device=input.device)
+
+        begin = 0
+        for batch in batch_sizes:
+            new_hx = self.rnn(
+                input[begin:begin + batch],
+                hx[0:batch],
+                att_scores[begin:begin + batch])
+            outputs[begin:begin + batch] = new_hx
+            hx = new_hx
+            begin += batch
+        return PackedSequence(outputs, batch_sizes, sorted_indices, unsorted_indices)
+
+
+class AttentionNet(nn.Module):
+    def __init__(self, input_size,
+                 dnn_hidden_units,
+                 activation='relu',
+                 l2_reg=0,
+                 dropout_rate=0,
+                 init_std=0.0001,
+                 use_bn=False,
+                 device='cpu',
+                 return_scores=False):
+        super(AttentionNet, self).__init__()
+        self.return_scores = return_scores
+        self.mlp = DNN(input_size * 4,
+                       dnn_hidden_units,
+                       activation=activation,
+                       l2_reg=l2_reg,
+                       dropout_rate=dropout_rate,
+                       use_bn=use_bn,
+                       init_std=init_std,
+                       device=device)
+        self.fc = nn.Linear(dnn_hidden_units[-1], 1)
+
+    def forward(self, query, keys, keys_length):
+        """
+        Parameters
+        ----------
+        query: 2D tensor, [B, H]
+        keys: 3D tensor, [B, T, H]
+        keys_length: 1D tensor, [B]
+
+        Returns
+        -------
+        outputs: 2D tensor, if return_scores=False [B, H], otherwise [B, T]
+        """
+        batch_size, max_length, dim = keys.size()
+
+        query = query.unsqueeze(1).expand(-1, max_length, -1)
+
+        din_all = torch.cat(
+            [query, keys, query - keys, query * keys], dim=-1)
+
+        din_all = din_all.view(batch_size * max_length, -1)
+
+        outputs = self.mlp(din_all)
+
+        outputs = self.fc(outputs).view(batch_size, max_length)  # [B, T]
+
+        # Scale
+        outputs = outputs / (dim ** 0.5)
+
+        # Mask
+        mask = (torch.arange(max_length, device=keys_length.device).repeat(
+            batch_size, 1) < keys_length.view(-1, 1))
+        outputs[~mask] = -np.inf
+
+        # Activation
+        outputs = F.softmax(outputs, dim=1)  # [B, T]
+
+        if not self.return_scores:
+            # Weighted sum
+            outputs = torch.matmul(
+                outputs.unsqueeze(1), keys).squeeze(1)  # [B, H]
+
+        return outputs
