@@ -1,7 +1,35 @@
+import pytest
+import torch
 import numpy as np
 
+from deepctr_torch.models.dien import InterestEvolving, DIEN
+from ..utils import check_model
 from deepctr_torch.inputs import SparseFeat, DenseFeat, VarLenSparseFeat, get_feature_names
-from deepctr_torch.models import DIEN
+
+
+@pytest.mark.parametrize(
+    'gru_type',
+    ["AIGRU", "AUGRU", "AGRU", "GRU"]
+)
+def test_InterestEvolving(gru_type):
+    interest_evolution = InterestEvolving(
+        input_size=3,
+        gru_type=gru_type,
+        use_neg=False)
+
+    query = torch.tensor([[1, 1, 1], [0.1, 0.2, 0.3]], dtype=torch.float)
+
+    keys = torch.tensor([
+        [[0.1, 0.2, 0.3], [1, 2, 3], [0.4, 0.2, 1], [0.0, 0.0, 0.0]],
+        [[0.1, 0.2, 0.3], [1, 2, 3], [0.4, 0.2, 1], [0.5, 0.5, 0.5]]
+    ], dtype=torch.float)
+
+    keys_length = torch.tensor([3, 4])
+
+    output = interest_evolution(query, keys, keys_length)
+
+    assert output.size()[0] == 2
+    assert output.size()[1] == 3
 
 
 def get_xy_fd(use_neg=False, hash_flag=False):
@@ -50,11 +78,23 @@ def get_xy_fd(use_neg=False, hash_flag=False):
     return x, y, feature_columns, behavior_feature_list
 
 
-if __name__ == "__main__":
-    x, y, feature_columns, behavior_feature_list = get_xy_fd(use_neg=True)
-    model = DIEN(feature_columns, behavior_feature_list,
-                 dnn_hidden_units=[4, 4, 4], dnn_dropout=0.6, gru_type="AUGRU", use_negsampling=True)
+@pytest.mark.parametrize(
+    'gru_type,use_neg',
+    [("AIGRU", True), ("AIGRU", False),
+     ("AUGRU", True), ("AUGRU", False),
+     ("AGRU", True), ("AGRU", False),
+     ("GRU", True), ("GRU", False)]
+)
+def test_DIEN(gru_type, use_neg):
+    model_name = "DIEN_" + gru_type
 
-    model.compile('adam', 'binary_crossentropy',
-                  metrics=['binary_crossentropy','auc'])
-    history = model.fit(x, y, batch_size=2, verbose=1, epochs=10, validation_split=0,shuffle=False)
+    x, y, feature_columns, behavior_feature_list = get_xy_fd(use_neg=use_neg)
+
+    model = DIEN(feature_columns, behavior_feature_list,
+                 dnn_hidden_units=[4, 4, 4], dnn_dropout=0.5, gru_type=gru_type)
+
+    check_model(model, model_name, x, y)
+
+
+if __name__ == "__main__":
+    pass

@@ -170,21 +170,6 @@ class AGRUCell(nn.Module):
 
         Reference:
         -  Deep Interest Evolution Network for Click-Through Rate Prediction[J]. arXiv preprint arXiv:1809.03672, 2018.
-
-    """
-    # todo check doc
-    """
-        Input shape
-        -  nD tensor with shape: ``(batch_size, ..., input_dim)``.
-
-        Output shape
-        - nD tensor with shape: ``(batch_size, ..., output_dim)``.
-
-        Arguments
-        - **inp**: positive integer, number of top elements to look for along the ``axis`` dimension.
-
-        - **axis**: positive integer, the dimension to look for elements.
-
     """
 
     def __init__(self, input_size, hidden_size, bias=True):
@@ -194,24 +179,20 @@ class AGRUCell(nn.Module):
         self.bias = bias
         # (W_ir|W_iz|W_ih)
         self.weight_ih = nn.Parameter(torch.Tensor(3 * hidden_size, input_size))
+        self.register_parameter('weight_ih', self.weight_ih)
         # (W_hr|W_hz|W_hh)
         self.weight_hh = nn.Parameter(torch.Tensor(3 * hidden_size, hidden_size))
+        self.register_parameter('weight_hh', self.weight_hh)
         if bias:
             # (b_ir|b_iz|b_ih)
             self.bias_ih = nn.Parameter(torch.Tensor(3 * hidden_size))
+            self.register_parameter('bias_ih', self.bias_ih)
             # (b_hr|b_hz|b_hh)
             self.bias_hh = nn.Parameter(torch.Tensor(3 * hidden_size))
+            self.register_parameter('bias_hh', self.bias_hh)
         else:
             self.register_parameter('bias_ih', None)
             self.register_parameter('bias_hh', None)
-        self.reset_parameters()
-
-    def reset_parameters(self):
-        stdv = 1.0 / math.sqrt(self.hidden_size)
-        for weight in self.parameters():
-            # todo fix
-            pass
-            # init.uniforms_(weight, -stdv, stdv)
 
     def forward(self, input, hx, att_score):
         gi = F.linear(input, self.weight_ih, self.bias_ih)
@@ -221,7 +202,6 @@ class AGRUCell(nn.Module):
 
         reset_gate = torch.sigmoid(i_r + h_r)
         # update_gate = torch.sigmoid(i_z + h_z)
-        # todo 更换激活函数为变量
         new_state = torch.tanh(i_n + reset_gate * h_n)
 
         att_score = att_score.view(-1, 1)
@@ -230,6 +210,12 @@ class AGRUCell(nn.Module):
 
 
 class AUGRUCell(nn.Module):
+    """ Effect of GRU with attentional update gate (AUGRU)
+
+        Reference:
+        -  Deep Interest Evolution Network for Click-Through Rate Prediction[J]. arXiv preprint arXiv:1809.03672, 2018.
+    """
+
     def __init__(self, input_size, hidden_size, bias=True):
         super(AUGRUCell, self).__init__()
         self.input_size = input_size
@@ -237,24 +223,20 @@ class AUGRUCell(nn.Module):
         self.bias = bias
         # (W_ir|W_iz|W_ih)
         self.weight_ih = nn.Parameter(torch.Tensor(3 * hidden_size, input_size))
+        self.register_parameter('weight_ih', self.weight_ih)
         # (W_hr|W_hz|W_hh)
         self.weight_hh = nn.Parameter(torch.Tensor(3 * hidden_size, hidden_size))
+        self.register_parameter('weight_hh', self.weight_hh)
         if bias:
             # (b_ir|b_iz|b_ih)
             self.bias_ih = nn.Parameter(torch.Tensor(3 * hidden_size))
+            self.register_parameter('bias_ih', self.bias_ih)
             # (b_hr|b_hz|b_hh)
             self.bias_hh = nn.Parameter(torch.Tensor(3 * hidden_size))
+            self.register_parameter('bias_ih', self.bias_hh)
         else:
             self.register_parameter('bias_ih', None)
             self.register_parameter('bias_hh', None)
-        self.reset_parameters()
-
-    def reset_parameters(self):
-        stdv = 1.0 / math.sqrt(self.hidden_size)
-        for weight in self.parameters():
-            # todo fix
-            pass
-            # init.uniforms_(weight, -stdv, stdv)
 
     def forward(self, input, hx, att_score):
         gi = F.linear(input, self.weight_ih, self.bias_ih)
@@ -264,7 +246,6 @@ class AUGRUCell(nn.Module):
 
         reset_gate = torch.sigmoid(i_r + h_r)
         update_gate = torch.sigmoid(i_z + h_z)
-        # todo 更换激活函数为变量
         new_state = torch.tanh(i_n + reset_gate * h_n)
 
         att_score = att_score.view(-1, 1)
@@ -296,7 +277,7 @@ class DynamicGRU(nn.Module):
             hx = torch.zeros(max_batch_size, self.hidden_size,
                              dtype=input.dtype, device=input.device)
 
-        outputs = torch.zeros(max_batch_size, self.hidden_size,
+        outputs = torch.zeros(input.size(0), self.hidden_size,
                               dtype=input.dtype, device=input.device)
 
         begin = 0
@@ -332,6 +313,9 @@ class AttentionNet(nn.Module):
                        init_std=init_std,
                        device=device)
         self.fc = nn.Linear(dnn_hidden_units[-1], 1)
+        for name, tensor in self.fc.named_parameters():
+            if 'weight' in name:
+                nn.init.normal_(tensor, mean=0, std=init_std)
 
     def forward(self, query, keys, keys_length):
         """

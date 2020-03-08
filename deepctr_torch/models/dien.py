@@ -29,44 +29,54 @@ class DIEN(BaseModel):
 
         self.item_features = history_feature_list
         self.use_negsampling = use_negsampling
+        self.alpha = alpha
         self._split_columns()
+
         # embedding layer
         # self.embedding_dict
         input_size = self._compute_interest_dim()
         # interest extractor layer
-        self.interest_extractor = InterestExtractor(input_size=input_size, use_neg=use_negsampling)
+        self.interest_extractor = InterestExtractor(input_size=input_size, use_neg=use_negsampling, init_std=init_std)
         # interest evolution layer
         self.interest_evolution = InterestEvolving(
             input_size=input_size,
             gru_type=gru_type,
             use_neg=use_negsampling,
+            init_std=init_std,
             att_hidden_size=att_hidden_units,
             att_activation=att_activation,
             att_weight_normalization=att_weight_normalization)
         # DNN layer
         dnn_input_size = self._compute_dnn_dim() + input_size
-        self.dnn = DNN(dnn_input_size, dnn_hidden_units, dnn_activation, l2_reg_dnn, dnn_dropout, use_bn, seed)
+        self.dnn = DNN(dnn_input_size, dnn_hidden_units, dnn_activation, l2_reg_dnn, dnn_dropout, use_bn, seed=seed)
         self.linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False)
+        for name, tensor in self.linear.named_parameters():
+            if 'weight' in name:
+                nn.init.normal_(tensor, mean=0, std=init_std)
         # prediction layer
-        self.prediction_layer = PredictionLayer(task=task, use_bias=False)
+        # self.out
 
-    # todo 为什么 X 不能 batch_size输入？
+        # add loss
+        self.add_regularization_loss(
+            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
+        self.to(device)
+
     def forward(self, X):
         # [B, H] , [B, T, H], [B, T, H] , [B]
         query_emb, keys_emb, neg_keys_emb, keys_length = self._get_emb(X)
         # [B, T, H] , [1]
-        # todo add loss  = aux_loss * alpha
         interest, aux_loss = self.interest_extractor(keys_emb, keys_length, neg_keys_emb)
+        self.add_auxiliary_loss(aux_loss, self.alpha)
         # [B, H]
-        hist = self.interest_evolution(query_emb, interest, keys_length, neg_keys_emb)
+        hist = self.interest_evolution(query_emb, interest, keys_length)
         # [B, H2]
         deep_input_emb = self._get_deep_input_emb(X)
         deep_input_emb = concat_fun([hist, deep_input_emb])
         dense_value_list = get_dense_input(X, self.feature_index, self.dense_feature_columns)
         dnn_input = combined_dnn_input([deep_input_emb], dense_value_list)
+        # [B, 1]
         output = self.linear(self.dnn(dnn_input))
-        y_pred = self.prediction_layer(output)
-
+        y_pred = self.out(output)
         return y_pred
 
     def _get_emb(self, X):
@@ -145,14 +155,29 @@ class DIEN(BaseModel):
 
 
 class InterestExtractor(nn.Module):
-    def __init__(self, input_size, use_neg=False):
+    def __init__(self, input_size, use_neg=False, init_std=0.001):
         super(InterestExtractor, self).__init__()
         self.use_neg = use_neg
         self.gru = nn.GRU(input_size=input_size, hidden_size=input_size, batch_first=True)
         if self.use_neg:
             self.auxiliary_net = DNN(input_size * 2, [100, 50, 1], 'sigmoid')
+        for name, tensor in self.gru.named_parameters():
+            if 'weight' in name or 'bias' in name:
+                nn.init.normal_(tensor, mean=0, std=init_std)
 
     def forward(self, keys, keys_length, neg_keys=None):
+        """
+        Parameters
+        ----------
+        keys: 3D tensor, [B, T, H]
+        keys_length: 1D tensor, [B]
+        neg_keys: 3D tensor, [B, T, H]
+
+        Returns
+        -------
+        interests: 2D tensor, [B, H]
+        aux_loss: 1D tensor, [B]
+        """
         batch_size, max_length, dim = keys.size()
         packed_keys = pack_padded_sequence(keys, lengths=keys_length, batch_first=True, enforce_sorted=False)
         packed_interests, _ = self.gru(packed_keys)
@@ -203,6 +228,7 @@ class InterestEvolving(nn.Module):
                  input_size,
                  gru_type='GRU',
                  use_neg=False,
+                 init_std=0.001,
                  att_hidden_size=(64, 16),
                  att_activation='sigmoid',
                  att_weight_normalization=False):
@@ -233,6 +259,9 @@ class InterestEvolving(nn.Module):
                                           return_scores=True)
             self.interest_evolution = DynamicGRU(input_size=input_size, hidden_size=input_size,
                                                  gru_type=gru_type)
+        for name, tensor in self.interest_evolution.named_parameters():
+            if 'weight' in name or 'bias' in name:
+                nn.init.normal_(tensor, mean=0, std=init_std)
 
     @staticmethod
     def _get_last_state(states, keys_length):
@@ -244,14 +273,13 @@ class InterestEvolving(nn.Module):
 
         return states[mask]
 
-    def forward(self, query, keys, keys_length, neg_keys=None):
+    def forward(self, query, keys, keys_length):
         """
         Parameters
         ----------
         query: 2D tensor, [B, H]
         keys: 3D tensor, [B, T, H]
         keys_length: 1D tensor, [B]
-        neg_keys: 3D tensor, [B, T, H]
 
         Returns
         -------
@@ -271,9 +299,8 @@ class InterestEvolving(nn.Module):
             packed_interests = pack_padded_sequence(interests, lengths=keys_length, batch_first=True,
                                                     enforce_sorted=False)
             _, outputs = self.interest_evolution(packed_interests)
-            outputs = outputs.squeeze(1)
+            outputs = outputs.squeeze(0)
         elif self.gru_type == 'AGRU' or self.gru_type == 'AUGRU':
-            # todo check AUGRU
             att_scores = self.attention(query, keys, keys_length)
             packed_interests = pack_padded_sequence(keys, lengths=keys_length, batch_first=True,
                                                     enforce_sorted=False)
