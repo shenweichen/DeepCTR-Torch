@@ -14,6 +14,28 @@ from ..inputs import *
 
 
 class DIEN(BaseModel):
+    """Instantiates the Deep Interest Evolution Network architecture.
+
+       :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
+       :param history_feature_list: list,to indicate  sequence sparse field
+       :param gru_type: str,can be GRU AIGRU AUGRU AGRU
+       :param use_negsampling: bool, whether or not use negtive sampling
+       :param alpha: float ,weight of auxiliary_loss
+       :param use_bn: bool. Whether use BatchNormalization before activation or not in deep net
+       :param dnn_hidden_units: list,list of positive integer or empty list, the layer number and units in each layer of DNN
+       :param dnn_activation: Activation function to use in DNN
+       :param att_hidden_units: list,list of positive integer , the layer number and units in each layer of attention net
+       :param att_activation: Activation function to use in attention net
+       :param att_weight_normalization: bool.Whether normalize the attention score of local activation unit.
+       :param l2_reg_dnn: float. L2 regularizer strength applied to DNN
+       :param l2_reg_embedding: float. L2 regularizer strength applied to embedding vector
+       :param dnn_dropout: float in [0,1), the probability we will drop out a given DNN coordinate.
+       :param init_std: float,to use as the initialize std of embedding vector
+       :param seed: integer ,to use as random seed.
+       :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
+       :param device: str, ``"cpu"`` or ``"cuda:0"``
+       :return: A PyTorch model instance.
+    """
     def __init__(self,
                  dnn_feature_columns, history_feature_list,
                  gru_type="GRU", use_negsampling=False, alpha=1.0, use_bn=False, dnn_hidden_units=(200, 80),
