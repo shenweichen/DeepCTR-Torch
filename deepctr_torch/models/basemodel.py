@@ -18,7 +18,7 @@ from sklearn.metrics import *
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat, get_varlen_pooling_list,create_embedding_matrix
+from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat, get_varlen_pooling_list, create_embedding_matrix
 from ..layers import PredictionLayer
 from ..layers.utils import slice_arrays
 
@@ -86,7 +86,7 @@ class BaseModel(nn.Module):
 
     def __init__(self,
                  linear_feature_columns, dnn_feature_columns, dnn_hidden_units=(128, 128),
-                 l2_reg_linear=1e-5,
+                 l2_reg_linear=1e-5, embedding_size=8,
                  l2_reg_embedding=1e-5, l2_reg_dnn=0, init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation='relu',
                  task='binary', varlen=True, device='cpu'):
 
@@ -350,17 +350,17 @@ class BaseModel(nn.Module):
             filter(lambda x: isinstance(x, VarLenSparseFeat), feature_columns)) if len(feature_columns) else []
 
         embedding_dict = nn.ModuleDict(
-            {feat.embedding_name: nn.Embedding(feat.dimension, embedding_size, sparse=sparse) for feat in
+            {feat.embedding_name: nn.Embedding(feat.vocabulary_size, embedding_size, sparse=sparse) for feat in
              sparse_feature_columns}
         )
 
         for feat in varlen_sparse_feature_columns:
             if varlen:
                 embedding_dict[feat.embedding_name] = nn.EmbeddingBag(
-                    feat.dimension, embedding_size, sparse=sparse, mode=feat.combiner)
+                    feat.vocabulary_size, embedding_size, sparse=sparse, mode=feat.combiner)
             else:
                 # for DIN
-                embedding_dict[feat.embedding_name] = nn.Embedding(feat.dimension, embedding_size, sparse=sparse)
+                embedding_dict[feat.embedding_name] = nn.Embedding(feat.vocabulary_size, embedding_size, sparse=sparse)
 
         for tensor in embedding_dict.values():
             nn.init.normal_(tensor.weight, mean=0, std=init_std)

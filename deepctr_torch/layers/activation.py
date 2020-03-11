@@ -1,5 +1,4 @@
-# -*- coding:utf-8 -*-
-
+import torch
 import torch.nn as nn
 
 class Identity(nn.Module):
@@ -23,7 +22,7 @@ class Dice(nn.Module):
         - [Zhou G, Zhu X, Song C, et al. Deep interest network for click-through rate prediction[C]//Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining. ACM, 2018: 1059-1068.](https://arxiv.org/pdf/1706.06978.pdf)
         - https://github.com/zhougr1993/DeepInterestNetwork, https://github.com/fanoping/DIN-pytorch
     """
-    def __init__(self, num_features, dim=2, epsilon=1e-9):
+    def __init__(self, num_features, dim=2, epsilon=1e-9, device='cpu'):
         super(Dice, self).__init__()
         assert dim == 2 or dim == 3
         self.bn = nn.BatchNorm1d(num_features, eps=epsilon)

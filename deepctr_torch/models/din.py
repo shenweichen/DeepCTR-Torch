@@ -96,8 +96,9 @@ class DIN(BaseModel):
                                               mask_feat_list=self.history_feature_list, to_list=True)
         
         sequence_embed_dict = varlen_embedding_lookup(X, self.embedding_dict, self.feature_index, self.sparse_varlen_feature_columns)
-        sequence_embed_list = get_varlen_pooling_list(sequence_embed_dict, self.feature_index, self.sparse_varlen_feature_columns,to_list=True)
-        
+        import pdb
+        pdb.set_trace()
+        sequence_embed_list = get_varlen_pooling_list(sequence_embed_dict, X, self.feature_index, self.sparse_varlen_feature_columns, self.device)
         dnn_input_emb_list += sequence_embed_list
 
         # concatenate

@@ -11,9 +11,14 @@ import pdb
 def get_xy_fd():
     # pdb.set_trace()
     feature_columns = [SparseFeat('user',3),SparseFeat('gender', 2), SparseFeat('item', 3 + 1), SparseFeat('item_gender', 2 + 1), DenseFeat('score', 1)]
-    feature_columns += [VarLenSparseFeat('hist_item', 3 + 1, maxlen=4, embedding_name='item'),
-                        VarLenSparseFeat('hist_item_gender', 2 + 1, maxlen=4, embedding_name='item_gender')]
-
+#    feature_columns += [VarLenSparseFeat('hist_item', 3 + 1, maxlen=4, embedding_name='item'),
+#                        VarLenSparseFeat('hist_item_gender', 2 + 1, maxlen=4, embedding_name='item_gender')]
+# VarLenSparseFeat(SparseFeat('genres', vocabulary_size=len(
+#         key2index) + 1, embedding_dim=4), maxlen=max_len, combiner='mean',
+#                                                weight_name=None)
+    feature_columns += [VarLenSparseFeat(SparseFeat('hist_item', vocabulary_size=3+1, embedding_name='item'), maxlen=4, combiner='mean', length_name=None),
+                        VarLenSparseFeat(SparseFeat('hist_item_gender', vocabulary_size=2 + 1, embedding_name='item_gender'), maxlen=4, combiner='mean', length_name=None)]
+    
     behavior_feature_list = ["item", "item_gender"]
     uid = np.array([0, 1, 2])
     ugender = np.array([0, 1, 0])

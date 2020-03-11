@@ -107,6 +107,10 @@ class VarLenSparseFeat(namedtuple('VarLenSparseFeat',
     def group_name(self):
         return self.sparsefeat.group_name
 
+    @property
+    def use_hash(self):
+        return self.sparsefeat.use_hash
+
     def __hash__(self):
         return self.name.__hash__()
 
@@ -249,44 +253,44 @@ def varlen_embedding_lookup(X, embedding_dict, sequence_input_dict, varlen_spars
     return varlen_embedding_vec_dict
 
 
-def get_varlen_pooling_list(embedding_dict, features, varlen_sparse_feature_columns, to_list=False):
-    pooling_vec_list = defaultdict(list)
-    for fc in varlen_sparse_feature_columns:
-        feature_name = fc.name
-        combiner = fc.combiner
-        feature_length_name = fc.length_name
-        if feature_length_name is not None:
-            seq_input = embedding_dict[feature_name]
-            vec = SequencePoolingLayer(combiner)([seq_input, features[feature_length_name]])
-        else:
-            seq_input = embedding_dict[feature_name]
-            vec = SequencePoolingLayer(combiner)(seq_input)
-        pooling_vec_list[fc.group_name].append(vec)
-
-        if to_list:
-            return chain.from_iterable(pooling_vec_list.values())
-
-    return pooling_vec_list
-
-# TODO: to compare these two functions
-# def get_varlen_pooling_list(embedding_dict, features, feature_index, varlen_sparse_feature_columns, device):
-#     varlen_sparse_embedding_list = []
-
-#     for feat in varlen_sparse_feature_columns:
-#         seq_emb = embedding_dict[feat.embedding_name](
-#             features[:, feature_index[feat.name][0]:feature_index[feat.name][1]].long())
-#         if feat.length_name is None:
-#             seq_mask = features[:, feature_index[feat.name][0]:feature_index[feat.name][1]].long() != 0
-
-#             emb = SequencePoolingLayer(mode=feat.combiner, supports_masking=True, device=device)(
-#                 [seq_emb, seq_mask])
+# def get_varlen_pooling_list(embedding_dict, features, varlen_sparse_feature_columns, to_list=False):
+#     pooling_vec_list = defaultdict(list)
+#     for fc in varlen_sparse_feature_columns:
+#         feature_name = fc.name
+#         combiner = fc.combiner
+#         feature_length_name = fc.length_name
+#         if feature_length_name is not None:
+#             seq_input = embedding_dict[feature_name]
+#             vec = SequencePoolingLayer(combiner)([seq_input, features[feature_length_name]])
 #         else:
-#             seq_length = features[:,
-#                          feature_index[feat.length_name][0]:feature_index[feat.length_name][1]].long()
-#             emb = SequencePoolingLayer(mode=feat.combiner, supports_masking=False, device=device)(
-#                 [seq_emb, seq_length])
-#         varlen_sparse_embedding_list.append(emb)
-#     return varlen_sparse_embedding_list
+#             seq_input = embedding_dict[feature_name]
+#             vec = SequencePoolingLayer(combiner)(seq_input)
+#         pooling_vec_list[fc.group_name].append(vec)
+
+#         if to_list:
+#             return chain.from_iterable(pooling_vec_list.values())
+
+#     return pooling_vec_list
+
+def get_varlen_pooling_list(embedding_dict, features, feature_index, varlen_sparse_feature_columns, device):
+    varlen_sparse_embedding_list = []
+
+    for feat in varlen_sparse_feature_columns:
+        seq_emb = embedding_dict[feat.embedding_name](
+            features[:, feature_index[feat.name][0]:feature_index[feat.name][1]].long())
+        if feat.length_name is None:
+            seq_mask = features[:, feature_index[feat.name][0]:feature_index[feat.name][1]].long() != 0
+
+            emb = SequencePoolingLayer(mode=feat.combiner, supports_masking=True, device=device)(
+                [seq_emb, seq_mask])
+        else:
+            seq_length = features[:,
+                         feature_index[feat.length_name][0]:feature_index[feat.length_name][1]].long()
+            emb = SequencePoolingLayer(mode=feat.combiner, supports_masking=False, device=device)(
+                [seq_emb, seq_length])
+        varlen_sparse_embedding_list.append(emb)
+    
+    return varlen_sparse_embedding_list
 
 
 def create_embedding_matrix(feature_columns, init_std=0.0001, linear=False, sparse=False, device='cpu'):
