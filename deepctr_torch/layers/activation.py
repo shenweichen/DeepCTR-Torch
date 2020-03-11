@@ -1,18 +1,13 @@
 # -*- coding:utf-8 -*-
-"""
 
-Author:
-    Yuef Zhang
-
-"""
-import sys
-
-import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
+class Identity(nn.Module):
+    def __init__(self, **kwargs):
+        super(Identity, self).__init__()
 
-device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+    def forward(self, X):
+        return X
 
 class Dice(nn.Module):
     """The Data Adaptive Activation Function in DIN,which can be viewed as a generalization of PReLu and can adaptively adjust the rectified point according to distribution of input data.
@@ -67,7 +62,9 @@ def activation_layer(act_name, hidden_size=None, dice_dim=2):
         act_layer: activation layer
     """
     if isinstance(act_name, str):
-        if act_name.lower() == 'relu' or 'linear':
+        if act_name.lower() == 'linear':
+            act_layer = Identity()
+        if act_name.lower() == 'relu':
             act_layer = nn.ReLU(inplace=True)
         elif act_name.lower() == 'dice':
             assert dice_dim
@@ -83,10 +80,13 @@ def activation_layer(act_name, hidden_size=None, dice_dim=2):
 
 
 if __name__ == "__main__":
-    torch.manual_seed(7)
-    a = Dice(3)
-    b = torch.rand((5, 3))
-    c = a(b)
-    print(c.size())     # [5, 3]
-    print('b:', b)
-    print('c:', c)
+    pass
+    #device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+
+    # torch.manual_seed(7)
+    # a = Dice(3)
+    # b = torch.rand((5, 3))
+    # c = a(b)
+    # print(c.size())
+    # print('b:', b)
+    # print('c:', c)

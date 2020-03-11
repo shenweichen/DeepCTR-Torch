@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import pytest
+
 from deepctr_torch.models import MLR
-from ..utils import check_model, SAMPLE_SIZE, get_test_data
+from ..utils import check_model, SAMPLE_SIZE, get_test_data, get_device
 
 
 @pytest.mark.parametrize(
@@ -24,7 +25,7 @@ def test_MLRs(region_sparse, region_dense, base_sparse, base_dense, bias_sparse,
         SAMPLE_SIZE, region_sparse, region_dense, prefix='bias')
 
     model = MLR(region_feature_columns, base_feature_columns,
-                bias_feature_columns=bias_feature_columns)
+                bias_feature_columns=bias_feature_columns, device=get_device())
     model.compile('adam', 'binary_crossentropy',
                   metrics=['binary_crossentropy'])
     print(model_name + " test pass!")
@@ -39,7 +40,7 @@ def test_MLR():
     bias_x, y, bias_feature_columns = get_test_data(
         SAMPLE_SIZE, 3, 3, prefix='bias')
 
-    model = MLR(region_feature_columns)
+    model = MLR(region_feature_columns, device=get_device())
     model.compile('adam', 'binary_crossentropy',
                   metrics=['binary_crossentropy'])
 

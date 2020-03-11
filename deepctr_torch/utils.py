@@ -37,8 +37,8 @@ def check_version(version):
                     logging.warning(
                         '\nDeepCTR-PyTorch version {0} detected. Your version is {1}.\nUse `pip install -U deepctr-torch` to upgrade.Changelog: https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v{0}'.format(
                             latest_version, version))
-        except Exception as e:
-            #print(e)
+        except :
+            print("Please check the latest version manually on https://pypi.org/project/deepctr-torch/#history")
             return
 
     Thread(target=check, args=(version,)).start()
