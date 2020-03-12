@@ -10,12 +10,14 @@ import pdb
 
 def get_xy_fd():
     # pdb.set_trace()
-    feature_columns = [SparseFeat('user',3),SparseFeat('gender', 2), SparseFeat('item', 3 + 1), SparseFeat('item_gender', 2 + 1), DenseFeat('score', 1)]
+    feature_columns = [SparseFeat('user',3, embedding_dim=8),SparseFeat('gender', 2, embedding_dim=8), 
+                       SparseFeat('item', 3 + 1, embedding_dim=8), SparseFeat('item_gender', 2 + 1, embedding_dim=8), 
+                       DenseFeat('score', 1)]
     # feature_columns += [VarLenSparseFeat('hist_item', 3 + 1, maxlen=4, embedding_name='item'),
     #                     VarLenSparseFeat('hist_item_gender', 2 + 1, maxlen=4, embedding_name='item_gender')]
     
-    feature_columns += [VarLenSparseFeat(SparseFeat('hist_item', 3 + 1), 4),
-                        VarLenSparseFeat(SparseFeat('hist_item_gender', 2 + 1), 4)]
+    feature_columns += [VarLenSparseFeat(SparseFeat('hist_item', 3 + 1, embedding_dim=8), 4),
+                        VarLenSparseFeat(SparseFeat('hist_item_gender', 2 + 1, embedding_dim=8), 4)]
 
     
 
