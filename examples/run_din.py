@@ -2,7 +2,7 @@ import sys
 sys.path.insert(0,'..')
 
 import numpy as np
-
+import torch
 from deepctr_torch.inputs import (DenseFeat, SparseFeat, VarLenSparseFeat,
                                   get_feature_names)
 from deepctr_torch.models.din import DIN
@@ -11,8 +11,13 @@ import pdb
 def get_xy_fd():
     # pdb.set_trace()
     feature_columns = [SparseFeat('user',3),SparseFeat('gender', 2), SparseFeat('item', 3 + 1), SparseFeat('item_gender', 2 + 1), DenseFeat('score', 1)]
-    feature_columns += [VarLenSparseFeat('hist_item', 3 + 1, maxlen=4, embedding_name='item'),
-                        VarLenSparseFeat('hist_item_gender', 2 + 1, maxlen=4, embedding_name='item_gender')]
+    # feature_columns += [VarLenSparseFeat('hist_item', 3 + 1, maxlen=4, embedding_name='item'),
+    #                     VarLenSparseFeat('hist_item_gender', 2 + 1, maxlen=4, embedding_name='item_gender')]
+    
+    feature_columns += [VarLenSparseFeat(SparseFeat('hist_item', 3 + 1), 4),
+                        VarLenSparseFeat(SparseFeat('hist_item_gender', 2 + 1), 4)]
+
+    
 
     behavior_feature_list = ["item", "item_gender"]
     uid = np.array([0, 1, 2])

@@ -1,5 +1,7 @@
 import math
 
+import pdb
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -123,6 +125,7 @@ class DNN(nn.Module):
 
         for i in range(len(self.linears)):
 
+            # pdb.set_trace() 
             fc = self.linears[i](deep_input)
 
             if self.use_bn:

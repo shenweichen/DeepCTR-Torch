@@ -7,6 +7,8 @@ Author:
 from collections import OrderedDict, namedtuple, defaultdict
 from itertools import chain
 
+import pdb
+
 import torch
 import torch.nn as nn
 
@@ -31,7 +33,7 @@ class SparseFeat(namedtuple('SparseFeat',
     """
     __slots__ = ()
 
-    def __new__(cls, name, vocabulary_size, embedding_dim=4, use_hash=False, dtype="int32", embedding_name=None,
+    def __new__(cls, name, vocabulary_size, embedding_dim=8, use_hash=False, dtype="int32", embedding_name=None,
                 group_name=DEFAULT_GROUP_NAME):
         if embedding_name is None:
             embedding_name = name
@@ -88,6 +90,10 @@ class VarLenSparseFeat(namedtuple('VarLenSparseFeat',
     @property
     def group_name(self):
         return self.sparsefeat.group_name
+
+    @property
+    def use_hash(self):
+        return self.sparsefeat.use_hash
 
     def __hash__(self):
         return self.name.__hash__()
@@ -178,53 +184,59 @@ def combined_dnn_input(sparse_embedding_list, dense_value_list):
     else:
         raise NotImplementedError
 
-    #
-    # def embedding_lookup(sparse_embedding_dict, sparse_input_dict, sparse_feature_columns, return_feat_list=(),
-    #                      mask_feat_list=(), to_list=False):
-    #     """
-    #         Args:
-    #             sparse_embedding_dict: nn.ModuleDict, {embedding_name: nn.Embedding}
-    #             sparse_input_dict: OrderedDict, {feature_name:(start, start+dimension)}
-    #             sparse_feature_columns: list, sparse features
-    #             return_feat_list: list, names of feature to be returned, defualt () -> return all features
-    #             mask_feat_list, list, names of feature to be masked in hash transform
-    #         Return:
-    #             group_embedding_dict: defaultdict(list)
-    #     """
-    #     group_embedding_dict = defaultdict(list)
-    #     for fc in sparse_feature_columns:
-    #         feature_name = fc.name
-    #         embedding_name = fc.embedding_name
-    #         if (len(return_feat_list) == 0 or feature_name in return_feat_list):
-    #             if fc.use_hash:
-    #                 # lookup_idx = Hash(fc.vocabulary_size, mask_zero=(feature_name in mask_feat_list))(
-    #                 #     sparse_input_dict[feature_name])
-    #                 # TODO: add hash function
-    #                 lookup_idx = sparse_input_dict[feature_name]
-    #             else:
-    #                 lookup_idx = sparse_input_dict[feature_name]
-    #
-    #             group_embedding_dict[fc.group_name].append(sparse_embedding_dict[embedding_name](lookup_idx))
-    #     if to_list:
-    #         return list(chain.from_iterable(group_embedding_dict.values()))
-    #     return group_embedding_dict
-    #
-    #
-    # def varlen_embedding_lookup(embedding_dict, sequence_input_dict, varlen_sparse_feature_columns):
-    #     varlen_embedding_vec_dict = {}
-    #     for fc in varlen_sparse_feature_columns:
-    #         feature_name = fc.name
-    #         embedding_name = fc.embedding_name
-    #         if fc.use_hash:
-    #             # lookup_idx = Hash(fc.vocabulary_size, mask_zero=True)(sequence_input_dict[feature_name])
-    #             # TODO: add hash function
-    #             lookup_idx = sequence_input_dict[feature_name]
-    #         else:
-    #             lookup_idx = sequence_input_dict[feature_name]
-    #         varlen_embedding_vec_dict[feature_name] = embedding_dict[embedding_name](lookup_idx)
-    #     return varlen_embedding_vec_dict
-    #
-    #
+    
+def embedding_lookup(X, sparse_embedding_dict, sparse_input_dict, sparse_feature_columns, return_feat_list=(),
+                     mask_feat_list=(), to_list=False):
+    """
+        Args:
+            sparse_embedding_dict: nn.ModuleDict, {embedding_name: nn.Embedding / nn.EmbeddingBag}
+            sparse_input_dict: OrderedDict, {feature_name:(start, start+dimension)}
+            sparse_feature_columns: list, sparse features
+            return_feat_list: list, names of feature to be returned, defualt () -> return all features
+            mask_feat_list, list, names of feature to be masked in hash transform
+        Return:
+            group_embedding_dict: defaultdict(list)
+    """
+    group_embedding_dict = defaultdict(list)
+    # pdb.set_trace()
+    for fc in sparse_feature_columns:
+        feature_name = fc.name
+        embedding_name = fc.embedding_name
+        if (len(return_feat_list) == 0 or feature_name in return_feat_list):
+            if fc.use_hash:
+                # lookup_idx = Hash(fc.vocabulary_size, mask_zero=(feature_name in mask_feat_list))(
+                #     sparse_input_dict[feature_name])
+                # TODO: add hash function
+                lookup_idx = sparse_input_dict[feature_name]
+            else:
+                lookup_idx = sparse_input_dict[feature_name]
+
+            group_embedding_dict[fc.group_name].append(sparse_embedding_dict[embedding_name](
+                X[:, lookup_idx[0]:lookup_idx[1]].long())) # (lookup_idx)
+
+    if to_list:
+        return list(chain.from_iterable(group_embedding_dict.values()))
+
+    return group_embedding_dict
+
+
+def varlen_embedding_lookup(X, embedding_dict, sequence_input_dict, varlen_sparse_feature_columns):
+    varlen_embedding_vec_dict = {}
+    for fc in varlen_sparse_feature_columns:
+        feature_name = fc.name
+        embedding_name = fc.embedding_name
+        if fc.use_hash:
+            # lookup_idx = Hash(fc.vocabulary_size, mask_zero=True)(sequence_input_dict[feature_name])
+            # TODO: add hash function
+            lookup_idx = sequence_input_dict[feature_name]
+        else:
+            lookup_idx = sequence_input_dict[feature_name]
+        varlen_embedding_vec_dict[feature_name] = embedding_dict[embedding_name](
+            X[:, lookup_idx[0]:lookup_idx[1]].long())    #(lookup_idx)
+    
+    return varlen_embedding_vec_dict
+    
+    
     # def get_varlen_pooling_list(embedding_dict, features, varlen_sparse_feature_columns, to_list=False):
     #     pooling_vec_list = defaultdict(list)
     #     for fc in varlen_sparse_feature_columns:
@@ -245,10 +257,11 @@ def combined_dnn_input(sparse_embedding_list, dense_value_list):
     #     return pooling_vec_list
 
 
-def get_varlen_pooling_list(embedding_dict, features, feature_index, varlen_sparse_feature_columns, device):
+def get_varlen_pooling_list(embedding_dict, features, feature_index, varlen_sparse_feature_columns, device='cpu'):
     varlen_sparse_embedding_list = []
 
     for feat in varlen_sparse_feature_columns:
+        # pdb.set_trace()
         seq_emb = embedding_dict[feat.embedding_name](
             features[:, feature_index[feat.name][0]:feature_index[feat.name][1]].long())
         if feat.length_name is None:

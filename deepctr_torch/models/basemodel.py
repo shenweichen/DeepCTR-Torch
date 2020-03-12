@@ -1,9 +1,7 @@
 # -*- coding:utf-8 -*-
 """
-
 Author:
     Weichen Shen,wcshen1994@163.com
-
 """
 from __future__ import print_function
 
@@ -88,7 +86,7 @@ class BaseModel(nn.Module):
                  linear_feature_columns, dnn_feature_columns, dnn_hidden_units=(128, 128),
                  l2_reg_linear=1e-5,
                  l2_reg_embedding=1e-5, l2_reg_dnn=0, init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation='relu',
-                 task='binary', varlen=True, device='cpu'):
+                 task='binary', device='cpu'):
 
         super(BaseModel, self).__init__()
 
@@ -101,8 +99,7 @@ class BaseModel(nn.Module):
             linear_feature_columns + dnn_feature_columns)
         self.dnn_feature_columns = dnn_feature_columns
 
-        self.embedding_dict = self.create_embedding_matrix(dnn_feature_columns, embedding_size, init_std,
-                                                           sparse=False, varlen=varlen).to(device)
+        self.embedding_dict = create_embedding_matrix(dnn_feature_columns,init_std,sparse=False,device=device)
         #         nn.ModuleDict(
         #             {feat.embedding_name: nn.Embedding(feat.dimension, embedding_size, sparse=True) for feat in
         #              self.dnn_feature_columns}
@@ -130,7 +127,6 @@ class BaseModel(nn.Module):
             shuffle=True,
             use_double=False ):
         """
-
         :param x: Numpy array of training data (if the model has a single input), or list of Numpy arrays (if the model has multiple inputs).If input layers in the model are named, you can also pass a
             dictionary mapping input names to Numpy arrays.
         :param y: Numpy array of target (label) data (if the model has a single output), or list of Numpy arrays (if the model has multiple outputs).
@@ -142,7 +138,6 @@ class BaseModel(nn.Module):
         :param validation_data: tuple `(x_val, y_val)` or tuple `(x_val, y_val, val_sample_weights)` on which to evaluate the loss and any model metrics at the end of each epoch. The model will not be trained on this data. `validation_data` will override `validation_split`.
         :param shuffle: Boolean. Whether to shuffle the order of the batches at the beginning of each epoch.
         :param use_double: Boolean. Whether to use double precision in metric calculation.
-
         """
         if isinstance(x, dict):
             x = [x[feature] for feature in self.feature_index]
@@ -212,6 +207,7 @@ class BaseModel(nn.Module):
                         y = y_train.to(self.device).float()
 
                         y_pred = model(x).squeeze()
+
                         optim.zero_grad()
                         loss = loss_func(y_pred, y.squeeze(), reduction='sum')
 
@@ -260,7 +256,6 @@ class BaseModel(nn.Module):
 
     def evaluate(self, x, y, batch_size=256):
         """
-
         :param x: Numpy array of test data (if the model has a single input), or list of Numpy arrays (if the model has multiple inputs).
         :param y: Numpy array of target (label) data (if the model has a single output), or list of Numpy arrays (if the model has multiple outputs).
         :param batch_size:
@@ -274,7 +269,6 @@ class BaseModel(nn.Module):
 
     def predict(self, x, batch_size=256, use_double=False):
         """
-
         :param x: The input data, as a Numpy array (or list of Numpy arrays if the model has multiple inputs).
         :param batch_size: Integer. If unspecified, it will default to 256.
         :return: Numpy array(s) of predictions.
@@ -331,43 +325,7 @@ class BaseModel(nn.Module):
 
         return sparse_embedding_list + varlen_sparse_embedding_list, dense_value_list
 
-    def create_embedding_matrix(self, feature_columns, embedding_size, init_std=0.0001, sparse=False, varlen=True):
-        # Return nn.ModuleDict: for sparse features, {embedding_name: nn.Embedding}
-        """
-            Args:
-                feature_colums: list of features
-                embedding_size: int
-                init_std: float
-                sparse: bool, if true, embedding's weight matrix (gradient) will be a sparse tensor
-            Return:
-                embedding_dict: nn.ModuleDict, {embedding_name: nn.Embedding} for sparse features, 
-                                or {embedding_name: nn.EmbeddingBag} for varlen sparse features
-        """
-        sparse_feature_columns = list(
-            filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
-
-        varlen_sparse_feature_columns = list(
-            filter(lambda x: isinstance(x, VarLenSparseFeat), feature_columns)) if len(feature_columns) else []
-
-        embedding_dict = nn.ModuleDict(
-            {feat.embedding_name: nn.Embedding(feat.dimension, embedding_size, sparse=sparse) for feat in
-             sparse_feature_columns}
-        )
-
-        for feat in varlen_sparse_feature_columns:
-            if varlen:
-                embedding_dict[feat.embedding_name] = nn.EmbeddingBag(
-                    feat.dimension, embedding_size, sparse=sparse, mode=feat.combiner)
-            else:
-                # for DIN
-                embedding_dict[feat.embedding_name] = nn.Embedding(feat.dimension, embedding_size, sparse=sparse)
-
-        for tensor in embedding_dict.values():
-            nn.init.normal_(tensor.weight, mean=0, std=init_std)
-
-        return embedding_dict
-
-    def compute_input_dim(self, feature_columns, embedding_size=1, include_sparse=True, include_dense=True, feature_group=False):
+    def compute_input_dim(self, feature_columns, include_sparse=True, include_dense=True, feature_group=False):
         sparse_feature_columns = list(
             filter(lambda x: isinstance(x, (SparseFeat, VarLenSparseFeat)), feature_columns)) if len(
             feature_columns) else []

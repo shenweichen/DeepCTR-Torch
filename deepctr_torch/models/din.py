@@ -49,11 +49,17 @@ class DIN(BaseModel):
                  dnn_dropout=0,
                  task='binary', device='cpu'):
 
-        super(DIN, self).__init__([], dnn_feature_columns, embedding_size=embedding_size,
+        # super(DIN, self).__init__([], dnn_feature_columns, embedding_size=embedding_size,
+        #                         dnn_hidden_units=dnn_hidden_units, l2_reg_linear=0,
+        #                         l2_reg_dnn=l2_reg_dnn, init_std=init_std,
+        #                         dnn_dropout=dnn_dropout, dnn_activation=dnn_activation,
+        #                         task=task, varlen=False, device=device)
+        
+        super(DIN, self).__init__([], dnn_feature_columns,
                                 dnn_hidden_units=dnn_hidden_units, l2_reg_linear=0,
                                 l2_reg_dnn=l2_reg_dnn, init_std=init_std,
                                 dnn_dropout=dnn_dropout, dnn_activation=dnn_activation,
-                                task=task, varlen=False, device=device)
+                                task=task, device=device)
        
         self.sparse_feature_columns = list(filter(lambda x:isinstance(x,SparseFeat),dnn_feature_columns)) if dnn_feature_columns else []
         self.varlen_sparse_feature_columns = list(filter(lambda x: isinstance(x, VarLenSparseFeat), dnn_feature_columns)) if dnn_feature_columns else []
@@ -96,7 +102,8 @@ class DIN(BaseModel):
                                               mask_feat_list=self.history_feature_list, to_list=True)
         
         sequence_embed_dict = varlen_embedding_lookup(X, self.embedding_dict, self.feature_index, self.sparse_varlen_feature_columns)
-        sequence_embed_list = get_varlen_pooling_list(sequence_embed_dict, self.feature_index, self.sparse_varlen_feature_columns,to_list=True)
+        # pdb.set_trace()
+        sequence_embed_list = get_varlen_pooling_list(sequence_embed_dict, X, self.feature_index, self.sparse_varlen_feature_columns)
         
         dnn_input_emb_list += sequence_embed_list
 
