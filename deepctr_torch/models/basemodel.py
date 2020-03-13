@@ -362,12 +362,10 @@ class BaseModel(nn.Module):
                 l2_reg = torch.norm(w, p=p, )
             reg_loss = reg_loss + l2_reg
         reg_loss = weight_decay * reg_loss
-        self.reg_loss += reg_loss
+        self.reg_loss = self.reg_loss + reg_loss
 
     def add_auxiliary_loss(self, aux_loss, alpha):
-        if aux_loss is not None:
-            aux_loss = aux_loss.to(self.device)
-            self.aux_loss += aux_loss * alpha
+        self.aux_loss = aux_loss * alpha
 
     def compile(self, optimizer,
                 loss=None,

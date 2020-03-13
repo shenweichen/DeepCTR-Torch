@@ -36,6 +36,7 @@ class DIEN(BaseModel):
        :param device: str, ``"cpu"`` or ``"cuda:0"``
        :return: A PyTorch model instance.
     """
+
     def __init__(self,
                  dnn_feature_columns, history_feature_list,
                  gru_type="GRU", use_negsampling=False, alpha=1.0, use_bn=False, dnn_hidden_units=(200, 80),
@@ -54,8 +55,10 @@ class DIEN(BaseModel):
         self.alpha = alpha
         self._split_columns()
 
+        # structure: embedding layer -> interest extractor layer -> interest evolution layer -> DNN layer -> out
+
         # embedding layer
-        # self.embedding_dict
+        # inherit -> self.embedding_dict
         input_size = self._compute_interest_dim()
         # interest extractor layer
         self.interest_extractor = InterestExtractor(input_size=input_size, use_neg=use_negsampling, init_std=init_std)
@@ -65,32 +68,33 @@ class DIEN(BaseModel):
             gru_type=gru_type,
             use_neg=use_negsampling,
             init_std=init_std,
+            l2_reg_dnn=l2_reg_dnn,
             att_hidden_size=att_hidden_units,
             att_activation=att_activation,
             att_weight_normalization=att_weight_normalization)
         # DNN layer
         dnn_input_size = self._compute_dnn_dim() + input_size
-        self.dnn = DNN(dnn_input_size, dnn_hidden_units, dnn_activation, l2_reg_dnn, dnn_dropout, use_bn, seed=seed)
+        self.dnn = DNN(dnn_input_size, dnn_hidden_units, dnn_activation, l2_reg_dnn, dnn_dropout, use_bn, init_std=init_std, seed=seed)
         self.linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False)
+        # prediction layer
+        # inherit -> self.out
+
+        # init
         for name, tensor in self.linear.named_parameters():
             if 'weight' in name:
                 nn.init.normal_(tensor, mean=0, std=init_std)
-        # prediction layer
-        # self.out
 
-        # add loss
-        self.add_regularization_loss(
-            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
         self.to(device)
+
 
     def forward(self, X):
         # [B, H] , [B, T, H], [B, T, H] , [B]
         query_emb, keys_emb, neg_keys_emb, keys_length = self._get_emb(X)
-        # [B, T, H] , [1]
-        interest, aux_loss = self.interest_extractor(keys_emb, keys_length, neg_keys_emb)
+        # [b, T, H],  [1]  (b<H)
+        masked_interest, aux_loss = self.interest_extractor(keys_emb, keys_length, neg_keys_emb)
         self.add_auxiliary_loss(aux_loss, self.alpha)
         # [B, H]
-        hist = self.interest_evolution(query_emb, interest, keys_length)
+        hist = self.interest_evolution(query_emb, masked_interest, keys_length)
         # [B, H2]
         deep_input_emb = self._get_deep_input_emb(X)
         deep_input_emb = concat_fun([hist, deep_input_emb])
@@ -177,15 +181,16 @@ class DIEN(BaseModel):
 
 
 class InterestExtractor(nn.Module):
-    def __init__(self, input_size, use_neg=False, init_std=0.001):
+    def __init__(self, input_size, use_neg=False, init_std=0.001, device='cpu'):
         super(InterestExtractor, self).__init__()
         self.use_neg = use_neg
         self.gru = nn.GRU(input_size=input_size, hidden_size=input_size, batch_first=True)
         if self.use_neg:
-            self.auxiliary_net = DNN(input_size * 2, [100, 50, 1], 'sigmoid')
+            self.auxiliary_net = DNN(input_size * 2, [100, 50, 1], 'sigmoid', init_std=init_std, device=device)
         for name, tensor in self.gru.named_parameters():
-            if 'weight' in name or 'bias' in name:
+            if 'weight' in name:
                 nn.init.normal_(tensor, mean=0, std=init_std)
+        self.to(device)
 
     def forward(self, keys, keys_length, neg_keys=None):
         """
@@ -197,25 +202,52 @@ class InterestExtractor(nn.Module):
 
         Returns
         -------
-        interests: 2D tensor, [B, H]
-        aux_loss: 1D tensor, [B]
+        masked_interests: 2D tensor, [b, H]
+        aux_loss: [1]
         """
         batch_size, max_length, dim = keys.size()
-        packed_keys = pack_padded_sequence(keys, lengths=keys_length, batch_first=True, enforce_sorted=False)
+        zero_outputs = torch.zeros(batch_size, dim, device=keys.device)
+        aux_loss = torch.zeros((1,), device=keys.device)
+
+        # create zero mask for keys_length, to make sure 'pack_padded_sequence' safe
+        mask = keys_length > 0
+        masked_keys_length = keys_length[mask]
+
+        # batch_size validation check
+        if masked_keys_length.shape[0] == 0:
+            return zero_outputs,
+
+        masked_keys = torch.masked_select(keys, mask.view(-1, 1, 1)).view(-1, max_length, dim)
+
+        packed_keys = pack_padded_sequence(masked_keys, lengths=masked_keys_length, batch_first=True,
+                                           enforce_sorted=False)
         packed_interests, _ = self.gru(packed_keys)
         interests, _ = pad_packed_sequence(packed_interests, batch_first=True, padding_value=0.0,
                                            total_length=max_length)
-        aux_loss = None
-        if self.use_neg:
+
+        if self.use_neg and neg_keys is not None:
+            masked_neg_keys = torch.masked_select(neg_keys, mask.view(-1, 1, 1)).view(-1, max_length, dim)
             aux_loss = self._cal_auxiliary_loss(
                 interests[:, :-1, :],
-                keys[:, 1:, :],
-                neg_keys[:, 1:, :],
-                keys_length - 1)
+                masked_keys[:, 1:, :],
+                masked_neg_keys[:, 1:, :],
+                masked_keys_length - 1)
+
         return interests, aux_loss
 
     def _cal_auxiliary_loss(self, states, click_seq, noclick_seq, keys_length):
-        batch_size, max_seq_length, embedding_size = states.size()
+        # keys_length >= 1
+        mask_shape = keys_length > 0
+        keys_length = keys_length[mask_shape]
+        if keys_length.shape[0] == 0:
+            return torch.zeros((1,), device=states.device)
+
+        _, max_seq_length, embedding_size = states.size()
+        states = torch.masked_select(states, mask_shape.view(-1, 1, 1)).view(-1, max_seq_length, embedding_size)
+        click_seq = torch.masked_select(click_seq, mask_shape.view(-1, 1, 1)).view(-1, max_seq_length, embedding_size)
+        noclick_seq = torch.masked_select(noclick_seq, mask_shape.view(-1, 1, 1)).view(-1, max_seq_length,
+                                                                                       embedding_size)
+        batch_size = states.size()[0]
 
         mask = (torch.arange(max_seq_length, device=states.device).repeat(
             batch_size, 1) < keys_length.view(-1, 1)).float()
@@ -251,6 +283,7 @@ class InterestEvolving(nn.Module):
                  gru_type='GRU',
                  use_neg=False,
                  init_std=0.001,
+                 l2_reg_dnn=0,
                  att_hidden_size=(64, 16),
                  att_activation='sigmoid',
                  att_weight_normalization=False):
@@ -264,12 +297,16 @@ class InterestEvolving(nn.Module):
             self.attention = AttentionNet(input_size=input_size,
                                           dnn_hidden_units=att_hidden_size,
                                           activation=att_activation,
+                                          init_std=init_std,
+                                          l2_reg = l2_reg_dnn,
                                           use_bn=att_weight_normalization)
             self.interest_evolution = nn.GRU(input_size=input_size, hidden_size=input_size, batch_first=True)
         elif gru_type == 'AIGRU':
             self.attention = AttentionNet(input_size=input_size,
                                           dnn_hidden_units=att_hidden_size,
                                           activation=att_activation,
+                                          init_std=init_std,
+                                          l2_reg=l2_reg_dnn,
                                           use_bn=att_weight_normalization,
                                           return_scores=True)
             self.interest_evolution = nn.GRU(input_size=input_size, hidden_size=input_size, batch_first=True)
@@ -277,12 +314,14 @@ class InterestEvolving(nn.Module):
             self.attention = AttentionNet(input_size=input_size,
                                           dnn_hidden_units=att_hidden_size,
                                           activation=att_activation,
+                                          init_std=init_std,
+                                          l2_reg=l2_reg_dnn,
                                           use_bn=att_weight_normalization,
                                           return_scores=True)
             self.interest_evolution = DynamicGRU(input_size=input_size, hidden_size=input_size,
                                                  gru_type=gru_type)
         for name, tensor in self.interest_evolution.named_parameters():
-            if 'weight' in name or 'bias' in name:
+            if 'weight' in name:
                 nn.init.normal_(tensor, mean=0, std=init_std)
 
     @staticmethod
@@ -295,19 +334,29 @@ class InterestEvolving(nn.Module):
 
         return states[mask]
 
-    def forward(self, query, keys, keys_length):
+    def forward(self, query, keys, keys_length, mask=None):
         """
         Parameters
         ----------
         query: 2D tensor, [B, H]
-        keys: 3D tensor, [B, T, H]
+        keys: (masked_interests), 3D tensor, [b, T, H]
         keys_length: 1D tensor, [B]
 
         Returns
         -------
         outputs: 2D tensor, [B, H]
         """
-        batch_size, max_length, dim = keys.size()
+        batch_size, dim = query.size()
+        max_length = keys.size()[1]
+
+        # check batch validation
+        zero_outputs = torch.zeros(batch_size, dim, device=query.device)
+        mask = keys_length > 0
+        keys_length = keys_length[mask]
+        if keys_length.shape[0] == 0:
+            return zero_outputs
+
+        query = torch.masked_select(query, mask.view(-1, 1)).view(-1, dim)
 
         if self.gru_type == 'GRU':
             packed_keys = pack_padded_sequence(keys, lengths=keys_length, batch_first=True, enforce_sorted=False)
@@ -332,4 +381,7 @@ class InterestEvolving(nn.Module):
             outputs, _ = pad_packed_sequence(outputs, batch_first=True, padding_value=0.0, total_length=max_length)
             # pick last state
             outputs = InterestEvolving._get_last_state(outputs, keys_length)
-        return outputs
+        # (b,H) -> (B,H)
+        res = torch.zeros(batch_size, dim, device=query.device)
+        res[mask] = outputs
+        return res
