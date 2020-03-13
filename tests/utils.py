@@ -140,20 +140,21 @@ def layer_test(layer_cls, kwargs = {}, input_shape=None,
 
 
 
-def check_model(model, model_name, x, y, check_model_io=True):
+def check_model(model, model_name, x, y, val_ratio = 0.5, check_model_io=True):
     '''compile model,train and evaluate it,then save/load weight and model file.
     
-    :param model:
-    :param model_name:
-    :param x:
-    :param y:
-    :param check_model_io:
-    :return:
+    :param model: class, model class
+    :param model_name: string, model name
+    :param x: np.array
+    :param y: np.array
+    :param check_model_io: check model save and load
+    :return: None
     '''
 
     model.compile('adam', 'binary_crossentropy',
                   metrics=['binary_crossentropy'])
-    model.fit(x, y, batch_size=100, epochs=1, validation_split=0.5,use_double=True)
+
+    model.fit(x, y, batch_size=100, epochs=1, validation_split=val_ratio, use_double=True)
 
     print(model_name + 'test, train valid pass!')
     torch.save(model.state_dict(), model_name + '_weights.h5')
