@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
 from deepctr_torch.inputs import SparseFeat, get_feature_names
-from deepctr_torch.models import DeepFM
+from deepctr_torch.models import FGCNN
 
 if __name__ == "__main__":
 
@@ -37,7 +37,10 @@ if __name__ == "__main__":
         print('cuda ready...')
         device = 'cuda:0'
 
-    model = DeepFM(linear_feature_columns, dnn_feature_columns, task='regression', device=device)
+    # model = DeepFM(linear_feature_columns, dnn_feature_columns, task='regression', device=device)
+    model = FGCNN( dnn_feature_columns=dnn_feature_columns, task='regression',
+                   l2_reg_embedding=1e-5, device=device, conv_kernel_width=(7, 7,), conv_filters=(14, 16,),
+                 new_maps=(3, 3,), pooling_width=(2, 2,))
     model.compile("adam", "mse", metrics=['mse'], )
 
     history = model.fit(train_model_input, train[target].values,

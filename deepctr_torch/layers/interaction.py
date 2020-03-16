@@ -618,3 +618,84 @@ class ConvLayer(nn.Module):
 
     def forward(self, inputs):
         return self.conv_layer(inputs)
+
+class FGCNNLayer(nn.Module):
+    """Feature Generation Layer used in FGCNN, including Convolution, MaxPooling and Recombination.
+    
+      Input shape
+            - A 3D tensor with shape:``(batch_size,field_size,embedding_size)``.
+      Output shape
+            - 3D tensor with shape: ``(batch_size,new_feture_num,embedding_size)``.
+      References
+            - [Liu B, Tang R, Chen Y, et al. Feature Generation by Convolutional Neural Network for Click-Through Rate Prediction[J]. arXiv preprint arXiv:1904.04447, 2019.](https://arxiv.org/pdf/1904.04447)
+    """
+    def __init__(self, field_size, embedding_size, 
+                 filters=(14, 16,), kernel_width=(7, 7,), new_maps=(3, 3,), pooling_width=(2, 2), stride=(1,1),
+                 device='cpu'):
+
+        super(FGCNNLayer, self).__init__()
+        if not (len(filters) == len(kernel_width) == len(new_maps) == len(pooling_width)):
+            raise ValueError("length of argument must be equal")
+        self.field_size = field_size
+        self.embedding_size = embedding_size
+        self.filters = filters
+        self.kernel_width = kernel_width
+        self.new_maps = new_maps
+        self.pooling_width = pooling_width
+        self.stride = stride
+        
+        self.pooling_shape = self.compute_pooling_shape()
+        self.padding_size = self.compute_padding_size()
+        if self.pooling_shape[-1] is 0:
+            raise ValueError("shape of pooling result must be positive integer")
+        self.in_channels_size = [1,] + list(self.filters)
+        self.new_feture_num = sum([self.pooling_shape[i] * self.new_maps[i] for i in range(len(self.filters))])
+
+        self.conv_pooling = nn.ModuleList([nn.Sequential(
+                nn.Conv2d(in_channels=self.in_channels_size[i], out_channels=self.filters[i], 
+                          kernel_size=(self.kernel_width[i], 1), padding=(self.padding_size[i], 0), 
+                          stride=self.stride),
+                nn.Tanh(),
+                nn.MaxPool2d(kernel_size=(self.pooling_width[i], 1), stride=(self.pooling_width[i], 1)),
+            ) for i in range(len(self.filters))])
+        self.recombination = nn.ModuleList([nn.Sequential(
+                nn.Linear(self.filters[i] * self.pooling_shape[i] * self.embedding_size,
+                          self.pooling_shape[i] * self.embedding_size * self.new_maps[i],
+                          bias=True),
+                nn.Tanh()
+            ) for i in range(len(self.filters))])
+        self.to(device)
+    
+    def forward(self, inputs):
+
+        if len(inputs.shape) != 3:
+            raise ValueError(
+                "Unexpected inputs dimensions %d, expect to be 3 dimensions" % (len(inputs.shape)))
+
+        feature = inputs.unsqueeze(1)
+        new_feature_list = []
+
+        for i in range(0, len(self.filters)):
+            feature = self.conv_pooling[i](feature)
+            result = self.recombination[i](torch.flatten(feature, start_dim=1))
+            new_feature_list.append(
+                torch.reshape(result, (-1, self.pooling_shape[i] * self.new_maps[i] , self.embedding_size)))
+        new_features = torch.cat(new_feature_list, dim=1)
+        return new_features
+
+    def compute_pooling_shape(self):
+        pooling_shape = []
+        pooling_shape.append(self.field_size // self.pooling_width[0])
+        for i in range(1, len(self.filters)):
+            pooling_shape.append(pooling_shape[i-1] // self.pooling_width[i])
+        return pooling_shape
+
+    def compute_padding_size(self):
+        """only support "same" padding
+        """
+        padding_size = []
+        padding_size.append(((self.field_size - 1) * self.stride[0] + self.kernel_width[0] - self.field_size) // 2)
+        for i in range(1, len(self.filters)):
+            padding_size.append(((self.pooling_shape[i-1] - 1) * self.stride[0] + self.kernel_width[i] - self.pooling_shape[i-1]) // 2)
+        return padding_size
+    
