@@ -54,7 +54,6 @@ class SequencePoolingLayer(nn.Module):
             user_behavior_length = torch.sum(mask, dim=-1, keepdim=True)
             mask = mask.unsqueeze(2)
         else:
-#             pdb.set_trace()
             uiseq_embed_list, user_behavior_length = seq_value_len_list                 # [B, T, E], [B, 1]
             mask = self._sequence_mask(user_behavior_length, dtype=torch.float32)       # [B, 1, maxlen]
             mask = torch.transpose(mask, 1, 2)                                          # [B, maxlen, 1]
@@ -117,7 +116,7 @@ class AttentionSequencePoolingLayer(nn.Module):
         #       it is not a must for small dataset as the open-sourced ones.
         attention_score = self.local_att(query, keys)                     # [B, T, 1]
         attention_score = torch.transpose(attention_score, 1, 2)          # [B, 1, T]
-        
+
         # define mask by length
         keys_length = keys_length.type(torch.LongTensor)
         mask = torch.arange(keys.size(1))[None, :] < keys_length[:, None] # [1, T] < [B, 1, 1]  -> [B, 1, T]

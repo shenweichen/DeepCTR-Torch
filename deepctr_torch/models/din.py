@@ -14,6 +14,8 @@ from ..inputs import get_varlen_pooling_list, embedding_lookup, get_dense_input,
 from ..layers import FM, DNN
 from ..layers.sequence import AttentionSequencePoolingLayer
 
+import pdb
+
 
 class DIN(BaseModel):
     """Instantiates the Deep Interest Network architecture.
@@ -102,7 +104,7 @@ class DIN(BaseModel):
                                               mask_feat_list=self.history_feature_list, to_list=True)
         
         sequence_embed_dict = varlen_embedding_lookup(X, self.embedding_dict, self.feature_index, self.sparse_varlen_feature_columns)
-        # pdb.set_trace()
+
         sequence_embed_list = get_varlen_pooling_list(sequence_embed_dict, X, self.feature_index, self.sparse_varlen_feature_columns)
         
         dnn_input_emb_list += sequence_embed_list
