@@ -12,7 +12,6 @@ import pdb
 import torch
 import torch.nn as nn
 
-from .layers.sequence import SequencePoolingLayer
 from .layers.utils import concat_fun
 from .layers.sequence import SequencePoolingLayer
 
@@ -148,7 +147,7 @@ def build_input_features(feature_columns):
         elif isinstance(feat, VarLenSparseFeat):
             features[feat_name] = (start, start + feat.maxlen)
             start += feat.maxlen
-            if feat.length_name is not None:
+            if feat.length_name is not None and feat.length_name not in features:
                 features[feat.length_name] = (start, start + 1)
                 start += 1
         else:
@@ -198,7 +197,7 @@ def embedding_lookup(X, sparse_embedding_dict, sparse_input_dict, sparse_feature
             group_embedding_dict: defaultdict(list)
     """
     group_embedding_dict = defaultdict(list)
-    # pdb.set_trace()
+    
     for fc in sparse_feature_columns:
         feature_name = fc.name
         embedding_name = fc.embedding_name
@@ -261,12 +260,12 @@ def get_varlen_pooling_list(embedding_dict, features, feature_index, varlen_spar
     varlen_sparse_embedding_list = []
 
     for feat in varlen_sparse_feature_columns:
-        # pdb.set_trace()
         seq_emb = embedding_dict[feat.embedding_name](
             features[:, feature_index[feat.name][0]:feature_index[feat.name][1]].long())
+
         if feat.length_name is None:
             seq_mask = features[:, feature_index[feat.name][0]:feature_index[feat.name][1]].long() != 0
-
+            
             emb = SequencePoolingLayer(mode=feat.combiner, supports_masking=True, device=device)(
                 [seq_emb, seq_mask])
         else:

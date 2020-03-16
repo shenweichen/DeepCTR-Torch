@@ -54,6 +54,7 @@ class SequencePoolingLayer(nn.Module):
             user_behavior_length = torch.sum(mask, dim=-1, keepdim=True)
             mask = mask.unsqueeze(2)
         else:
+#             pdb.set_trace()
             uiseq_embed_list, user_behavior_length = seq_value_len_list                 # [B, T, E], [B, 1]
             mask = self._sequence_mask(user_behavior_length, dtype=torch.float32)       # [B, 1, maxlen]
             mask = torch.transpose(mask, 1, 2)                                          # [B, maxlen, 1]
