@@ -31,6 +31,7 @@ class SequencePoolingLayer(nn.Module):
             raise ValueError('parameter mode should in [sum, mean, max]')
         self.supports_masking = supports_masking
         self.mode = mode
+        self.device = device
         self.eps = torch.FloatTensor([1e-8]).to(device)
         self.to(device)
 
@@ -38,7 +39,7 @@ class SequencePoolingLayer(nn.Module):
         # Returns a mask tensor representing the first N positions of each cell.
         if maxlen is None:
             maxlen = lengths.max()
-        row_vector = torch.arange(0, maxlen, 1)
+        row_vector = torch.arange(0, maxlen, 1).to(self.device)
         matrix = torch.unsqueeze(lengths, dim=-1)
         mask = row_vector < matrix
 

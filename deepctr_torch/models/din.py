@@ -125,7 +125,7 @@ class DIN(BaseModel):
         # concatenate
         query_emb = torch.cat(query_emb_list, dim=-1)  # [B, 1, E]
         keys_emb = torch.cat(keys_emb_list, dim=-1)  # [B, T, E]
-        keys_length = torch.ones((query_emb.size(0), 1))  # [B, 1]
+        keys_length = torch.ones((query_emb.size(0), 1)).to(self.device)  # [B, 1]
         deep_input_emb = torch.cat(dnn_input_emb_list, dim=-1)
 
         hist = self.attention(query_emb, keys_emb, keys_length)
