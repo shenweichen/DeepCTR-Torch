@@ -133,42 +133,6 @@ def combined_dnn_input(sparse_embedding_list, dense_value_list):
     else:
         raise NotImplementedError
 
-        #
-        #
-        # def varlen_embedding_lookup(embedding_dict, sequence_input_dict, varlen_sparse_feature_columns):
-        #     varlen_embedding_vec_dict = {}
-        #     for fc in varlen_sparse_feature_columns:
-        #         feature_name = fc.name
-        #         embedding_name = fc.embedding_name
-        #         if fc.use_hash:
-        #             # lookup_idx = Hash(fc.vocabulary_size, mask_zero=True)(sequence_input_dict[feature_name])
-        #             # TODO: add hash function
-        #             lookup_idx = sequence_input_dict[feature_name]
-        #         else:
-        #             lookup_idx = sequence_input_dict[feature_name]
-        #         varlen_embedding_vec_dict[feature_name] = embedding_dict[embedding_name](lookup_idx)
-        #     return varlen_embedding_vec_dict
-        #
-        #
-        # def get_varlen_pooling_list(embedding_dict, features, varlen_sparse_feature_columns, to_list=False):
-        #     pooling_vec_list = defaultdict(list)
-        #     for fc in varlen_sparse_feature_columns:
-        #         feature_name = fc.name
-        #         combiner = fc.combiner
-        #         feature_length_name = fc.length_name
-        #         if feature_length_name is not None:
-        #             seq_input = embedding_dict[feature_name]
-        #             vec = SequencePoolingLayer(combiner)([seq_input, features[feature_length_name]])
-        #         else:
-        #             seq_input = embedding_dict[feature_name]
-        #             vec = SequencePoolingLayer(combiner)(seq_input)
-        #         pooling_vec_list[fc.group_name].append(vec)
-        #
-        #         if to_list:
-        #             return chain.from_iterable(pooling_vec_list.values())
-        #
-        #     return pooling_vec_list
-
 
 def get_varlen_pooling_list(embedding_dict, features, feature_index, varlen_sparse_feature_columns, device):
     varlen_sparse_embedding_list = []
@@ -241,6 +205,7 @@ def input_from_feature_columns(self, X, feature_columns, embedding_dict, support
     return sparse_embedding_list + varlen_sparse_embedding_list, dense_value_list
 
 
+
 def embedding_lookup(X, sparse_embedding_dict, sparse_input_dict, sparse_feature_columns, return_feat_list=(),
                      mask_feat_list=(), to_list=False):
     """
@@ -269,6 +234,23 @@ def embedding_lookup(X, sparse_embedding_dict, sparse_input_dict, sparse_feature
     if to_list:
         return list(chain.from_iterable(group_embedding_dict.values()))
     return group_embedding_dict
+
+
+def varlen_embedding_lookup(X, embedding_dict, sequence_input_dict, varlen_sparse_feature_columns):
+    varlen_embedding_vec_dict = {}
+    for fc in varlen_sparse_feature_columns:
+        feature_name = fc.name
+        embedding_name = fc.embedding_name
+        if fc.use_hash:
+            # lookup_idx = Hash(fc.vocabulary_size, mask_zero=True)(sequence_input_dict[feature_name])
+            # TODO: add hash function
+            lookup_idx = sequence_input_dict[feature_name]
+        else:
+            lookup_idx = sequence_input_dict[feature_name]
+        varlen_embedding_vec_dict[feature_name] = embedding_dict[embedding_name](
+            X[:, lookup_idx[0]:lookup_idx[1]].long())  # (lookup_idx)
+
+    return varlen_embedding_vec_dict
 
 
 def get_dense_input(X, features, feature_columns):
