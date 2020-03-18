@@ -34,30 +34,23 @@ class LocalActivationUnit(nn.Module):
         - [Zhou G, Zhu X, Song C, et al. Deep interest network for click-through rate prediction[C]//Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining. ACM, 2018: 1059-1068.](https://arxiv.org/pdf/1706.06978.pdf)
     """
 
-    def __init__(self, hidden_units=[80, 40], embedding_dim=4, activation='Dice', dropout_rate=0, use_bn=False):
+    def __init__(self, hidden_units=(64, 32), embedding_dim=4, activation='sigmoid', dropout_rate=0, use_bn=False):
         super(LocalActivationUnit, self).__init__()
 
         self.dnn1 = DNN(inputs_dim=4 * embedding_dim,
                         hidden_units=hidden_units,
                         activation=activation,
-                        dropout_rate=0.5,
-                        use_bn=use_bn,
-                        dice_dim=3)
-
-        # self.dnn2 = DNN(inputs_dim=hidden_units[-1],
-        #                  hidden_units=[1],
-        #                  activation=activation,
-        #                  use_bn=use_bn,
-        #                  dice_dim=3)
+                        dropout_rate=dropout_rate,
+                        use_bn=use_bn)  # todo add dice_dim for DIN
 
         self.dense = nn.Linear(hidden_units[-1], 1)
 
     def forward(self, query, user_behavior):
         # query ad            : size -> batch_size * 1 * embedding_size
         # user behavior       : size -> batch_size * time_seq_len * embedding_size
-
         user_behavior_len = user_behavior.size(1)
-        queries = torch.cat([query for _ in range(user_behavior_len)], dim=1)
+
+        queries = query.expand(-1, user_behavior_len, -1)
 
         attention_input = torch.cat([queries, user_behavior, queries - user_behavior, queries * user_behavior], dim=-1)
         attention_output = self.dnn1(attention_input)

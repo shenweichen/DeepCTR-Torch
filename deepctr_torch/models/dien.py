@@ -68,13 +68,13 @@ class DIEN(BaseModel):
             gru_type=gru_type,
             use_neg=use_negsampling,
             init_std=init_std,
-            l2_reg_dnn=l2_reg_dnn,
             att_hidden_size=att_hidden_units,
             att_activation=att_activation,
             att_weight_normalization=att_weight_normalization)
         # DNN layer
         dnn_input_size = self._compute_dnn_dim() + input_size
-        self.dnn = DNN(dnn_input_size, dnn_hidden_units, dnn_activation, l2_reg_dnn, dnn_dropout, use_bn, init_std=init_std, seed=seed)
+        self.dnn = DNN(dnn_input_size, dnn_hidden_units, dnn_activation, l2_reg_dnn, dnn_dropout, use_bn,
+                       init_std=init_std, seed=seed)
         self.linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False)
         # prediction layer
         # inherit -> self.out
@@ -85,7 +85,6 @@ class DIEN(BaseModel):
                 nn.init.normal_(tensor, mean=0, std=init_std)
 
         self.to(device)
-
 
     def forward(self, X):
         # [B, H] , [B, T, H], [B, T, H] , [B]
@@ -283,7 +282,6 @@ class InterestEvolving(nn.Module):
                  gru_type='GRU',
                  use_neg=False,
                  init_std=0.001,
-                 l2_reg_dnn=0,
                  att_hidden_size=(64, 16),
                  att_activation='sigmoid',
                  att_weight_normalization=False):
@@ -294,30 +292,25 @@ class InterestEvolving(nn.Module):
         self.use_neg = use_neg
 
         if gru_type == 'GRU':
-            self.attention = AttentionNet(input_size=input_size,
-                                          dnn_hidden_units=att_hidden_size,
-                                          activation=att_activation,
-                                          init_std=init_std,
-                                          l2_reg = l2_reg_dnn,
-                                          use_bn=att_weight_normalization)
+            self.attention = AttentionSequencePoolingLayer(embedding_dim=input_size,
+                                                           att_hidden_units=att_hidden_size,
+                                                           att_activation=att_activation,
+                                                           weight_normalization=att_weight_normalization,
+                                                           return_score=False)
             self.interest_evolution = nn.GRU(input_size=input_size, hidden_size=input_size, batch_first=True)
         elif gru_type == 'AIGRU':
-            self.attention = AttentionNet(input_size=input_size,
-                                          dnn_hidden_units=att_hidden_size,
-                                          activation=att_activation,
-                                          init_std=init_std,
-                                          l2_reg=l2_reg_dnn,
-                                          use_bn=att_weight_normalization,
-                                          return_scores=True)
+            self.attention = AttentionSequencePoolingLayer(embedding_dim=input_size,
+                                                           att_hidden_units=att_hidden_size,
+                                                           att_activation=att_activation,
+                                                           weight_normalization=att_weight_normalization,
+                                                           return_score=True)
             self.interest_evolution = nn.GRU(input_size=input_size, hidden_size=input_size, batch_first=True)
         elif gru_type == 'AGRU' or gru_type == 'AUGRU':
-            self.attention = AttentionNet(input_size=input_size,
-                                          dnn_hidden_units=att_hidden_size,
-                                          activation=att_activation,
-                                          init_std=init_std,
-                                          l2_reg=l2_reg_dnn,
-                                          use_bn=att_weight_normalization,
-                                          return_scores=True)
+            self.attention = AttentionSequencePoolingLayer(embedding_dim=input_size,
+                                                           att_hidden_units=att_hidden_size,
+                                                           att_activation=att_activation,
+                                                           weight_normalization=att_weight_normalization,
+                                                           return_score=True)
             self.interest_evolution = DynamicGRU(input_size=input_size, hidden_size=input_size,
                                                  gru_type=gru_type)
         for name, tensor in self.interest_evolution.named_parameters():
@@ -352,27 +345,30 @@ class InterestEvolving(nn.Module):
         # check batch validation
         zero_outputs = torch.zeros(batch_size, dim, device=query.device)
         mask = keys_length > 0
+        # [B] -> [b]
         keys_length = keys_length[mask]
         if keys_length.shape[0] == 0:
             return zero_outputs
 
-        query = torch.masked_select(query, mask.view(-1, 1)).view(-1, dim)
+        # [B, H] -> [b, 1, H]
+        query = torch.masked_select(query, mask.view(-1, 1)).view(-1, dim).unsqueeze(1)
 
         if self.gru_type == 'GRU':
             packed_keys = pack_padded_sequence(keys, lengths=keys_length, batch_first=True, enforce_sorted=False)
             packed_interests, _ = self.interest_evolution(packed_keys)
             interests, _ = pad_packed_sequence(packed_interests, batch_first=True, padding_value=0.0,
                                                total_length=max_length)
-            outputs = self.attention(query, interests, keys_length)
+            outputs = self.attention(query, interests, keys_length.unsqueeze(1))  # [b, 1, H]
+            outputs = outputs.squeeze(1)  # [b, H]
         elif self.gru_type == 'AIGRU':
-            att_scores = self.attention(query, keys, keys_length)
-            interests = keys * att_scores.unsqueeze(-1)
+            att_scores = self.attention(query, keys, keys_length.unsqueeze(1))  # [b, 1, T]
+            interests = keys * att_scores.transpose(1, 2)  # [b, T, H]
             packed_interests = pack_padded_sequence(interests, lengths=keys_length, batch_first=True,
                                                     enforce_sorted=False)
             _, outputs = self.interest_evolution(packed_interests)
-            outputs = outputs.squeeze(0)
+            outputs = outputs.squeeze(0) # [b, H]
         elif self.gru_type == 'AGRU' or self.gru_type == 'AUGRU':
-            att_scores = self.attention(query, keys, keys_length)
+            att_scores = self.attention(query, keys, keys_length.unsqueeze(1)).squeeze(1)  # [b, T]
             packed_interests = pack_padded_sequence(keys, lengths=keys_length, batch_first=True,
                                                     enforce_sorted=False)
             packed_scores = pack_padded_sequence(att_scores, lengths=keys_length, batch_first=True,
@@ -380,8 +376,7 @@ class InterestEvolving(nn.Module):
             outputs = self.interest_evolution(packed_interests, packed_scores)
             outputs, _ = pad_packed_sequence(outputs, batch_first=True, padding_value=0.0, total_length=max_length)
             # pick last state
-            outputs = InterestEvolving._get_last_state(outputs, keys_length)
-        # (b,H) -> (B,H)
-        res = torch.zeros(batch_size, dim, device=query.device)
-        res[mask] = outputs
-        return res
+            outputs = InterestEvolving._get_last_state(outputs, keys_length) # [b, H]
+        # [b, H] -> [B, H]
+        zero_outputs[mask] = outputs
+        return zero_outputs

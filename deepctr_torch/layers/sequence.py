@@ -2,10 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import math
-import numpy as np
 from torch.nn.utils.rnn import PackedSequence
-from ..layers.core import DNN
+from ..layers.core import LocalActivationUnit
 
 
 class SequencePoolingLayer(nn.Module):
@@ -76,58 +74,78 @@ class SequencePoolingLayer(nn.Module):
         return hist
 
 
-# class AttentionSequencePoolingLayer(nn.Module):
-#     """The Attentional sequence pooling operation used in DIN.
-#
-#       Input shape
-#         - A list of three tensor: [query,keys,keys_length]
-#
-#         - query is a 3D tensor with shape:  ``(batch_size, 1, embedding_size)``
-#
-#         - keys is a 3D tensor with shape:   ``(batch_size, T, embedding_size)``
-#
-#         - keys_length is a 2D tensor with shape: ``(batch_size, 1)``
-#
-#       Output shape
-#         - 3D tensor with shape: ``(batch_size, 1, embedding_size)``
-#
-#       Arguments
-#         - **att_hidden_units**: List of positive integer, the attention net layer number and units in each layer.
-#
-#         - **embedding_dim**: Dimension of the input embeddings.
-#
-#         - **activation**: Activation function to use in attention net.
-#
-#         - **weight_normalization**: bool.Whether normalize the attention score of local activation unit.
-#
-#       References
-#         - [Zhou G, Zhu X, Song C, et al. Deep interest network for click-through rate prediction[C]//Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining. ACM, 2018: 1059-1068.](https://arxiv.org/pdf/1706.06978.pdf)
-#     """
-#
-#     def __init__(self, att_hidden_units=[80, 40], embedding_dim=4, activation='Dice', weight_normalization=False):
-#         super(AttentionSequencePoolingLayer, self).__init__()
-#
-#         self.local_att = LocalActivationUnit(hidden_units=att_hidden_units, embedding_dim=embedding_dim,
-#                                              activation=activation)
-#
-#     def forward(self, query, keys, keys_length):
-#         # query: [B, 1, E], keys: [B, T, E], keys_length: [B, 1]
-#         # TODO: Mini-batch aware regularization in originial paper [Zhou G, et al. 2018] is not implemented here. As the authors mentioned
-#         #       it is not a must for small dataset as the open-sourced ones.
-#         attention_score = self.local_att(query, keys)
-#         attention_score = torch.transpose(attention_score, 1, 2)  # B * 1 * T
-#
-#         # define mask by length
-#         keys_length = keys_length.type(torch.LongTensor)
-#         mask = torch.arange(keys.size(1))[None, :] < keys_length[:, None]  # [1, T] < [B, 1, 1]  -> [B, 1, T]
-#
-#         # mask
-#         output = torch.mul(attention_score, mask.type(torch.FloatTensor))  # [B, 1, T]
-#
-#         # multiply weight
-#         output = torch.matmul(output, keys)  # [B, 1, E]
-#
-#         return output
+class AttentionSequencePoolingLayer(nn.Module):
+    """The Attentional sequence pooling operation used in DIN & DIEN.
+
+        Arguments
+          - **att_hidden_units**:list of positive integer, the attention net layer number and units in each layer.
+
+          - **att_activation**: Activation function to use in attention net.
+
+          - **weight_normalization**: bool.Whether normalize the attention score of local activation unit.
+
+          - **supports_masking**:If True,the input need to support masking.
+
+        References
+          - [Zhou G, Zhu X, Song C, et al. Deep interest network for click-through rate prediction[C]//Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining. ACM, 2018: 1059-1068.](https://arxiv.org/pdf/1706.06978.pdf)
+      """
+
+    def __init__(self, att_hidden_units=(80, 40), att_activation='sigmoid', weight_normalization=False,
+                 return_score=False, supports_masking=False, embedding_dim=4, **kwargs):
+        super(AttentionSequencePoolingLayer, self).__init__()
+        self.return_score = return_score
+        self.weight_normalization = weight_normalization
+        self.supports_masking = supports_masking
+        self.local_att = LocalActivationUnit(hidden_units=att_hidden_units, embedding_dim=embedding_dim,
+                                             activation=att_activation,
+                                             dropout_rate=0, use_bn=False)
+
+    def forward(self, query, keys, keys_length, mask=None):
+        """
+        Input shape
+          - A list of three tensor: [query,keys,keys_length]
+
+          - query is a 3D tensor with shape:  ``(batch_size, 1, embedding_size)``
+
+          - keys is a 3D tensor with shape:   ``(batch_size, T, embedding_size)``
+
+          - keys_length is a 2D tensor with shape: ``(batch_size, 1)``
+
+        Output shape
+          - 3D tensor with shape: ``(batch_size, 1, embedding_size)``.
+        """
+        batch_size, max_length, dim = keys.size()
+
+        attention_score = self.local_att(query, keys)  # [B, T, 1]
+
+        outputs = torch.transpose(attention_score, 1, 2)  # [B, 1, T]
+
+        if self.weight_normalization:
+            paddings = torch.ones_like(outputs) * (-2 ** 32 + 1)
+        else:
+            paddings = torch.zeros_like(outputs)
+
+        # Mask
+        if self.supports_masking:
+            if mask is None:
+                raise ValueError(
+                    "When supports_masking=True,input must support masking")
+            # todo : check mask's dim for DIN
+            keys_masks = mask.unsqueeze(1)
+        else:
+            keys_masks = (torch.arange(max_length, device=keys_length.device).repeat(
+                batch_size, 1) < keys_length.view(-1, 1)).unsqueeze(1)   # [B, 1, T]
+        outputs = torch.where(keys_masks, outputs, paddings)
+
+        if self.weight_normalization:
+            outputs = F.softmax(outputs,dim=-1) # [B, 1, T]
+
+        if not self.return_score:
+            # Weighted sum
+            outputs = torch.matmul(
+                outputs, keys)  # [B, 1, H]
+
+        return outputs
 
 
 class KMaxPooling(nn.Module):
@@ -290,72 +308,3 @@ class DynamicGRU(nn.Module):
             hx = new_hx
             begin += batch
         return PackedSequence(outputs, batch_sizes, sorted_indices, unsorted_indices)
-
-
-class AttentionNet(nn.Module):
-    def __init__(self, input_size,
-                 dnn_hidden_units,
-                 activation='relu',
-                 l2_reg=0,
-                 dropout_rate=0,
-                 init_std=0.0001,
-                 use_bn=False,
-                 device='cpu',
-                 return_scores=False):
-        super(AttentionNet, self).__init__()
-        self.return_scores = return_scores
-        self.mlp = DNN(input_size * 4,
-                       dnn_hidden_units,
-                       activation=activation,
-                       l2_reg=l2_reg,
-                       dropout_rate=dropout_rate,
-                       use_bn=use_bn,
-                       init_std=init_std,
-                       device=device)
-        self.fc = nn.Linear(dnn_hidden_units[-1], 1)
-        for name, tensor in self.fc.named_parameters():
-            if 'weight' in name:
-                nn.init.normal_(tensor, mean=0, std=init_std)
-
-    def forward(self, query, keys, keys_length):
-        """
-        Parameters
-        ----------
-        query: 2D tensor, [B, H]
-        keys: 3D tensor, [B, T, H]
-        keys_length: 1D tensor, [B]
-
-        Returns
-        -------
-        outputs: 2D tensor, if return_scores=False [B, H], otherwise [B, T]
-        """
-        batch_size, max_length, dim = keys.size()
-
-        query = query.unsqueeze(1).expand(-1, max_length, -1)
-
-        din_all = torch.cat(
-            [query, keys, query - keys, query * keys], dim=-1)
-
-        din_all = din_all.view(batch_size * max_length, -1)
-
-        outputs = self.mlp(din_all)
-
-        outputs = self.fc(outputs).view(batch_size, max_length)  # [B, T]
-
-        # Scale
-        outputs = outputs / (dim ** 0.5)
-
-        # Mask
-        mask = (torch.arange(max_length, device=keys_length.device).repeat(
-            batch_size, 1) < keys_length.view(-1, 1))
-        outputs[~mask] = -np.inf
-
-        # Activation
-        outputs = F.softmax(outputs, dim=1)  # [B, T]
-
-        if not self.return_scores:
-            # Weighted sum
-            outputs = torch.matmul(
-                outputs.unsqueeze(1), keys).squeeze(1)  # [B, H]
-
-        return outputs
