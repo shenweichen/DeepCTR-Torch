@@ -83,9 +83,14 @@ class DIN(BaseModel):
             else:
                 self.sparse_varlen_feature_columns.append(fc)
 
-        self.atten = AttentionSequencePoolingLayer(att_hidden_units=att_hidden_size,
-                                                   embedding_dim=embedding_size,
-                                                   activation=att_activation)
+        att_emb_dim = self._compute_interest_dim()
+
+        self.attention = AttentionSequencePoolingLayer(att_hidden_units=att_hidden_size,
+                                                   embedding_dim=att_emb_dim,
+                                                   activation=att_activation,
+                                                   return_score=False,
+                                                   supports_masking=False,
+                                                   weight_normalization=False)
 
         self.dnn = DNN(inputs_dim=self.compute_input_dim(dnn_feature_columns, embedding_size),
                        hidden_units=dnn_hidden_units,
@@ -94,6 +99,7 @@ class DIN(BaseModel):
                        l2_reg=l2_reg_dnn)
         self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False).to(device)
         self.to(device)
+
 
     def forward(self, X):
         sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
@@ -107,11 +113,12 @@ class DIN(BaseModel):
         dnn_input_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.sparse_feature_columns,
                                               mask_feat_list=self.history_feature_list, to_list=True)
 
+
         sequence_embed_dict = varlen_embedding_lookup(X, self.embedding_dict, self.feature_index,
                                                       self.sparse_varlen_feature_columns)
 
         sequence_embed_list = get_varlen_pooling_list(sequence_embed_dict, X, self.feature_index,
-                                                      self.sparse_varlen_feature_columns,self.device)
+                                                      self.sparse_varlen_feature_columns, self.device)
 
         dnn_input_emb_list += sequence_embed_list
 
@@ -121,7 +128,7 @@ class DIN(BaseModel):
         keys_length = torch.ones((query_emb.size(0), 1))  # [B, 1]
         deep_input_emb = torch.cat(dnn_input_emb_list, dim=-1)
 
-        hist = self.atten(query_emb, keys_emb, keys_length)
+        hist = self.attention(query_emb, keys_emb, keys_length)
 
         # deep part
         deep_input_emb = torch.cat((deep_input_emb, hist), dim=-1)
@@ -135,7 +142,13 @@ class DIN(BaseModel):
 
         return y_pred
 
+    def _compute_interest_dim(self):
+        interest_dim = 0
+        for feat in self.sparse_feature_columns:
+            if feat.name in self.history_feature_list:
+                interest_dim += feat.embedding_dim
+        return interest_dim
+
 
 if __name__ == '__main__':
     pass
-
