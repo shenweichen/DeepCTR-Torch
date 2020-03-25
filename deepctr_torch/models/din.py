@@ -10,9 +10,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from .basemodel import BaseModel
-from ..inputs import get_varlen_pooling_list, embedding_lookup, varlen_embedding_lookup, SparseFeat, \
-    DenseFeat, VarLenSparseFeat, combined_dnn_input
-from ..layers import FM, DNN
+from ..inputs import *
+from ..layers import *
 from ..layers.sequence import AttentionSequencePoolingLayer
 
 import pdb
@@ -28,7 +27,7 @@ class DIN(BaseModel):
     :param dnn_activation: Activation function to use in deep net
     :param att_hidden_size: list,list of positive integer , the layer number and units in each layer of attention net
     :param att_activation: Activation function to use in attention net
-    :param att_weight_normalization: bool.Whether normalize the attention score of local activation unit.
+    :param att_weight_normalization: bool. Whether normalize the attention score of local activation unit.
     :param l2_reg_dnn: float. L2 regularizer strength applied to DNN
     :param l2_reg_embedding: float. L2 regularizer strength applied to embedding vector
     :param dnn_dropout: float in [0,1), the probability we will drop out a given DNN coordinate.
@@ -39,31 +38,18 @@ class DIN(BaseModel):
 
     """
 
-    def __init__(self,
-                 dnn_feature_columns,
-                 history_feature_list,
-                 dnn_use_bn=False,
-                 embedding_size=8,
-                 dnn_hidden_units=(256, 128),
-                 dnn_activation='relu',
-                 att_hidden_size=[80, 40],
-                 att_activation='Dice',
-                 l2_reg_dnn=0.0,
-                 init_std=0.0001,
-                 dnn_dropout=0,
-                 task='binary', device='cpu'):
-
-        # super(DIN, self).__init__([], dnn_feature_columns, embedding_size=embedding_size,
-        #                         dnn_hidden_units=dnn_hidden_units, l2_reg_linear=0,
-        #                         l2_reg_dnn=l2_reg_dnn, init_std=init_std,
-        #                         dnn_dropout=dnn_dropout, dnn_activation=dnn_activation,
-        #                         task=task, varlen=False, device=device)
-
+    def __init__(self, dnn_feature_columns, history_feature_list, dnn_use_bn=False,
+                 dnn_hidden_units=(256, 128), dnn_activation='relu', att_hidden_size=[80, 40],             
+                 att_activation='Dice', att_weight_normalization=False, l2_reg_dnn=0.0,
+                 l2_reg_embedding=1e-6, dnn_dropout=0, init_std=0.0001,
+                 seed=1024, task='binary', device='cpu'):
         super(DIN, self).__init__([], dnn_feature_columns,
                                   dnn_hidden_units=dnn_hidden_units, l2_reg_linear=0,
                                   l2_reg_dnn=l2_reg_dnn, init_std=init_std,
+                                  l2_reg_embedding=l2_reg_embedding,
                                   dnn_dropout=dnn_dropout, dnn_activation=dnn_activation,
-                                  task=task, device=device)
+                                  seed=seed, task=task, 
+                                  device=device)
 
         self.sparse_feature_columns = list(
             filter(lambda x: isinstance(x, SparseFeat), dnn_feature_columns)) if dnn_feature_columns else []
@@ -86,17 +72,18 @@ class DIN(BaseModel):
         att_emb_dim = self._compute_interest_dim()
 
         self.attention = AttentionSequencePoolingLayer(att_hidden_units=att_hidden_size,
-                                                   embedding_dim=att_emb_dim,
-                                                   activation=att_activation,
-                                                   return_score=False,
-                                                   supports_masking=False,
-                                                   weight_normalization=False)
+                                                       embedding_dim=att_emb_dim,
+                                                       activation=att_activation,
+                                                       return_score=False,
+                                                       supports_masking=False,
+                                                       weight_normalization=att_weight_normalization)
 
-        self.dnn = DNN(inputs_dim=self.compute_input_dim(dnn_feature_columns, embedding_size),
+        self.dnn = DNN(inputs_dim=self.compute_input_dim(dnn_feature_columns),
                        hidden_units=dnn_hidden_units,
                        activation=dnn_activation,
                        dropout_rate=dnn_dropout,
-                       l2_reg=l2_reg_dnn)
+                       l2_reg=l2_reg_dnn,
+                       use_bn=dnn_use_bn)
         self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False).to(device)
         self.to(device)
 
@@ -110,8 +97,7 @@ class DIN(BaseModel):
                                           self.history_feature_list, self.history_feature_list, to_list=True)
         keys_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.history_feature_columns,
                                          self.history_fc_names, self.history_fc_names, to_list=True)
-        dnn_input_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.sparse_feature_columns,
-                                              mask_feat_list=self.history_feature_list, to_list=True)
+        dnn_input_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.sparse_feature_columns, mask_feat_list=self.history_feature_list, to_list=True)
 
 
         sequence_embed_dict = varlen_embedding_lookup(X, self.embedding_dict, self.feature_index,
@@ -123,12 +109,12 @@ class DIN(BaseModel):
         dnn_input_emb_list += sequence_embed_list
 
         # concatenate
-        query_emb = torch.cat(query_emb_list, dim=-1)  # [B, 1, E]
-        keys_emb = torch.cat(keys_emb_list, dim=-1)  # [B, T, E]
+        query_emb = torch.cat(query_emb_list, dim=-1)                     # [B, 1, E]
+        keys_emb = torch.cat(keys_emb_list, dim=-1)                       # [B, T, E]
         keys_length = torch.ones((query_emb.size(0), 1)).to(self.device)  # [B, 1]
         deep_input_emb = torch.cat(dnn_input_emb_list, dim=-1)
 
-        hist = self.attention(query_emb, keys_emb, keys_length)
+        hist = self.attention(query_emb, keys_emb, keys_length)           # [B, 1, E]
 
         # deep part
         deep_input_emb = torch.cat((deep_input_emb, hist), dim=-1)
