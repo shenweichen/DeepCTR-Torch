@@ -66,7 +66,8 @@ class SequencePoolingLayer(nn.Module):
             hist = uiseq_embed_list - (1 - mask) * 1e9
             hist = torch.max(hist, dim=1, keepdim=True)[0]
             return hist
-        hist = torch.sum(uiseq_embed_list * mask, dim=1, keepdim=False)
+        hist = uiseq_embed_list * mask.float()
+        hist = torch.sum(hist, dim=1, keepdim=False)
 
         if self.mode == 'mean':
             hist = torch.div(hist, user_behavior_length.type(torch.float32) + self.eps)
@@ -123,7 +124,7 @@ class AttentionSequencePoolingLayer(nn.Module):
                 raise ValueError("When supports_masking=True,input must support masking")
             keys_masks = mask.unsqueeze(1)
         else:
-            keys_masks = torch.arange(max_length, device=keys_length.device).repeat(batch_size, 1)  # [B, T]
+            keys_masks = torch.arange(max_length, device=keys_length.device, dtype=keys_length.dtype).repeat(batch_size, 1)  # [B, T]
             keys_masks = keys_masks < keys_length.view(-1, 1)  # 0, 1 mask
             keys_masks = keys_masks.unsqueeze(1)               # [B, 1, T]
             
