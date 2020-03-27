@@ -47,34 +47,6 @@ Please follow our wechat to join group:
 - wechat ID: **deepctrbot**
 ![wechat](./docs/pics/weichennote.png)
 
-## Contributors([welcome to join us!](./CONTRIBUTING.md))
-<a href="https://github.com/shenweichen">
-    <img src="https://avatars.githubusercontent.com/shenweichen " width=70 height="70" alt="pic" >
-</a>
-<a href="https://github.com/weberrr">
-    <img src="https://avatars.githubusercontent.com/weberrr " width=70 height="70" alt="pic" >
-</a>
-<a href="https://github.com/wutongzhang">
-    <img src="https://avatars.githubusercontent.com/wutongzhang " width=70 height="70" alt="pic" >
-</a>
-<a href="https://github.com/ZhangYuef">
-    <img src="https://avatars.githubusercontent.com/ZhangYuef " width=70 height="70" alt="pic" >
-</a>
-<a href="https://github.com/JyiHUO">
-    <img src="https://avatars.githubusercontent.com/JyiHUO " width=70 height="70" alt="pic" >
-</a>
-<a href="https://github.com/Zengai">
-    <img src="https://avatars.githubusercontent.com/Zengai " width=70 height="70" alt="pic" >
-</a>
-<a href="https://github.com/chenkkkk">
-    <img src="https://avatars.githubusercontent.com/chenkkkk " width=70 height="70" alt="pic" >
-</a>
-<a href="https://github.com/tangaqi">
-    <img src="https://avatars.githubusercontent.com/tangaqi " width=70 height=70" alt="pic" >
-</a>
-<a href="https://github.com/uestc7d">
-    <img src="https://avatars.githubusercontent.com/uestc7d " width=70 height="70" alt="pic" >
-</a>
 
 ## Contributors([welcome to join us!](./CONTRIBUTING.md))
 
