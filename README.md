@@ -51,11 +51,11 @@ Please follow our wechat to join group:
 <a href="https://github.com/shenweichen">
     <img src="https://avatars.githubusercontent.com/shenweichen " width=70 height="70" alt="pic" >
 </a>
-<a href="https://github.com/wutongzhang">
-    <img src="https://avatars.githubusercontent.com/wutongzhang " width=70 height="70" alt="pic" >
-</a>
 <a href="https://github.com/weberrr">
     <img src="https://avatars.githubusercontent.com/weberrr " width=70 height="70" alt="pic" >
+</a>
+<a href="https://github.com/wutongzhang">
+    <img src="https://avatars.githubusercontent.com/wutongzhang " width=70 height="70" alt="pic" >
 </a>
 <a href="https://github.com/ZhangYuef">
     <img src="https://avatars.githubusercontent.com/ZhangYuef " width=70 height="70" alt="pic" >
@@ -75,3 +75,66 @@ Please follow our wechat to join group:
 <a href="https://github.com/uestc7d">
     <img src="https://avatars.githubusercontent.com/uestc7d " width=70 height="70" alt="pic" >
 </a>
+
+## Contributors([welcome to join us!](./CONTRIBUTING.md))
+
+<table border="0">
+  <tbody>
+    <tr align="center" >
+      <td>
+        ​ <a href="https://github.com/shenweichen"><img width="70" height="70" src="https://github.com/shenweichen.png?s=40" alt="pic"></a><br>
+        ​ <a href="https://github.com/shenweichen">Shen Weichen</a> ​
+        <p>Founder<br>
+        Zhejiang Unversity <br> </p>​
+      </td>
+      <td>
+         <a href="https://github.com/weberrr"><img width="70" height="70" src="https://github.com/weberrr.png?s=40" alt="pic"></a><br>
+         <a href="https://github.com/weberrr">Wang Ze</a> ​
+        <p>Core Dev<br> Beihang University <br> </p>​
+      </td>
+      <td>
+        ​ <a href="https://github.com/wutongzhang"><img width="70" height="70" src="https://github.com/wutongzhang.png?s=40" alt="pic"></a><br>
+         <a href="https://github.com/wutongzhang">Zhang Wutong</a>
+         <p>Core Dev<br> Beijing University of <br> Posts and Telecommunications</p>​
+      </td>
+      <td>
+        ​ <a href="https://github.com/ZhangYuef"><img width="70" height="70" src="https://github.com/ZhangYuef.png?s=40" alt="pic"></a><br>
+        ​ <a href="https://github.com/ZhangYuef">Zhang Yuefeng</a>
+        <p>Core Dev<br>
+        Peking University <br> </p>​
+      </td>
+      <td>
+        ​ <a href="https://github.com/JyiHUO"><img width="70" height="70" src="https://github.com/JyiHUO.png?s=40" alt="pic"></a><br>
+        ​ <a href="https://github.com/JyiHUO">Huo Junyi</a>
+        <p>Core Dev<br>
+        University of Southampton <br> </p>​
+      </td>
+    </tr>
+    <tr align="center">
+      <td>
+        ​ <a href="https://github.com/Zengai"><img width="70" height="70" src="https://github.com/Zengai.png?s=40" alt="pic"></a><br>
+        ​ <a href="https://github.com/Zengai">Zeng Kai</a> ​
+        <p>Dev<br>
+        SenseTime <br> </p>​
+      </td>
+      <td>
+        ​ <a href="https://github.com/chenkkkk"><img width="70" height="70" src="https://github.com/chenkkkk.png?s=40" alt="pic"></a><br>
+        ​ <a href="https://github.com/chenkkkk">Chen K</a> ​
+        <p>Dev<br>
+        NetEase <br> </p>​
+      </td>
+      <td>
+        ​ <a href="https://github.com/tangaqi"><img width="70" height="70" src="https://github.com/tangaqi.png?s=40" alt="pic"></a><br>
+        ​ <a href="https://github.com/tangaqi">Tang</a>
+        <p>Test<br>
+        Tongji University <br> </p>​
+      </td>
+      <td>
+        ​ <a href="https://github.com/uestc7d"><img width="70" height="70" src="https://github.com/uestc7d.png?s=40" alt="pic"></a><br>
+        ​ <a href="https://github.com/uestc7d">Xu Qidi</a> ​
+        <p>Dev<br>
+        University of Electronic Science <br> and Technology of China</p>​
+      </td>
+    </tr>
+  </tbody>
+</table>
