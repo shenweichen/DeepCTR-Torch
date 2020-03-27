@@ -18,7 +18,8 @@ from sklearn.metrics import *
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat, get_varlen_pooling_list,create_embedding_matrix
+from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat, get_varlen_pooling_list, \
+    create_embedding_matrix
 from ..layers import PredictionLayer
 from ..layers.utils import slice_arrays
 
@@ -36,7 +37,8 @@ class Linear(nn.Module):
         self.varlen_sparse_feature_columns = list(
             filter(lambda x: isinstance(x, VarLenSparseFeat), feature_columns)) if len(feature_columns) else []
 
-        self.embedding_dict = create_embedding_matrix(feature_columns,init_std,linear=True,sparse=False,device=device)
+        self.embedding_dict = create_embedding_matrix(feature_columns, init_std, linear=True, sparse=False,
+                                                      device=device)
 
         #         nn.ModuleDict(
         #             {feat.embedding_name: nn.Embedding(feat.dimension, 1, sparse=True) for feat in
@@ -83,7 +85,6 @@ class Linear(nn.Module):
 
 
 class BaseModel(nn.Module):
-
     def __init__(self,
                  linear_feature_columns, dnn_feature_columns, dnn_hidden_units=(128, 128),
                  l2_reg_linear=1e-5,
@@ -95,13 +96,14 @@ class BaseModel(nn.Module):
         self.dnn_feature_columns = dnn_feature_columns
 
         self.reg_loss = torch.zeros((1,), device=device)
+        self.aux_loss = torch.zeros((1,), device=device)
         self.device = device  # device
 
         self.feature_index = build_input_features(
             linear_feature_columns + dnn_feature_columns)
         self.dnn_feature_columns = dnn_feature_columns
 
-        self.embedding_dict = create_embedding_matrix(dnn_feature_columns,init_std,sparse=False,device=device)
+        self.embedding_dict = create_embedding_matrix(dnn_feature_columns, init_std, sparse=False, device=device)
         #         nn.ModuleDict(
         #             {feat.embedding_name: nn.Embedding(feat.dimension, embedding_size, sparse=True) for feat in
         #              self.dnn_feature_columns}
@@ -115,7 +117,7 @@ class BaseModel(nn.Module):
         self.add_regularization_loss(
             self.linear_model.parameters(), l2_reg_linear)
 
-        self.out = PredictionLayer(task,)
+        self.out = PredictionLayer(task, )
         self.to(device)
 
     def fit(self, x=None,
@@ -127,7 +129,7 @@ class BaseModel(nn.Module):
             validation_split=0.,
             validation_data=None,
             shuffle=True,
-            use_double=False ):
+            use_double=False):
         """
 
         :param x: Numpy array of training data (if the model has a single input), or list of Numpy arrays (if the model has multiple inputs).If input layers in the model are named, you can also pass a
@@ -215,7 +217,7 @@ class BaseModel(nn.Module):
                         optim.zero_grad()
                         loss = loss_func(y_pred, y.squeeze(), reduction='sum')
 
-                        total_loss = loss + self.reg_loss
+                        total_loss = loss + self.reg_loss + self.aux_loss
 
                         loss_epoch += loss.item()
                         total_loss_epoch += total_loss.item()
@@ -360,7 +362,10 @@ class BaseModel(nn.Module):
                 l2_reg = torch.norm(w, p=p, )
             reg_loss = reg_loss + l2_reg
         reg_loss = weight_decay * reg_loss
-        self.reg_loss += reg_loss
+        self.reg_loss = self.reg_loss + reg_loss
+
+    def add_auxiliary_loss(self, aux_loss, alpha):
+        self.aux_loss = aux_loss * alpha
 
     def compile(self, optimizer,
                 loss=None,
