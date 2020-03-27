@@ -387,7 +387,7 @@ class InteractingLayer(nn.Module):
             'bnik,bnjk->bnij', querys, keys)  # head_num None F F
 
         self.normalized_att_scores = F.softmax(
-            inner_product, dim=-1)  # head_num None F F
+            inner_product, dim=1)  # head_num None F F
         result = torch.matmul(self.normalized_att_scores,
                               values)  # head_num None F D
 

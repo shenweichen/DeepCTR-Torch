@@ -18,8 +18,6 @@ Submodules
    deepctr_torch.models.pnn
    deepctr_torch.models.wdl
    deepctr_torch.models.xdeepfm
-   deepctr_torch.models.din
-   deepctr_torch.models.dien
 
 Module contents
 ---------------
