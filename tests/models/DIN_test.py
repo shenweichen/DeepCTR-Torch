@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-import pytest
 import numpy as np
 
+from deepctr_torch.inputs import SparseFeat, VarLenSparseFeat, DenseFeat, get_feature_names
 from deepctr_torch.models.din import DIN
-from deepctr_torch.inputs import SparseFeat,VarLenSparseFeat,DenseFeat,get_feature_names
-from ..utils import get_test_data, SAMPLE_SIZE, check_model, get_device
+from ..utils import check_model, get_device
 
 
 def get_xy_fd(hash_flag=False):
@@ -46,9 +45,9 @@ def test_DIN():
     model_name = "DIN"
 
     x, y, feature_columns, behavior_feature_list = get_xy_fd()
-    model = DIN(feature_columns, behavior_feature_list, dnn_dropout=0.5)
+    model = DIN(feature_columns, behavior_feature_list, dnn_dropout=0.5, device=get_device())
 
-    check_model(model, model_name, x, y)   # only have 3 train data so we set validation ratio at 0
+    check_model(model, model_name, x, y)  # only have 3 train data so we set validation ratio at 0
 
 
 if __name__ == "__main__":

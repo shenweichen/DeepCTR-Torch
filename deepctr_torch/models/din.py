@@ -5,16 +5,11 @@ Author:
 Reference:
     [1] Zhou G, Zhu X, Song C, et al. Deep interest network for click-through rate prediction[C]//Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining. ACM, 2018: 1059-1068. (https://arxiv.org/pdf/1706.06978.pdf)
 """
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 
 from .basemodel import BaseModel
 from ..inputs import *
 from ..layers import *
 from ..layers.sequence import AttentionSequencePoolingLayer
-
-import pdb
 
 
 class DIN(BaseModel):
@@ -39,7 +34,7 @@ class DIN(BaseModel):
     """
 
     def __init__(self, dnn_feature_columns, history_feature_list, dnn_use_bn=False,
-                 dnn_hidden_units=(256, 128), dnn_activation='relu', att_hidden_size=[80, 40],             
+                 dnn_hidden_units=(256, 128), dnn_activation='relu', att_hidden_size=(64, 16),
                  att_activation='Dice', att_weight_normalization=False, l2_reg_dnn=0.0,
                  l2_reg_embedding=1e-6, dnn_dropout=0, init_std=0.0001,
                  seed=1024, task='binary', device='cpu'):

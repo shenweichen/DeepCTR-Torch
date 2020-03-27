@@ -1,10 +1,10 @@
+import numpy as np
 import pytest
 import torch
-import numpy as np
 
-from deepctr_torch.models.dien import InterestEvolving, DIEN
-from ..utils import check_model
 from deepctr_torch.inputs import SparseFeat, DenseFeat, VarLenSparseFeat, get_feature_names
+from deepctr_torch.models.dien import InterestEvolving, DIEN
+from ..utils import check_model, get_device
 
 
 @pytest.mark.parametrize(
@@ -91,7 +91,7 @@ def test_DIEN(gru_type, use_neg):
     x, y, feature_columns, behavior_feature_list = get_xy_fd(use_neg=use_neg)
 
     model = DIEN(feature_columns, behavior_feature_list,
-                 dnn_hidden_units=[4, 4, 4], dnn_dropout=0.5, gru_type=gru_type)
+                 dnn_hidden_units=[4, 4, 4], dnn_dropout=0.5, gru_type=gru_type, device=get_device())
 
     check_model(model, model_name, x, y)
 
