@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 from deepctr_torch.inputs import SparseFeat, DenseFeat, VarLenSparseFeat, get_feature_names
 from deepctr_torch.models import DIEN
@@ -52,9 +53,16 @@ def get_xy_fd(use_neg=False, hash_flag=False):
 
 if __name__ == "__main__":
     x, y, feature_columns, behavior_feature_list = get_xy_fd(use_neg=True)
+
+    device = 'cpu'
+    use_cuda = True
+    if use_cuda and torch.cuda.is_available():
+        print('cuda ready...')
+        device = 'cuda:0'
+
     model = DIEN(feature_columns, behavior_feature_list,
-                 dnn_hidden_units=[4, 4, 4], dnn_dropout=0.6, gru_type="AUGRU", use_negsampling=True)
+                 dnn_hidden_units=[4, 4, 4], dnn_dropout=0.6, gru_type="AUGRU", use_negsampling=True, device=device)
 
     model.compile('adam', 'binary_crossentropy',
-                  metrics=['binary_crossentropy','auc'])
-    history = model.fit(x, y, batch_size=2, verbose=1, epochs=10, validation_split=0,shuffle=False)
+                  metrics=['binary_crossentropy', 'auc'])
+    history = model.fit(x, y, batch_size=2, verbose=1, epochs=10, validation_split=0, shuffle=False)

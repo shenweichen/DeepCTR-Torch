@@ -7,16 +7,12 @@ import torch
 from deepctr_torch.inputs import (DenseFeat, SparseFeat, VarLenSparseFeat,
                                   get_feature_names)
 from deepctr_torch.models.din import DIN
-import pdb
 
 
 def get_xy_fd():
-    # pdb.set_trace()
     feature_columns = [SparseFeat('user', 3, embedding_dim=8), SparseFeat('gender', 2, embedding_dim=8),
                        SparseFeat('item', 3 + 1, embedding_dim=8), SparseFeat('item_gender', 2 + 1, embedding_dim=8),
                        DenseFeat('score', 1)]
-    # feature_columns += [VarLenSparseFeat('hist_item', 3 + 1, maxlen=4, embedding_name='item'),
-    #                     VarLenSparseFeat('hist_item_gender', 2 + 1, maxlen=4, embedding_name='item_gender')]
 
     feature_columns += [VarLenSparseFeat(SparseFeat('hist_item', 3 + 1, embedding_dim=8), 4),
                         VarLenSparseFeat(SparseFeat('hist_item_gender', 2 + 1, embedding_dim=8), 4)]
@@ -41,7 +37,13 @@ def get_xy_fd():
 
 if __name__ == "__main__":
     x, y, feature_columns, behavior_feature_list = get_xy_fd()
-    model = DIN(feature_columns, behavior_feature_list)
+    device = 'cpu'
+    use_cuda = True
+    if use_cuda and torch.cuda.is_available():
+        print('cuda ready...')
+        device = 'cuda:0'
+
+    model = DIN(feature_columns, behavior_feature_list, device=device)
     model.compile('adagrad', 'binary_crossentropy',
                   metrics=['binary_crossentropy'])
     history = model.fit(x, y, batch_size=3, epochs=10, validation_split=0.0, verbose=2)
