@@ -54,6 +54,12 @@ Please follow our wechat to join group:
 <a href="https://github.com/wutongzhang">
     <img src="https://avatars.githubusercontent.com/wutongzhang " width=70 height="70" alt="pic" >
 </a>
+<a href="https://github.com/weberrr">
+    <img src="https://avatars.githubusercontent.com/weberrr " width=70 height="70" alt="pic" >
+</a>
+<a href="https://github.com/ZhangYuef">
+    <img src="https://avatars.githubusercontent.com/ZhangYuef " width=70 height="70" alt="pic" >
+</a>
 <a href="https://github.com/JyiHUO">
     <img src="https://avatars.githubusercontent.com/JyiHUO " width=70 height="70" alt="pic" >
 </a>

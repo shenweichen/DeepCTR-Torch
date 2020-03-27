@@ -39,7 +39,7 @@ class DIEN(BaseModel):
 
     def __init__(self,
                  dnn_feature_columns, history_feature_list,
-                 gru_type="GRU", use_negsampling=False, alpha=1.0, use_bn=False, dnn_hidden_units=(200, 80),
+                 gru_type="GRU", use_negsampling=False, alpha=1.0, use_bn=False, dnn_hidden_units=(256, 128),
                  dnn_activation='relu',
                  att_hidden_units=(64, 16), att_activation="relu", att_weight_normalization=True,
                  l2_reg_dnn=0, l2_reg_embedding=1e-6, dnn_dropout=0, init_std=0.0001, seed=1024, task='binary',
