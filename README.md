@@ -85,12 +85,12 @@ Please follow our wechat to join group:
         ​ <a href="https://github.com/shenweichen"><img width="70" height="70" src="https://github.com/shenweichen.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/shenweichen">Shen Weichen</a> ​
         <p>Founder<br>
-        Zhejiang Unversity <br> <br> _ </p>​
+        Zhejiang Unversity <br> <br>  </p>​
       </td>
       <td>
          <a href="https://github.com/weberrr"><img width="70" height="70" src="https://github.com/weberrr.png?s=40" alt="pic"></a><br>
          <a href="https://github.com/weberrr">Wang Ze</a> ​
-        <p>Core Dev<br> Beihang University <br> <br> _ </p>​
+        <p>Core Dev<br> Beihang University <br> <br>  </p>​
       </td>
       <td>
         ​ <a href="https://github.com/wutongzhang"><img width="70" height="70" src="https://github.com/wutongzhang.png?s=40" alt="pic"></a><br>
@@ -101,13 +101,13 @@ Please follow our wechat to join group:
         ​ <a href="https://github.com/ZhangYuef"><img width="70" height="70" src="https://github.com/ZhangYuef.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/ZhangYuef">Zhang Yuefeng</a>
         <p>Core Dev<br>
-        Peking University <br>  <br> _ </p>​
+        Peking University <br>  <br>  </p>​
       </td>
       <td>
         ​ <a href="https://github.com/JyiHUO"><img width="70" height="70" src="https://github.com/JyiHUO.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/JyiHUO">Huo Junyi</a>
         <p>Core Dev<br>
-        University of Southampton <br> <br> _ </p>​
+        University of Southampton <br> <br>  </p>​
       </td>
     </tr>
     <tr align="center">
@@ -115,19 +115,19 @@ Please follow our wechat to join group:
         ​ <a href="https://github.com/Zengai"><img width="70" height="70" src="https://github.com/Zengai.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/Zengai">Zeng Kai</a> ​
         <p>Dev<br>
-        SenseTime <br> <br> _ </p>​
+        SenseTime <br> <br>  </p>​
       </td>
       <td>
         ​ <a href="https://github.com/chenkkkk"><img width="70" height="70" src="https://github.com/chenkkkk.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/chenkkkk">Chen K</a> ​
         <p>Dev<br>
-        NetEase <br>  <br> _ </p>​
+        NetEase <br>  <br>  </p>​
       </td>
       <td>
         ​ <a href="https://github.com/tangaqi"><img width="70" height="70" src="https://github.com/tangaqi.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/tangaqi">Tang</a>
         <p>Test<br>
-        Tongji University <br> <br> _ </p>​
+        Tongji University <br> <br>  </p>​
       </td>
       <td>
         ​ <a href="https://github.com/uestc7d"><img width="70" height="70" src="https://github.com/uestc7d.png?s=40" alt="pic"></a><br>
@@ -136,7 +136,7 @@ Please follow our wechat to join group:
         University of <br> Electronic  Science  and <br> Technology of China</p>​
       </td>
       <td>
-        ​ Welcome You!
+      <a href="https://github.com/shenweichen/DeepCTR-Torch/blob/master/CONTRIBUTING.md"> Welcome you !!</a>
       </td>
     </tr>
   </tbody>
