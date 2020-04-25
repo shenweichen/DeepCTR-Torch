@@ -90,7 +90,7 @@ class DIN(BaseModel):
         # sequence pooling part
         query_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.sparse_feature_columns,
                                           self.history_feature_list, self.history_feature_list, to_list=True)
-        keys_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.history_feature_columns,
+        keys_emb_list, keys_length = embedding_lookup_with_varlen_lengths(X, self.embedding_dict, self.feature_index, self.history_feature_columns,
                                          self.history_fc_names, self.history_fc_names, to_list=True)
         dnn_input_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.sparse_feature_columns, mask_feat_list=self.history_feature_list, to_list=True)
 
@@ -106,7 +106,7 @@ class DIN(BaseModel):
         # concatenate
         query_emb = torch.cat(query_emb_list, dim=-1)                     # [B, 1, E]
         keys_emb = torch.cat(keys_emb_list, dim=-1)                       # [B, T, E]
-        keys_length = torch.ones((query_emb.size(0), 1)).to(self.device)  # [B, 1]
+        # keys_length = torch.ones((query_emb.size(0), 1)).to(self.device)  # [B, 1]
         deep_input_emb = torch.cat(dnn_input_emb_list, dim=-1)
 
         hist = self.attention(query_emb, keys_emb, keys_length)           # [B, 1, E]
@@ -129,6 +129,34 @@ class DIN(BaseModel):
             if feat.name in self.history_feature_list:
                 interest_dim += feat.embedding_dim
         return interest_dim
+
+
+def embedding_lookup_with_varlen_lengths(
+        X, embedding_dict, feature_index, varlen_sparse_feature_columns, 
+        return_feat_list=(), mask_feat_list=(), to_list=False):
+    
+    group_embedding_dict = defaultdict(list)
+    for fc in varlen_sparse_feature_columns:
+        if not hasattr(fc, "length_name"):
+            continue
+        feature_name = fc.name
+        embedding_name = fc.embedding_name
+        length_name = fc.length_name
+        if (len(return_feat_list) == 0 or feature_name in return_feat_list):
+            lookup_idx = feature_index[feature_name]
+            input_tensor = X[:, lookup_idx[0]:lookup_idx[1]].long()
+            emb = embedding_dict[embedding_name](input_tensor)
+            group_embedding_dict[fc.group_name].append(emb)
+            
+            if length_name is None:
+                varlen_lengths = (input_tensor != 0).sum(dim=-1).long().view(-1, 1)
+            else:
+                lookup_idx = feature_index[length_name]
+                varlen_lengths = X[:, lookup_idx[0]:lookup_idx[1]].long()
+
+    if to_list:
+        return list(chain.from_iterable(group_embedding_dict.values())), varlen_lengths
+    return group_embedding_dict, varlen_lengths
 
 
 if __name__ == '__main__':
