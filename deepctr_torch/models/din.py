@@ -9,7 +9,7 @@ Reference:
 from .basemodel import BaseModel
 from ..inputs import *
 from ..layers import *
-from ..layers.sequence import AttentionSequencePoolingLayer
+from ..layers.sequence import AttentionSequencePoolingLayer, SequencePoolingLayer
 
 
 class DIN(BaseModel):
@@ -46,24 +46,20 @@ class DIN(BaseModel):
                                   seed=seed, task=task, 
                                   device=device)
 
-        self.sparse_feature_columns = list(
-            filter(lambda x: isinstance(x, SparseFeat), dnn_feature_columns)) if dnn_feature_columns else []
-        self.varlen_sparse_feature_columns = list(
-            filter(lambda x: isinstance(x, VarLenSparseFeat), dnn_feature_columns)) if dnn_feature_columns else []
-
-        self.history_feature_list = history_feature_list
-
-        self.history_feature_columns = []
-        self.sparse_varlen_feature_columns = []
-        self.history_fc_names = list(map(lambda x: "hist_" + x, history_feature_list))
-
-        for fc in self.varlen_sparse_feature_columns:
-            feature_name = fc.name
-            if feature_name in self.history_fc_names:
-                self.history_feature_columns.append(fc)
-            else:
-                self.sparse_varlen_feature_columns.append(fc)
-
+        for i in range(len(dnn_feature_columns)):
+            fc = dnn_feature_columns[i]
+            if hasattr(fc, 'group_name'):
+                if fc.name in history_feature_list:
+                    dnn_feature_columns[i] = SparseFeat(
+                        fc.name, fc.vocabulary_size, fc.embedding_dim, 
+                        fc.use_hash, fc.dtype, fc.embedding_name, 'ad_group')
+                elif 'hist' in fc.name:
+                    dnn_feature_columns[i] = VarLenSparseFeat(SparseFeat(
+                        fc.name, fc.vocabulary_size, fc.embedding_dim, 
+                        fc.sparsefeat.use_hash, fc.dtype, fc.embedding_name, 'behavior_group'),
+                        fc.maxlen, fc.combiner, fc.length_name)
+        self.dnn_input = DinInput(dnn_feature_columns)
+        self.behavior_fc0 = self.dnn_input.get_varlen_sparse_feature_columns(self.dnn_input.behavior_group)[0]
         att_emb_dim = self._compute_interest_dim()
 
         self.attention = AttentionSequencePoolingLayer(att_hidden_units=att_hidden_size,
@@ -82,40 +78,25 @@ class DIN(BaseModel):
         self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False).to(device)
         self.to(device)
 
-
     def forward(self, X):
-        sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
-                                                                                  self.embedding_dict)
-
-        # sequence pooling part
-        query_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.sparse_feature_columns,
-                                          self.history_feature_list, self.history_feature_list, to_list=True)
-        keys_emb_list, keys_length = embedding_lookup_with_varlen_lengths(X, self.embedding_dict, self.feature_index, self.history_feature_columns,
-                                         self.history_fc_names, self.history_fc_names, to_list=True)
-        dnn_input_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.sparse_feature_columns, mask_feat_list=self.history_feature_list, to_list=True)
-
-
-        sequence_embed_dict = varlen_embedding_lookup(X, self.embedding_dict, self.feature_index,
-                                                      self.sparse_varlen_feature_columns)
-
-        sequence_embed_list = get_varlen_pooling_list(sequence_embed_dict, X, self.feature_index,
-                                                      self.sparse_varlen_feature_columns, self.device)
-
-        dnn_input_emb_list += sequence_embed_list
+         # query -> AD , keys -> user_behavior hist
+        query_emb_list, keys_emb_list, keys_length, dnn_input_emb_list, dense_value_list = \
+            self._get_embedding_list(X)
 
         # concatenate
-        query_emb = torch.cat(query_emb_list, dim=-1)                     # [B, 1, E]
-        keys_emb = torch.cat(keys_emb_list, dim=-1)                       # [B, T, E]
-        # keys_length = torch.ones((query_emb.size(0), 1)).to(self.device)  # [B, 1]
-        deep_input_emb = torch.cat(dnn_input_emb_list, dim=-1)
+        dense_value = torch.cat(dense_value_list)               # -> [B, E_dense]
+        deep_input_emb = torch.cat(dnn_input_emb_list, dim=-1)  # -> [B, 1, E_dnn_0]
+        query_emb = torch.cat(query_emb_list, dim=-1)           # -> [B, 1, E]
+        keys_emb = torch.cat(keys_emb_list, dim=-1)             # -> [B, T, E]
 
-        hist = self.attention(query_emb, keys_emb, keys_length)           # [B, 1, E]
+        att_interest_hist = self.attention(query_emb, keys_emb, keys_length) # -> [B, 1, E]
 
         # deep part
-        deep_input_emb = torch.cat((deep_input_emb, hist), dim=-1)
-        deep_input_emb = deep_input_emb.view(deep_input_emb.size(0), -1)
+        dnn_input = torch.cat([
+            att_interest_hist.squeeze(), 
+            deep_input_emb.squeeze(), 
+            dense_value], dim=-1)                               # -> [B, 1, E_dnn_1]
 
-        dnn_input = combined_dnn_input([deep_input_emb], dense_value_list)
         dnn_output = self.dnn(dnn_input)
         dnn_logit = self.dnn_linear(dnn_output)
 
@@ -123,41 +104,179 @@ class DIN(BaseModel):
 
         return y_pred
 
+    def _get_embedding_list(self, X):
+        ##### Interest Part
+        # query -> AD
+        query_emb_list = self.input_from_sparse_columns(
+            X, self.dnn_input.sparse_group_dict[self.dnn_input.ad_group])
+
+        # keys -> user_behavior hist
+        keys_emb_list = self.input_from_varlen_sparse_columns(
+            X, self.dnn_input.varlen_sparse_group_dict[self.dnn_input.behavior_group], pooling=False)
+
+        ### NonInterest dnn Part embedding
+        dnn_sparse_emb_list = self.input_from_sparse_columns(
+            X, self.dnn_input.sparse_group_dict[self.dnn_input.default_group])
+
+        dnn_varlen_sparse_emb_list = self.input_from_varlen_sparse_columns(
+            X, self.dnn_input.varlen_sparse_group_dict[self.dnn_input.default_group])
+
+        dnn_input_emb_list = query_emb_list + dnn_sparse_emb_list + dnn_varlen_sparse_emb_list
+
+        dense_value_list = self.input_from_dense_columns(X, self.dnn_input.dense_feature_columns)
+
+        if self.behavior_fc0.length_name is None:
+            lookup = self.feature_index[self.behavior_fc0.name]
+            keys_mask = X[:, lookup[0]: lookup[1]] != 0
+            keys_length = keys_mask.sum(-1, keepdim=True, dtype=torch.long)
+        else:
+            lookup = self.feature_index[self.behavior_fc0.length_name]
+            keys_length = X[:, lookup[0]: lookup[1]].long()
+
+        return query_emb_list, keys_emb_list, keys_length, dnn_input_emb_list, dense_value_list
+
     def _compute_interest_dim(self):
         interest_dim = 0
-        for feat in self.sparse_feature_columns:
-            if feat.name in self.history_feature_list:
-                interest_dim += feat.embedding_dim
+        for feat in self.dnn_input.sparse_group_dict[self.dnn_input.ad_group]:
+            interest_dim += feat.embedding_dim
         return interest_dim
 
+    def input_from_dense_columns(self, X, feature_columns):
 
-def embedding_lookup_with_varlen_lengths(
-        X, embedding_dict, feature_index, varlen_sparse_feature_columns, 
-        return_feat_list=(), mask_feat_list=(), to_list=False):
+        dense_value_list = [
+            X[:, self.feature_index[fc.name][0]: self.feature_index[fc.name][1]] 
+            for fc in feature_columns if isinstance(fc, DenseFeat)]
+
+        return dense_value_list
+
+    def input_from_sparse_columns(self, X, feature_columns):
+
+        sparse_embedding_list = [
+            self.embedding_dict[fc.embedding_name](
+                X[:, self.feature_index[fc.name][0]: self.feature_index[fc.name][1]].long()
+            ) for fc in feature_columns if isinstance(fc, SparseFeat)]
+
+        return sparse_embedding_list
+
+    def input_from_varlen_sparse_columns(self, X, feature_columns, pooling=True):
+
+        varlen_sparse_embedding_list = [
+            self.get_varlen_sparse_feature_pooling(X, fc) if pooling else 
+            self.embedding_dict[fc.embedding_name](
+                X[:, self.feature_index[fc.name][0]: self.feature_index[fc.name][1]].long()
+            ) for fc in feature_columns if isinstance(fc, VarLenSparseFeat)]
+
+        return varlen_sparse_embedding_list
+
+    def get_varlen_sparse_feature_pooling(self, X, fc):
+
+        x = X[:, self.feature_index[fc.name][0]: self.feature_index[fc.name][1]].long()
+        seq_emb = self.embedding_dict[fc.embedding_name](x)
+        if fc.length_name is None:
+            mask = (x != 0)
+            seq_emb_pooling = SequencePoolingLayer(mode=fc.combiner, support_masking=True)(seq_emb, mask)
+        else:
+            seq_length = X[:, self.feature_index[fc.length_name][0]: self.feature_index[fc.length_name][1]].long()
+            seq_emb_pooling = SequencePoolingLayer(mode=fc.combiner)(seq_emb, seq_length)
+
+        return seq_emb_pooling    
+
+
+class Input(object):
+    def __init__(self, feature_columns, **kwargs):
+        self.default_group = DEFAULT_GROUP_NAME
+
+        self.sparse_feature_columns, self.varlen_sparse_feature_columns, self.dense_feature_columns = \
+            split_feature_by_class(feature_columns)
+        self.feature_columns = self.sparse_feature_columns + self.varlen_sparse_feature_columns + self.dense_feature_columns
+        self.length = len(self.feature_columns)
+
+        self.group_dict = split_feature_by_group(self.feature_columns)
+        self.dense_group_dict = split_feature_by_group(self.dense_feature_columns)
+        self.sparse_group_dict = split_feature_by_group(self.sparse_feature_columns)
+        self.varlen_sparse_group_dict = split_feature_by_group(self.varlen_sparse_feature_columns)
+
+        self.flag()
     
-    group_embedding_dict = defaultdict(list)
-    for fc in varlen_sparse_feature_columns:
-        if not hasattr(fc, "length_name"):
+    def get_sparse_feature_columns(self, group_names=None):
+        
+        if group_names is None:
+            return self.sparse_feature_columns
+        if isinstance(group_names, str):
+            group_names = [group_names]
+        if isinstance(group_names, (list, tuple)) and all(isinstance(name, str) for name in group_names):
+            return list(chain.from_iterable(self.sparse_group_dict[group_name] for group_name in group_names))
+        else:
+            raise TypeError(
+                "group_name should be string or strings in list-like, got {}".format(group_names))
+
+    def get_varlen_sparse_feature_columns(self, group_names=None):
+        if group_names is None:
+            return self.varlen_sparse_feature_columns
+        if isinstance(group_names, str):
+            group_names = [group_names]      
+        if isinstance(group_names, (list, tuple)) and all(isinstance(name, str) for name in group_names):
+            return list(chain.from_iterable(self.varlen_sparse_group_dict[group_name] for group_name in group_names))
+        else:
+            raise TypeError(
+                "group_name should be string or strings in list-like, got {}".format(group_names))
+
+    def __len__(self):
+        return self.length
+    
+    def flag(self):
+        self.dense = len(self.dense_feature_columns) > 0
+        self.sparse = len(self.sparse_feature_columns) > 0
+        self.varlen = len(self.varlen_sparse_feature_columns) > 0
+
+
+class DinInput(Input):
+    def __init__(self, feature_columns, behavior_group="behavior_group", ad_group="ad_group", **kwargs):
+        super().__init__(feature_columns)
+        self.behavior_group=behavior_group
+        self.ad_group=ad_group
+
+        self.has_behavior_lenth = any(fc.length_name is not None for fc in self.varlen_sparse_group_dict[self.behavior_group])
+
+        self.ad_group_feature_names = [
+            fc.name for fc in self.sparse_feature_columns if "ad" in fc.group_name]
+        self.behavior_group_feature_names = [
+            fc.name for fc in self.sparse_feature_columns if "behavior" in fc.group_name]
+
+
+def split_feature_by_group(feature_columns):
+    group_dict = defaultdict(list)
+    for fc in feature_columns:
+        if not hasattr(fc, "group_name"):
             continue
-        feature_name = fc.name
-        embedding_name = fc.embedding_name
-        length_name = fc.length_name
-        if (len(return_feat_list) == 0 or feature_name in return_feat_list):
-            lookup_idx = feature_index[feature_name]
-            input_tensor = X[:, lookup_idx[0]:lookup_idx[1]].long()
-            emb = embedding_dict[embedding_name](input_tensor)
-            group_embedding_dict[fc.group_name].append(emb)
-            
-            if length_name is None:
-                varlen_lengths = (input_tensor != 0).sum(dim=-1).long().view(-1, 1)
-            else:
-                lookup_idx = feature_index[length_name]
-                varlen_lengths = X[:, lookup_idx[0]:lookup_idx[1]].long()
+        group_dict[fc.group_name].append(fc)
 
-    if to_list:
-        return list(chain.from_iterable(group_embedding_dict.values())), varlen_lengths
-    return group_embedding_dict, varlen_lengths
+    return group_dict
 
 
-if __name__ == '__main__':
-    pass
+def split_feature_by_class(feature_columns):
+    
+    dense_feature_dict = OrderedDict()
+    sparse_feature_dict = OrderedDict()
+    varlen_sparse_feature_dict = OrderedDict()
+
+    feature_dict_list = [sparse_feature_dict, varlen_sparse_feature_dict, dense_feature_dict]
+
+    for fc in feature_columns:
+        f_name = fc.name
+        if any(f_name in feature_dict for feature_dict in feature_dict_list):
+            continue
+        if isinstance(fc, SparseFeat):
+            sparse_feature_dict[f_name] = fc
+        elif isinstance(fc, VarLenSparseFeat):
+            varlen_sparse_feature_dict[f_name] = fc
+        elif isinstance(fc, DenseFeat):
+            dense_feature_dict[f_name] = fc
+        else:
+            raise TypeError("Invalid feature type, got {}".format(type(fc)))
+    
+    sparse_feature_columns = list(sparse_feature_dict.values())
+    varlen_sparse_feature_columns = list(varlen_sparse_feature_dict.values())
+    dense_feature_columns = list(dense_feature_dict.values())
+
+    return sparse_feature_columns, varlen_sparse_feature_columns, dense_feature_columns
