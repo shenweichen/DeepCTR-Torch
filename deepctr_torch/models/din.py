@@ -80,7 +80,7 @@ class DIN(BaseModel):
         self.to(device)
 
     def forward(self, X):
-         # query -> AD , keys -> user_behavior hist
+        # query -> AD , keys -> user_behavior hist
         query_emb_list, keys_emb_list, keys_length, dnn_input_emb_list, dense_value_list = \
             self._get_embedding_list(X)
 
@@ -96,7 +96,7 @@ class DIN(BaseModel):
         dnn_input = torch.cat([
             att_interest_hist.squeeze(), 
             deep_input_emb.squeeze(), 
-            dense_value], dim=-1)                               # -> [B, 1, E_dnn_1]
+            dense_value], dim=-1)                               # -> [B, E_dnn_1]
 
         dnn_output = self.dnn(dnn_input)
         dnn_logit = self.dnn_linear(dnn_output)
