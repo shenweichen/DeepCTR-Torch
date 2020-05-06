@@ -163,8 +163,11 @@ def split_feature_columns(feature_columns, history_feature_list):
             dense_feature_columns.append(fc)
 
     if len(ad_feature_columns) == 0 or len(behavior_feature_columns) == 0:
-        raise ValueError("Goods or Hist feature columns is None, check history_feature_list {} and feature_columns {} matched".format(history_feature_list, feature_columns))
-    
+        raise ValueError("Goods or History feature columns is None, "
+                         "check history_feature_list {} and Interest feature columns {} matched".format(history_feature_list, ad_feature_columns + behavior_feature_columns))
+    elif len(ad_feature_columns) != len(behavior_feature_columns):
+        raise ValueError("Goods num_feature: {} do not equel History num_feature: {}.".format(len(ad_feature_columns), len(behavior_feature_columns))
+ 
     behavior_fc_with_length = [fc for fc in behavior_feature_columns if fc.length_name is not None]
     behavior_fc_with_length = behavior_fc_with_length[0] if len(behavior_fc_with_length) > 0 else None
 
