@@ -87,12 +87,12 @@ class DIN(BaseModel):
         # concatenate
         query_emb = torch.cat(query_emb_list, dim=-1)           # -> [B, 1, E]
         keys_emb = torch.cat(keys_emb_list, dim=-1)             # -> [B, T, E]
-        deep_input_emb = torch.cat(dnn_input_emb_list, dim=-1)  # -> [B, 1, E_dnn_0]
+        dnn_input_emb = torch.cat(dnn_input_emb_list, dim=-1)  # -> [B, 1, E_dnn_0]
 
         att_interest_hist = self.attention(query_emb, keys_emb, keys_length) # -> [B, 1, E]
 
         # deep part                                             # -> [B, E_dnn_1]
-        dnn_input = torch.cat([att_interest_hist.squeeze(), deep_input_emb.squeeze()] + dnn_input_emb_list, dim=-1)                               
+        dnn_input = torch.cat([att_interest_hist.squeeze(), dnn_input_emb.squeeze()] + dense_value_list, dim=-1)                               
 
         dnn_output = self.dnn(dnn_input)
         dnn_logit = self.dnn_linear(dnn_output)
