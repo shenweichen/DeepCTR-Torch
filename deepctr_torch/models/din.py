@@ -36,8 +36,8 @@ class DIN(BaseModel):
 
     def __init__(self, dnn_feature_columns, history_feature_list, dnn_use_bn=False,
                  dnn_hidden_units=(256, 128), dnn_activation='relu', att_hidden_units=(64, 16),
-                 att_activation='Dice', att_weight_normalization=False, supports_masking=False, 
-                 l2_reg_dnn=0.0, l2_reg_embedding=1e-6, dnn_dropout=0, init_std=0.0001,
+                 att_activation='Dice', att_weight_normalization=False, l2_reg_dnn=0.0, 
+                 l2_reg_embedding=1e-6, dnn_dropout=0, init_std=0.0001,
                  seed=1024, task='binary', device='cpu'):
         super(DIN, self).__init__([], dnn_feature_columns,
                                   dnn_hidden_units=dnn_hidden_units, l2_reg_linear=0,
@@ -50,17 +50,13 @@ class DIN(BaseModel):
         self.ad_feature_columns, self.behavior_feature_columns, self.default_sparse_feature_columns, \
             self.default_varlen_sparse_feature_columns, self.dense_feature_columns, self.behavior_fc_with_length = \
                 split_feature_columns(dnn_feature_columns, history_feature_list)
-        self.supports_masking=supports_masking 
-        if self.behavior_fc_with_length is None:
-            self.supports_masking = True
-            print("Model got no history behavior seq_length values, and set supports_masking=True for auto masking, please check it!")
-            
+
         att_emb_dim = self._compute_interest_dim()
         self.attention = AttentionSequencePoolingLayer(att_hidden_units=att_hidden_units,
                                                        embedding_dim=att_emb_dim,
                                                        activation=att_activation,
                                                        return_score=False,
-                                                       supports_masking=self.supports_masking,
+                                                       supports_masking=self.behavior_fc_with_length is None,
                                                        weight_normalization=att_weight_normalization)
 
         self.dnn = DNN(inputs_dim=self.compute_input_dim(dnn_feature_columns),
@@ -123,14 +119,12 @@ class DIN(BaseModel):
         _, dense_value_list = self.input_from_feature_columns(
             X, self.dense_feature_columns, self.embedding_dict)
 
-        if self.supports_masking:
+        if self.behavior_fc_with_length is None:
             lookup = self.feature_index[self.behavior_feature_columns[0].name]
             keys_length_or_mask = X[:, lookup[0]: lookup[1]] != 0
-        elif self.behavior_fc_with_length is not None:
+        else:
             lookup = self.feature_index[self.behavior_fc_with_length.length_name]
             keys_length_or_mask = X[:, lookup[0]: lookup[1]].long()
-        else:
-            raise ValueError("please set behavior_sequence length_name and length values or set supports_masking=True for auto masking")
 
         return query_emb_list, keys_emb_list, keys_length_or_mask, dnn_input_emb_list, dense_value_list
 
@@ -161,15 +155,14 @@ def split_feature_columns(feature_columns, history_feature_list):
                 default_varlen_sparse_feature_columns.append(fc)
         elif isinstance(fc, DenseFeat):
             dense_feature_columns.append(fc)
-
+    
     if len(ad_feature_columns) == 0 or len(behavior_feature_columns) == 0:
         raise ValueError("Goods or History feature columns is None, "
                          "check history_feature_list {} and Interest feature columns {} matched".format(history_feature_list, ad_feature_columns + behavior_feature_columns))
     elif len(ad_feature_columns) != len(behavior_feature_columns):
-        raise ValueError("Goods num_feature: {} do not equel History num_feature: {}.".format(len(ad_feature_columns), len(behavior_feature_columns))
+        raise ValueError("Goods num_feature: {} do not equel History num_feature: {}.".format(len(ad_feature_columns), len(behavior_feature_columns)))
  
     behavior_fc_with_length = [fc for fc in behavior_feature_columns if fc.length_name is not None]
     behavior_fc_with_length = behavior_fc_with_length[0] if len(behavior_fc_with_length) > 0 else None
 
     return ad_feature_columns, behavior_feature_columns, default_sparse_feature_columns, default_varlen_sparse_feature_columns, dense_feature_columns, behavior_fc_with_length
-
