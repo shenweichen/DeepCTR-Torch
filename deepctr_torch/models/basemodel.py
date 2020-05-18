@@ -146,6 +146,10 @@ class BaseModel(nn.Module):
 
         """
         if isinstance(x, dict):
+            x_keys, feature_index_keys = set(x.keys()), set(self.feature_index.keys())
+            if len(feature_index_keys-x_keys) > 0:
+                raise KeyError("keys in input data X: {} do not match keys in feature_index: {}, "
+                               "please check missing data input like sequence lengths".format(x_keys - feature_index_keys, feature_index_keys - x_keys))
             x = [x[feature] for feature in self.feature_index]
         if validation_data:
             if len(validation_data) == 2:
