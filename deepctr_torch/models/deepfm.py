@@ -11,6 +11,7 @@ import torch.nn as nn
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
 from ..layers import FM, DNN
+from ..layers.regularization import Regularization
 
 
 class DeepFM(BaseModel):
@@ -62,9 +63,12 @@ class DeepFM(BaseModel):
             self.dnn_linear = nn.Linear(
                 dnn_hidden_units[-1], 1, bias=False).to(device)
 
-            self.add_regularization_loss(
-                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
-            self.add_regularization_loss(self.dnn_linear.weight, l2_reg_dnn)
+            if l2_reg_dnn > 0:
+                self.regularization.append(Regularization(self.dnn, l2_reg_dnn, device=device))
+                self.regularization.append(Regularization(self.dnn_linear, l2_reg_dnn, device=device))
+            # self.add_regularization_loss(
+            #     filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
+            # self.add_regularization_loss(self.dnn_linear.weight, l2_reg_dnn)
         self.to(device)
 
     def forward(self, X):

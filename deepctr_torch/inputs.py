@@ -166,7 +166,8 @@ def create_embedding_matrix(feature_columns, init_std=0.0001, linear=False, spar
     embedding_dict = nn.ModuleDict(
         {feat.embedding_name: nn.Embedding(feat.vocabulary_size, feat.embedding_dim if not linear else 1, sparse=sparse)
          for feat in
-         sparse_feature_columns + varlen_sparse_feature_columns}
+         sparse_feature_columns + varlen_sparse_feature_columns
+         }
     )
 
     # for feat in varlen_sparse_feature_columns:
@@ -203,7 +204,6 @@ def input_from_feature_columns(self, X, feature_columns, embedding_dict, support
                         dense_feature_columns]
 
     return sparse_embedding_list + varlen_sparse_embedding_list, dense_value_list
-
 
 
 def embedding_lookup(X, sparse_embedding_dict, sparse_input_dict, sparse_feature_columns, return_feat_list=(),
@@ -265,7 +265,7 @@ def get_dense_input(X, features, feature_columns):
 
 
 def maxlen_lookup(X, sparse_input_dict, maxlen_column):
-    if maxlen_column is None or len(maxlen_column)==0:
+    if maxlen_column is None or len(maxlen_column) == 0:
         raise ValueError('please add max length column for VarLenSparseFeat of DIEN input')
     lookup_idx = np.array(sparse_input_dict[maxlen_column[0]])
     return X[:, lookup_idx[0]:lookup_idx[1]].long()

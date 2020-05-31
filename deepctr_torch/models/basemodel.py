@@ -22,6 +22,7 @@ from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFe
     create_embedding_matrix
 from ..layers import PredictionLayer
 from ..layers.utils import slice_arrays
+from ..layers.regularization import Regularization
 
 
 class Linear(nn.Module):
@@ -49,8 +50,9 @@ class Linear(nn.Module):
             nn.init.normal_(tensor.weight, mean=0, std=init_std)
 
         if len(self.dense_feature_columns) > 0:
-            self.weight = nn.Parameter(torch.Tensor(sum(fc.dimension for fc in self.dense_feature_columns), 1)).to(
-                device)
+            # self.weight = nn.Parameter(torch.Tensor(sum(fc.dimension for fc in self.dense_feature_columns), 1)).to(device) # , device=device
+            self.weight = nn.Parameter(torch.Tensor(sum(fc.dimension for fc in self.dense_feature_columns), 1).to(device))
+
             torch.nn.init.normal_(self.weight, mean=0, std=init_std)
 
     def forward(self, X):
@@ -112,10 +114,13 @@ class BaseModel(nn.Module):
         self.linear_model = Linear(
             linear_feature_columns, self.feature_index, device=device)
 
-        self.add_regularization_loss(
-            self.embedding_dict.parameters(), l2_reg_embedding)
-        self.add_regularization_loss(
-            self.linear_model.parameters(), l2_reg_linear)
+        self.regularization = []
+        self.regularization.append(Regularization(self.embedding_dict, l2_reg_embedding, device=device))
+        self.regularization.append(Regularization(self.linear_model, l2_reg_linear, device=device))
+        # self.add_regularization_loss(
+        #     self.embedding_dict.parameters(), l2_reg_embedding)
+        # self.add_regularization_loss(
+        #     self.linear_model.parameters(), l2_reg_linear)
 
         self.out = PredictionLayer(task, )
         self.to(device)
@@ -217,11 +222,13 @@ class BaseModel(nn.Module):
                         optim.zero_grad()
                         loss = loss_func(y_pred, y.squeeze(), reduction='sum')
 
-                        total_loss = loss + self.reg_loss + self.aux_loss
+                        for reg in self.regularization:
+                            loss = loss + reg()
+                        total_loss = loss # + self.reg_loss + self.aux_loss
 
                         loss_epoch += loss.item()
                         total_loss_epoch += total_loss.item()
-                        total_loss.backward(retain_graph=True)
+                        total_loss.backward(retain_graph=False)
                         optim.step()
 
                         if verbose > 0:
