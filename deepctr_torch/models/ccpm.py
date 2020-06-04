@@ -11,13 +11,11 @@ Reference:
 """
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from .basemodel import BaseModel
-from ..layers.core import DNN, Conv2dSame
-from ..layers.utils import concat_fun
-from ..layers.sequence import KMaxPooling
+from ..layers.core import DNN
 from ..layers.interaction import ConvLayer
+from ..layers.utils import concat_fun
 
 
 class CCPM(BaseModel):
@@ -25,7 +23,6 @@ class CCPM(BaseModel):
 
     :param linear_feature_columns: An iterable containing all the features used by linear part of the model.
     :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
-    :param embedding_size: positive integer,sparse feature embedding_size
     :param conv_kernel_width: list,list of positive integer or empty list,the width of filter in each conv layer.
     :param conv_filters: list,list of positive integer or empty list,the number of filters in each conv layer.
     :param dnn_hidden_units: list,list of positive integer or empty list, the layer number and units in each layer of DNN.
@@ -41,12 +38,12 @@ class CCPM(BaseModel):
 
     """
 
-    def __init__(self, linear_feature_columns, dnn_feature_columns, embedding_size=8, conv_kernel_width=(6, 5),
+    def __init__(self, linear_feature_columns, dnn_feature_columns, conv_kernel_width=(6, 5),
                  conv_filters=(4, 4),
                  dnn_hidden_units=(256,), l2_reg_linear=1e-5, l2_reg_embedding=1e-5, l2_reg_dnn=0, dnn_dropout=0,
-                 init_std=0.0001, seed=1024, task='binary', device='cpu', dnn_use_bn=False, dnn_activation=F.relu):
+                 init_std=0.0001, seed=1024, task='binary', device='cpu', dnn_use_bn=False, dnn_activation='relu'):
 
-        super(CCPM, self).__init__(linear_feature_columns, dnn_feature_columns, embedding_size=embedding_size,
+        super(CCPM, self).__init__(linear_feature_columns, dnn_feature_columns,
                                    dnn_hidden_units=dnn_hidden_units,
                                    l2_reg_linear=l2_reg_linear,
                                    l2_reg_embedding=l2_reg_embedding, l2_reg_dnn=l2_reg_dnn, init_std=init_std,
@@ -57,21 +54,20 @@ class CCPM(BaseModel):
         if len(conv_kernel_width) != len(conv_filters):
             raise ValueError(
                 "conv_kernel_width must have same element with conv_filters")
-        
-        filed_size = self.compute_input_dim(dnn_feature_columns, embedding_size, include_dense=False, feature_group=True)
-        self.conv_layer = ConvLayer(field_size=filed_size, conv_kernel_width=conv_kernel_width, conv_filters=conv_filters, device=device)
-        
-        self.dnn_input_dim = self.conv_layer.filed_shape * embedding_size * conv_filters[-1]
+
+        filed_size = self.compute_input_dim(dnn_feature_columns, include_dense=False, feature_group=True)
+        self.conv_layer = ConvLayer(field_size=filed_size, conv_kernel_width=conv_kernel_width,
+                                    conv_filters=conv_filters, device=device)
+        self.dnn_input_dim = self.conv_layer.filed_shape * self.embedding_size * conv_filters[-1]
         self.dnn = DNN(self.dnn_input_dim, dnn_hidden_units,
-                           activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
-                           init_std=init_std, device=device)
+                       activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
+                       init_std=init_std, device=device)
         self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False).to(device)
         self.add_regularization_loss(
-                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
+            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
         self.add_regularization_loss(self.dnn_linear.weight, l2_reg_dnn)
-        
-        self.to(device)
 
+        self.to(device)
 
     def forward(self, X):
         linear_logit = self.linear_model(X)

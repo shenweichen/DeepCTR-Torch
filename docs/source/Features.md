@@ -21,6 +21,34 @@ DNN based CTR estimation models consists of the following 4 modules:
 
  > High-order Extractor learns feature combination through complex neural network functions like MLP,Cross Net,etc.
 
+## Feature Columns
+### SparseFeat
+``SparseFeat`` is a namedtuple with signature ``SparseFeat(name, vocabulary_size, embedding_dim, use_hash, dtype,embedding_name, group_name)``
+
+- name : feature name
+- vocabulary_size : number of unique feature values for sprase feature or hashing space when `use_hash=True`
+- embedding_dim : embedding dimension
+- use_hash : defualt `False`.If `True` the input will be hashed to space of size `vocabulary_size`.
+- dtype : default `float32`.dtype of input tensor.
+- embedding_name : default `None`. If None, the embedding_name will be same as `name`.
+- group_name : feature group of this feature.
+
+### DenseFeat
+``DenseFeat`` is a namedtuple with signature ``DenseFeat(name, dimension, dtype)``
+
+- name : feature name
+- dimension : dimension of dense feature vector.
+- dtype : default `float32`.dtype of input tensor.
+
+### VarLenSparseFeat
+
+``VarLenSparseFeat`` is a namedtuple with signature ``VarLenSparseFeat(sparsefeat, maxlen, combiner, length_name)``
+
+- sparsefeat : a instance of `SparseFeat`
+- maxlen : maximum length of this feature for all samples
+- combiner : pooling method,can be ``sum``,``mean`` or ``max``
+- length_name : feature length name,if `None`, value 0 in feature is for padding.
+
 ## Models
 
 
@@ -119,6 +147,35 @@ The output of Cross Net and MLP are concatenated.The concatenated vector are fee
 ![DCN](../pics/DCN.png)
 
 [Wang R, Fu B, Fu G, et al. Deep & cross network for ad click predictions[C]//Proceedings of the ADKDD'17. ACM, 2017: 12.](https://arxiv.org/abs/1708.05123) 
+
+
+### DIN (Deep Interest Network)
+
+DIN introduce a attention method to learn from sequence(multi-valued) feature.
+Tradional method usually use sum/mean pooling on sequence feature.
+DIN use a local activation unit to get the activation score between candidate item and history items.
+User's interest are represented by weighted sum of user behaviors.
+user's interest vector and other embedding vectors are concatenated and fed into a MLP to get the prediction. 
+
+[**DIN Model API**](./deepctr_torch.models.din.html)  
+
+[DIN example](https://github.com/shenweichen/DeepCTR-Torch/tree/master/examples/run_din.py)
+
+![DIN](../pics/DIN.png)
+
+[Zhou G, Zhu X, Song C, et al. Deep interest network for click-through rate prediction[C]//Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining. ACM, 2018: 1059-1068.](https://arxiv.org/pdf/1706.06978.pdf)
+
+### DIEN (Deep Interest Evolution Network)
+
+Deep Interest Evolution Network (DIEN) uses interest extractor layer to capture temporal interests from history behavior sequence. At this layer,  an auxiliary loss is proposed to supervise interest extracting at each step. As user interests are diverse, especially in the e-commerce system, interest evolving layer is proposed to capture interest evolving process that is relative to the target item. At interest evolving layer, attention mechanism is embedded into the sequential structure novelly, and the effects of relative interests are strengthened during interest evolution.
+
+[**DIEN Model API**](./deepctr_torch.models.dien.html) 
+
+[DIEN example](https://github.com/shenweichen/DeepCTR-Torch/tree/master/examples/run_dien.py)
+
+![DIEN](../pics/DIEN.png)
+
+[Zhou G, Mou N, Fan Y, et al. Deep Interest Evolution Network for Click-Through Rate Prediction[J]. arXiv preprint arXiv:1809.03672, 2018.](https://arxiv.org/pdf/1809.03672.pdf)
 
 
 ### xDeepFM

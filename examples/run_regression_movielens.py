@@ -4,8 +4,8 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
+from deepctr_torch.inputs import SparseFeat, get_feature_names
 from deepctr_torch.models import DeepFM
-from deepctr_torch.inputs import SparseFeat,get_feature_names
 
 if __name__ == "__main__":
 
@@ -27,8 +27,8 @@ if __name__ == "__main__":
 
     # 3.generate input data for model
     train, test = train_test_split(data, test_size=0.2)
-    train_model_input = {name:train[name] for name in feature_names}
-    test_model_input = {name:test[name] for name in feature_names}
+    train_model_input = {name: train[name] for name in feature_names}
+    test_model_input = {name: test[name] for name in feature_names}
     # 4.Define Model,train,predict and evaluate
 
     device = 'cpu'
@@ -37,8 +37,8 @@ if __name__ == "__main__":
         print('cuda ready...')
         device = 'cuda:0'
 
-    model = DeepFM(linear_feature_columns, dnn_feature_columns, task='regression',device=device)
-    model.compile("adam", "mse", metrics=['mse'],)
+    model = DeepFM(linear_feature_columns, dnn_feature_columns, task='regression', device=device)
+    model.compile("adam", "mse", metrics=['mse'], )
 
     history = model.fit(train_model_input, train[target].values,
                         batch_size=256, epochs=10, verbose=2, validation_split=0.2, )

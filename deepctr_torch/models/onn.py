@@ -33,12 +33,12 @@ class Interac(nn.Module):
         y = first_emb * second_emb  # core code
         return y
 
+
 class ONN(BaseModel):
     """Instantiates the Operation-aware Neural Networks  architecture.
 
     :param linear_feature_columns: An iterable containing all the features used by linear part of the model.
     :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
-    :param embedding_size: positive integer,sparse feature embedding_size
     :param dnn_hidden_units: list,list of positive integer or empty list, the layer number and units in each layer of deep net
     :param l2_reg_embedding: float. L2 regularizer strength applied to embedding vector
     :param l2_reg_linear: float. L2 regularizer strength applied to linear part.
@@ -53,12 +53,13 @@ class ONN(BaseModel):
     :return: A PyTorch model instance.
     
     """
-    def __init__(self, linear_feature_columns, dnn_feature_columns, embedding_size=4,
+
+    def __init__(self, linear_feature_columns, dnn_feature_columns,
                  dnn_hidden_units=(128, 128),
                  l2_reg_embedding=1e-5, l2_reg_linear=1e-5, l2_reg_dnn=0,
-                 dnn_dropout=0, init_std=0.0001, seed=1024, dnn_use_bn=False, dnn_activation=F.relu,
+                 dnn_dropout=0, init_std=0.0001, seed=1024, dnn_use_bn=False, dnn_activation='relu',
                  task='binary', device='cpu'):
-        super(ONN, self).__init__(linear_feature_columns, dnn_feature_columns, embedding_size=embedding_size,
+        super(ONN, self).__init__(linear_feature_columns, dnn_feature_columns,
                                   dnn_hidden_units=dnn_hidden_units,
                                   l2_reg_linear=l2_reg_linear,
                                   l2_reg_embedding=l2_reg_embedding, l2_reg_dnn=l2_reg_dnn, init_std=init_std,
@@ -67,6 +68,7 @@ class ONN(BaseModel):
                                   task=task, device=device)
 
         # second order part
+        embedding_size = self.embedding_size
         self.second_order_embedding_dict = self.__create_second_order_embedding_matrix(
             dnn_feature_columns, embedding_size=embedding_size, sparse=False).to(device)
 
@@ -114,9 +116,9 @@ class ONN(BaseModel):
                 second_order_embedding_list.append(
                     second_order_embedding_dict[first_name + "+" + second_name](
                         X[:, self.feature_index[first_name][0]
-                            :self.feature_index[first_name][1]].long(),
+                             :self.feature_index[first_name][1]].long(),
                         X[:, self.feature_index[second_name][0]
-                            :self.feature_index[second_name][1]].long()
+                             :self.feature_index[second_name][1]].long()
                     )
                 )
         return second_order_embedding_list
@@ -130,8 +132,9 @@ class ONN(BaseModel):
             for second_index in range(first_index + 1, len(sparse_feature_columns)):
                 first_name = sparse_feature_columns[first_index].embedding_name
                 second_name = sparse_feature_columns[second_index].embedding_name
-                temp_dict[first_name + "+" + second_name] = Interac(sparse_feature_columns[first_index].dimension,
-                                                                    sparse_feature_columns[second_index].dimension,
+                temp_dict[first_name + "+" + second_name] = Interac(sparse_feature_columns[first_index].vocabulary_size,
+                                                                    sparse_feature_columns[
+                                                                        second_index].vocabulary_size,
                                                                     emb_size=embedding_size,
                                                                     init_std=init_std,
                                                                     sparse=sparse)
@@ -157,5 +160,3 @@ class ONN(BaseModel):
         y_pred = self.out(final_logit)
 
         return y_pred
-
-

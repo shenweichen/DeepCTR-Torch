@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
+import torch
 from sklearn.preprocessing import LabelEncoder
 from tensorflow.python.keras.preprocessing.sequence import pad_sequences
 
+from deepctr_torch.inputs import SparseFeat, VarLenSparseFeat, get_feature_names
 from deepctr_torch.models import DeepFM
-from deepctr_torch.inputs import SparseFeat, VarLenSparseFeat,get_feature_names
 
 
 def split(x):
@@ -16,43 +17,53 @@ def split(x):
     return list(map(lambda x: key2index[x], key_ans))
 
 
-data = pd.read_csv("./movielens_sample.txt")
-sparse_features = ["movie_id", "user_id",
-                   "gender", "age", "occupation", "zip", ]
-target = ['rating']
+if __name__ == "__main__":
+    data = pd.read_csv("./movielens_sample.txt")
+    sparse_features = ["movie_id", "user_id",
+                       "gender", "age", "occupation", "zip", ]
+    target = ['rating']
 
-# 1.Label Encoding for sparse features,and process sequence features
-for feat in sparse_features:
-    lbe = LabelEncoder()
-    data[feat] = lbe.fit_transform(data[feat])
-# preprocess the sequence feature
+    # 1.Label Encoding for sparse features,and process sequence features
+    for feat in sparse_features:
+        lbe = LabelEncoder()
+        data[feat] = lbe.fit_transform(data[feat])
+    # preprocess the sequence feature
 
-key2index = {}
-genres_list = list(map(split, data['genres'].values))
-genres_length = np.array(list(map(len, genres_list)))
-max_len = max(genres_length)
-# Notice : padding=`post`
-genres_list = pad_sequences(genres_list, maxlen=max_len, padding='post', )
+    key2index = {}
+    genres_list = list(map(split, data['genres'].values))
+    genres_length = np.array(list(map(len, genres_list)))
+    max_len = max(genres_length)
+    # Notice : padding=`post`
+    genres_list = pad_sequences(genres_list, maxlen=max_len, padding='post', )
 
-# 2.count #unique features for each sparse field and generate feature config for sequence feature
+    # 2.count #unique features for each sparse field and generate feature config for sequence feature
 
-fixlen_feature_columns = [SparseFeat(feat, data[feat].nunique())
-                    for feat in sparse_features]
-varlen_feature_columns = [VarLenSparseFeat('genres', len(
-    key2index) + 1, max_len, 'mean')]  # Notice : value 0 is for padding for sequence input feature
+    fixlen_feature_columns = [SparseFeat(feat, data[feat].nunique(), embedding_dim=4)
+                              for feat in sparse_features]
 
-linear_feature_columns = fixlen_feature_columns + varlen_feature_columns
-dnn_feature_columns = fixlen_feature_columns + varlen_feature_columns
-feature_names = get_feature_names(linear_feature_columns + dnn_feature_columns)
+    varlen_feature_columns = [VarLenSparseFeat(SparseFeat('genres', vocabulary_size=len(
+        key2index) + 1, embedding_dim=4), maxlen=max_len, combiner='mean',
+                                               weight_name=None)]  # Notice : value 0 is for padding for sequence input feature
 
+    linear_feature_columns = fixlen_feature_columns + varlen_feature_columns
+    dnn_feature_columns = fixlen_feature_columns + varlen_feature_columns
 
-# 3.generate input data for model
-model_input = {name:data[name] for name in feature_names}
-model_input['genres'] = genres_list
+    feature_names = get_feature_names(linear_feature_columns + dnn_feature_columns)
 
-# 4.Define Model,compile and train
-model = DeepFM(linear_feature_columns,dnn_feature_columns,task='regression')
+    # 3.generate input data for model
+    model_input = {name: data[name] for name in sparse_features}  #
+    model_input["genres"] = genres_list
 
-model.compile("adam", "mse", metrics=['mse'], )
-history = model.fit(model_input, data[target].values,
-                    batch_size=256, epochs=10, verbose=2, validation_split=0.2, )
+    # 4.Define Model,compile and train
+
+    device = 'cpu'
+    use_cuda = True
+    if use_cuda and torch.cuda.is_available():
+        print('cuda ready...')
+        device = 'cuda:0'
+
+    model = DeepFM(linear_feature_columns, dnn_feature_columns, task='regression', device=device)
+
+    model.compile("adam", "mse", metrics=['mse'], )
+    history = model.fit(model_input, data[target].values,
+                        batch_size=256, epochs=10, verbose=2, validation_split=0.2, )

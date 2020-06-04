@@ -34,11 +34,12 @@ You can read the latest code at https://github.com/shenweichen/DeepCTR-Torch and
 
 News
 -----
+03/27/2020 : Add `DIN <./Features.html#din-deep-interest-network>`_ and `DIEN <./Features.html#dien-deep-interest-evolution-network>`_ . `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.1>`_
+
+01/31/2020 : Refactor `feature columns <./Features.html#feature-columns>`_ . Support double precision in metric calculation . `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.0>`_
+
 10/03/2019 : Simplify the input logic(`examples <./Examples.html#classification-criteo>`_). `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.1.3>`_
 
-09/28/2019 : Add `sequence(multi-value) input support <./Examples.html#multi-value-input-movielens>`_ . `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.1.2)>`_
-
-09/24/2019 : Add `CCPM <./Features.html#ccpm-convolutional-click-prediction-model>`_ . `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.1.1>`_
 
 DisscussionGroup
 -----------------------
@@ -46,7 +47,6 @@ DisscussionGroup
 公众号：**浅梦的学习笔记**  wechat ID: **deepctrbot**
 
 .. image:: ../pics/weichennote.png
-
 
 .. toctree::
    :maxdepth: 2

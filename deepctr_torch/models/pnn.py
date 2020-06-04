@@ -8,7 +8,6 @@ Reference:
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
@@ -19,7 +18,6 @@ class PNN(BaseModel):
     """Instantiates the Product-based Neural Network architecture.
 
     :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
-    :param embedding_size: positive integer,sparse feature embedding_size
     :param dnn_hidden_units: list,list of positive integer or empty list, the layer number and units in each layer of deep net
     :param l2_reg_embedding: float . L2 regularizer strength applied to embedding vector
     :param l2_reg_dnn: float. L2 regularizer strength applied to DNN
@@ -36,11 +34,11 @@ class PNN(BaseModel):
     
     """
 
-    def __init__(self, dnn_feature_columns, embedding_size=8, dnn_hidden_units=(128, 128), l2_reg_embedding=1e-5, l2_reg_dnn=0,
-                 init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation=F.relu, use_inner=True, use_outter=False,
-                 kernel_type='mat', task='binary', device='cpu',):
+    def __init__(self, dnn_feature_columns, dnn_hidden_units=(128, 128), l2_reg_embedding=1e-5, l2_reg_dnn=0,
+                 init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation='relu', use_inner=True, use_outter=False,
+                 kernel_type='mat', task='binary', device='cpu', ):
 
-        super(PNN, self).__init__([], dnn_feature_columns, embedding_size=embedding_size,
+        super(PNN, self).__init__([], dnn_feature_columns,
                                   dnn_hidden_units=dnn_hidden_units,
                                   l2_reg_embedding=l2_reg_embedding, l2_reg_dnn=l2_reg_dnn,
                                   l2_reg_linear=0, init_std=init_std, seed=seed,
@@ -56,8 +54,7 @@ class PNN(BaseModel):
         self.task = task
 
         product_out_dim = 0
-        num_inputs = self.compute_input_dim(dnn_feature_columns, embedding_size, include_dense=False,
-                                            feature_group=True)
+        num_inputs = self.compute_input_dim(dnn_feature_columns, include_dense=False, feature_group=True)
         num_pairs = int(num_inputs * (num_inputs - 1) / 2)
 
         if self.use_inner:
@@ -67,9 +64,9 @@ class PNN(BaseModel):
         if self.use_outter:
             product_out_dim += num_pairs
             self.outterproduct = OutterProductLayer(
-                num_inputs, embedding_size, kernel_type=kernel_type, device=device)
+                num_inputs, self.embedding_size, kernel_type=kernel_type, device=device)
 
-        self.dnn = DNN(product_out_dim + self.compute_input_dim(dnn_feature_columns, embedding_size), dnn_hidden_units,
+        self.dnn = DNN(product_out_dim + self.compute_input_dim(dnn_feature_columns), dnn_hidden_units,
                        activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=False,
                        init_std=init_std, device=device)
 

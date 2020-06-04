@@ -9,14 +9,12 @@ Reference:
 import torch
 import torch.nn as nn
 
-
 from .basemodel import Linear, BaseModel
 from ..inputs import build_input_features
 from ..layers import PredictionLayer
 
 
 class MLR(BaseModel):
-
     """Instantiates the Mixed Logistic Regression/Piece-wise Linear Model.
 
     :param region_feature_columns: An iterable containing all the features used by region part of the model.
@@ -61,7 +59,8 @@ class MLR(BaseModel):
             self.region_feature_columns + self.base_feature_columns + self.bias_feature_columns)
 
         self.region_linear_model = nn.ModuleList([Linear(
-            self.region_feature_columns, self.feature_index, self.init_std, self.device) for i in range(self.region_num)])
+            self.region_feature_columns, self.feature_index, self.init_std, self.device) for i in
+            range(self.region_num)])
 
         self.base_linear_model = nn.ModuleList([Linear(
             self.base_feature_columns, self.feature_index, self.init_std, self.device) for i in range(self.region_num)])
@@ -93,9 +92,9 @@ class MLR(BaseModel):
         learner_score = self.get_learner_score(X, self.region_num)
 
         final_logit = torch.sum(
-            region_score*learner_score, dim=-1, keepdim=True)
+            region_score * learner_score, dim=-1, keepdim=True)
 
         if self.bias_feature_columns is not None and len(self.bias_feature_columns) > 0:
             bias_score = self.bias_model(X)
-            final_logit = final_logit*bias_score
+            final_logit = final_logit * bias_score
         return final_logit
