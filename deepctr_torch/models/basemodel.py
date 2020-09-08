@@ -92,7 +92,7 @@ class BaseModel(nn.Module):
                  task='binary', device='cpu'):
 
         super(BaseModel, self).__init__()
-
+        torch.manual_seed(seed)
         self.dnn_feature_columns = dnn_feature_columns
 
         self.reg_loss = torch.zeros((1,), device=device)
