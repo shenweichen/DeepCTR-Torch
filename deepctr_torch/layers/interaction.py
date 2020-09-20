@@ -437,6 +437,121 @@ class CrossNet(nn.Module):
         return x_l
 
 
+class CrossNetM(nn.Module):
+    """The Cross Network part of DCN-M model, which improves DCN by
+    parameterizing the cross network using matrices instead of vectors.
+      Input shape
+        - 2D tensor with shape: ``(batch_size, units)``.
+      Output shape
+        - 2D tensor with shape: ``(batch_size, units)``.
+      Arguments
+        - **in_features** : Positive integer, dimensionality of input features.
+        - **input_feature_num**: Positive integer, shape(Input tensor)[-1]
+        - **layer_num**: Positive integer, the cross layer number
+        - **l2_reg**: float between 0 and 1. L2 regularizer strength applied to the kernel weights matrix
+        - **seed**: A Python integer to use as random seed.
+      References
+        - [Wang R, Shivanna R, Cheng D Z, et al. DCN-M: Improved Deep & Cross Network for Feature Cross Learning in Web-scale Learning to Rank Systems[J]. 2020.](https://arxiv.org/abs/2008.13535)
+    """
+
+    def __init__(self, in_features, layer_num=2, seed=1024, device='cpu'):
+        super(CrossNetM, self).__init__()
+        self.layer_num = layer_num
+        self.weight = torch.nn.ParameterList([nn.Parameter(nn.init.xavier_normal_(
+            torch.empty(in_features, in_features))) for i in range(self.layer_num)])
+        self.bias = torch.nn.ParameterList([nn.Parameter(nn.init.zeros_(
+            torch.empty(in_features, 1))) for i in range(self.layer_num)])
+        self.to(device)
+
+    def forward(self, inputs):
+        x_0 = inputs.unsqueeze(2)  # (bs, in_features, 1)
+        x_l = x_0
+        for i in range(self.layer_num):
+            dot_ = torch.matmul(self.weight[i], x_l)  # W * xi  (bs, in_features, 1)
+            dot_ = dot_ + self.bias[i]  # W * xi + b
+            dot_ = x_0 * dot_  # x0 · (W * xi + b)  Hadamard-product
+            x_l = dot_ + x_l  # x0 · (W * xi + b) + xi
+        x_l = torch.squeeze(x_l, dim=2)
+        return x_l
+
+
+class CrossNetMix(nn.Module):
+    """The Cross Network part of DCN-Mix model, which improves DCN-M by:
+      1 add MOE to learn feature interactions in different subspaces
+      2 add nonlinear transformations in low-dimensional space
+      Input shape
+        - 2D tensor with shape: ``(batch_size, units)``.
+      Output shape
+        - 2D tensor with shape: ``(batch_size, units)``.
+      Arguments
+        - **in_features** : Positive integer, dimensionality of input features.
+        - **low_rank** : Positive integer, dimensionality of low-rank sapce.
+        - **num_experts** : Positive integer, number of experts.
+        - **input_feature_num**: Positive integer, shape(Input tensor)[-1]
+        - **layer_num**: Positive integer, the cross layer number
+        - **l2_reg**: float between 0 and 1. L2 regularizer strength applied to the kernel weights matrix
+        - **seed**: A Python integer to use as random seed.
+      References
+        - [Wang R, Shivanna R, Cheng D Z, et al. DCN-M: Improved Deep & Cross Network for Feature Cross Learning in Web-scale Learning to Rank Systems[J]. 2020.](https://arxiv.org/abs/2008.13535)
+    """
+
+    def __init__(self, in_features, low_rank=32, num_experts=4, layer_num=2, seed=1024, device='cpu'):
+        super(CrossNetMix, self).__init__()
+        self.layer_num = layer_num
+        self.num_experts = num_experts
+
+        # U:(in_features, low_rank)
+        self.U_list = torch.nn.ParameterList([nn.Parameter(nn.init.xavier_normal_(
+            torch.empty(num_experts, in_features, low_rank))) for i in range(self.layer_num)])
+        # V:(in_features, low_rank)
+        self.V_list = torch.nn.ParameterList([nn.Parameter(nn.init.xavier_normal_(
+            torch.empty(num_experts, in_features, low_rank))) for i in range(self.layer_num)])
+        # C:(low_rank, low_rank)
+        self.C_list = torch.nn.ParameterList([nn.Parameter(nn.init.xavier_normal_(
+            torch.empty(num_experts, low_rank, low_rank))) for i in range(self.layer_num)])
+        self.gating = nn.ModuleList([nn.Linear(in_features, 1, bias=False) for i in range(self.num_experts)])
+
+        self.bias = torch.nn.ParameterList([nn.Parameter(nn.init.zeros_(
+            torch.empty(in_features, 1))) for i in range(self.layer_num)])
+        self.to(device)
+
+    def forward(self, inputs):
+        x_0 = inputs.unsqueeze(2)  # (bs, in_features, 1)
+        x_l = x_0
+        for i in range(self.layer_num):
+            # print('layer', i)
+            output_of_experts = []
+            gating_score_of_experts = []
+            for expert_id in range(self.num_experts):
+                # print('expert', expert_id)
+
+                # project the input to $\mathbb{R}^{r}$
+                v_x = torch.matmul(self.V_list[i][expert_id].T, x_l)
+
+                # nonlinear activation in low rank space
+                v_x = torch.tanh(v_x)
+                v_x = torch.matmul(self.C_list[i][expert_id], v_x)
+                v_x = torch.tanh(v_x)
+
+                # project back to $\mathbb{R}^{d}$
+                uv_x = torch.matmul(self.U_list[i][expert_id], v_x)
+
+                dot_ = uv_x + self.bias[i]  # W * xi + b
+                dot_ = x_0 * dot_  # x0 · (W * xi + b)  Hadamard-product
+
+                output_of_experts.append(dot_.squeeze(2))
+                gating_score_of_experts.append(self.gating[expert_id](dot_.squeeze(2)))
+
+            # mixture of low-rank experts
+            output_of_experts = torch.stack(output_of_experts, 2)
+            gating_score_of_experts = torch.stack(gating_score_of_experts, 1)
+            moe_out = torch.matmul(output_of_experts, gating_score_of_experts)
+
+            x_l = moe_out + x_l
+
+        return x_l.squeeze()
+
+
 class InnerProductLayer(nn.Module):
     """InnerProduct Layer used in PNN that compute the element-wise
     product or inner product between feature vectors.
