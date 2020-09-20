@@ -457,6 +457,7 @@ class CrossNetM(nn.Module):
     def __init__(self, in_features, layer_num=2, seed=1024, device='cpu'):
         super(CrossNetM, self).__init__()
         self.layer_num = layer_num
+        # weight: (in_features, in_features)
         self.weight = torch.nn.ParameterList([nn.Parameter(nn.init.xavier_normal_(
             torch.empty(in_features, in_features))) for i in range(self.layer_num)])
         self.bias = torch.nn.ParameterList([nn.Parameter(nn.init.zeros_(
@@ -471,7 +472,7 @@ class CrossNetM(nn.Module):
             dot_ = dot_ + self.bias[i]  # W * xi + b
             dot_ = x_0 * dot_  # x0 · (W * xi + b)  Hadamard-product
             x_l = dot_ + x_l  # x0 · (W * xi + b) + xi
-        x_l = torch.squeeze(x_l, dim=2)
+        x_l = torch.squeeze(x_l, dim=2)  # (bs, in_features)
         return x_l
 
 
@@ -500,13 +501,13 @@ class CrossNetMix(nn.Module):
         self.layer_num = layer_num
         self.num_experts = num_experts
 
-        # U:(in_features, low_rank)
+        # U: (in_features, low_rank)
         self.U_list = torch.nn.ParameterList([nn.Parameter(nn.init.xavier_normal_(
             torch.empty(num_experts, in_features, low_rank))) for i in range(self.layer_num)])
-        # V:(in_features, low_rank)
+        # V: (in_features, low_rank)
         self.V_list = torch.nn.ParameterList([nn.Parameter(nn.init.xavier_normal_(
             torch.empty(num_experts, in_features, low_rank))) for i in range(self.layer_num)])
-        # C:(low_rank, low_rank)
+        # C: (low_rank, low_rank)
         self.C_list = torch.nn.ParameterList([nn.Parameter(nn.init.xavier_normal_(
             torch.empty(num_experts, low_rank, low_rank))) for i in range(self.layer_num)])
         self.gating = nn.ModuleList([nn.Linear(in_features, 1, bias=False) for i in range(self.num_experts)])
@@ -526,7 +527,7 @@ class CrossNetMix(nn.Module):
                 # print('expert', expert_id)
 
                 # project the input to $\mathbb{R}^{r}$
-                v_x = torch.matmul(self.V_list[i][expert_id].T, x_l)
+                v_x = torch.matmul(self.V_list[i][expert_id].T, x_l)  # (bs, low_rank, 1)
 
                 # nonlinear activation in low rank space
                 v_x = torch.tanh(v_x)
@@ -534,22 +535,23 @@ class CrossNetMix(nn.Module):
                 v_x = torch.tanh(v_x)
 
                 # project back to $\mathbb{R}^{d}$
-                uv_x = torch.matmul(self.U_list[i][expert_id], v_x)
+                uv_x = torch.matmul(self.U_list[i][expert_id], v_x)  # (bs, in_features, 1)
 
-                dot_ = uv_x + self.bias[i]  # W * xi + b
-                dot_ = x_0 * dot_  # x0 · (W * xi + b)  Hadamard-product
+                dot_ = uv_x + self.bias[i]
+                dot_ = x_0 * dot_  # Hadamard-product
 
                 output_of_experts.append(dot_.squeeze(2))
                 gating_score_of_experts.append(self.gating[expert_id](dot_.squeeze(2)))
 
             # mixture of low-rank experts
-            output_of_experts = torch.stack(output_of_experts, 2)
-            gating_score_of_experts = torch.stack(gating_score_of_experts, 1)
-            moe_out = torch.matmul(output_of_experts, gating_score_of_experts)
+            output_of_experts = torch.stack(output_of_experts, 2)  # (bs, in_features, num_experts)
+            gating_score_of_experts = torch.stack(gating_score_of_experts, 1)  # (bs, num_experts, 1)
+            moe_out = torch.matmul(output_of_experts, gating_score_of_experts.softmax(1))
 
-            x_l = moe_out + x_l
+            x_l = moe_out + x_l  # (bs, in_features, 1)
 
-        return x_l.squeeze()
+        x_l = x_l.squeeze()  # (bs, in_features)
+        return x_l
 
 
 class InnerProductLayer(nn.Module):
