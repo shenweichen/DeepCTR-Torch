@@ -69,7 +69,7 @@ class DCNM(BaseModel):
         self.add_regularization_loss(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
         self.add_regularization_loss(self.dnn_linear.weight, l2_reg_linear)
-        self.add_regularization_loss(self.crossnet.kernels, l2_reg_cross)
+        self.add_regularization_loss(self.crossnet.weight, l2_reg_cross)
         self.to(device)
 
     def forward(self, X):
