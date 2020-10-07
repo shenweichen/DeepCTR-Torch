@@ -57,7 +57,7 @@ if __name__ == "__main__":
         device = 'cuda:0'
 
     model = DCNMix(linear_feature_columns=linear_feature_columns, dnn_feature_columns=dnn_feature_columns,
-                   task='binary',
+                   task='binary', low_rank=32, num_experts=4,
                    l2_reg_embedding=1e-5, device=device)
 
     model.compile("adagrad", "binary_crossentropy",

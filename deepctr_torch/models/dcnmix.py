@@ -40,7 +40,7 @@ class DCNMix(BaseModel):
                  dnn_feature_columns, cross_num=2,
                  dnn_hidden_units=(128, 128), l2_reg_linear=0.00001,
                  l2_reg_embedding=0.00001, l2_reg_cross=0.00001, l2_reg_dnn=0, init_std=0.0001, seed=1024,
-                 dnn_dropout=0,
+                 dnn_dropout=0, low_rank=32, num_experts=4,
                  dnn_activation='relu', dnn_use_bn=False, task='binary', device='cpu'):
 
         super(DCNMix, self).__init__(linear_feature_columns=linear_feature_columns,
@@ -65,7 +65,7 @@ class DCNMix(BaseModel):
         self.dnn_linear = nn.Linear(dnn_linear_in_feature, 1, bias=False).to(
             device)
         self.crossnet = CrossNetMix(in_features=self.compute_input_dim(dnn_feature_columns),
-                                    low_rank=32, num_experts=4,
+                                    low_rank=low_rank, num_experts=num_experts,
                                     layer_num=cross_num, seed=1024, device=device)
         self.add_regularization_loss(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
