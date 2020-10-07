@@ -216,12 +216,6 @@ class BaseModel(nn.Module):
 
                         optim.zero_grad()
                         loss = loss_func(y_pred, y.squeeze(), reduction='sum')
-                        print('self.reg_loss',self.reg_loss,self.reg_loss.data.numpy())
-
-                        # self.add_regularization_loss(
-                        #     self.embedding_dict.parameters(), 1e-5)
-                        # self.add_regularization_loss(
-                        #     self.linear_model.parameters(), 1e-5)
 
                         total_loss = loss + self.reg_loss + self.aux_loss
 
