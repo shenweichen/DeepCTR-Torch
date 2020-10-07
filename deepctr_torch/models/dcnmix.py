@@ -30,6 +30,8 @@ class DCNMix(BaseModel):
     :param dnn_dropout: float in [0,1), the probability we will drop out a given DNN coordinate.
     :param dnn_use_bn: bool. Whether use BatchNormalization before activation or not DNN
     :param dnn_activation: Activation function to use in DNN
+    :param low_rank: Positive integer, dimensionality of low-rank sapce.
+    :param num_experts: Positive integer, number of experts.
     :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
     :param device: str, ``"cpu"`` or ``"cuda:0"``
     :return: A PyTorch model instance.
