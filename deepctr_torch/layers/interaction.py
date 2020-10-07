@@ -520,12 +520,9 @@ class CrossNetMix(nn.Module):
         x_0 = inputs.unsqueeze(2)  # (bs, in_features, 1)
         x_l = x_0
         for i in range(self.layer_num):
-            # print('layer', i)
             output_of_experts = []
             gating_score_of_experts = []
             for expert_id in range(self.num_experts):
-                # print('expert', expert_id)
-
                 # project the input to $\mathbb{R}^{r}$
                 v_x = torch.matmul(self.V_list[i][expert_id].T, x_l)  # (bs, low_rank, 1)
 
