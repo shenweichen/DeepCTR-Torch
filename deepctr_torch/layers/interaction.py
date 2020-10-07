@@ -446,15 +446,13 @@ class CrossNetM(nn.Module):
         - 2D tensor with shape: ``(batch_size, units)``.
       Arguments
         - **in_features** : Positive integer, dimensionality of input features.
-        - **input_feature_num**: Positive integer, shape(Input tensor)[-1]
         - **layer_num**: Positive integer, the cross layer number
-        - **l2_reg**: float between 0 and 1. L2 regularizer strength applied to the kernel weights matrix
-        - **seed**: A Python integer to use as random seed.
+        - **device**: str, e.g. ``"cpu"`` or ``"cuda:0"``
       References
         - [Wang R, Shivanna R, Cheng D Z, et al. DCN-M: Improved Deep & Cross Network for Feature Cross Learning in Web-scale Learning to Rank Systems[J]. 2020.](https://arxiv.org/abs/2008.13535)
     """
 
-    def __init__(self, in_features, layer_num=2, seed=1024, device='cpu'):
+    def __init__(self, in_features, layer_num=2, device='cpu'):
         super(CrossNetM, self).__init__()
         self.layer_num = layer_num
         # weight: (in_features, in_features)
@@ -488,15 +486,13 @@ class CrossNetMix(nn.Module):
         - **in_features** : Positive integer, dimensionality of input features.
         - **low_rank** : Positive integer, dimensionality of low-rank sapce.
         - **num_experts** : Positive integer, number of experts.
-        - **input_feature_num**: Positive integer, shape(Input tensor)[-1]
         - **layer_num**: Positive integer, the cross layer number
-        - **l2_reg**: float between 0 and 1. L2 regularizer strength applied to the kernel weights matrix
-        - **seed**: A Python integer to use as random seed.
+        - **device**: str, e.g. ``"cpu"`` or ``"cuda:0"``
       References
         - [Wang R, Shivanna R, Cheng D Z, et al. DCN-M: Improved Deep & Cross Network for Feature Cross Learning in Web-scale Learning to Rank Systems[J]. 2020.](https://arxiv.org/abs/2008.13535)
     """
 
-    def __init__(self, in_features, low_rank=32, num_experts=4, layer_num=2, seed=1024, device='cpu'):
+    def __init__(self, in_features, low_rank=32, num_experts=4, layer_num=2, device='cpu'):
         super(CrossNetMix, self).__init__()
         self.layer_num = layer_num
         self.num_experts = num_experts
