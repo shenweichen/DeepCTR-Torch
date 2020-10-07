@@ -1,0 +1,18 @@
+from .wdl import WDL
+from .deepfm import DeepFM
+from .xdeepfm import xDeepFM
+from .afm import AFM
+from .autoint import AutoInt
+from .dcn import DCN
+from .dcnm import DCNM
+from .dcnmix import DCNMix
+from .fibinet import FiBiNET
+from .nfm import NFM
+from .mlr import MLR
+from .onn import ONN
+from .pnn import PNN
+from .ccpm import CCPM
+from .dien import DIEN
+from .din import DIN
+
+NFFM = ONN
