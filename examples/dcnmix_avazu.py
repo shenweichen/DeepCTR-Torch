@@ -9,28 +9,37 @@ from deepctr_torch.inputs import SparseFeat, DenseFeat, get_feature_names
 from deepctr_torch.models import *
 
 if __name__ == "__main__":
-    epochs=2
-    batch_size=1024
-    data = pd.read_csv('/HDD_sdb/wyw/zsx/avazu/avazu_first_3d.csv')
+    epochs=5
+    batch_size=512
+    print('epochs',epochs,'batch_size',batch_size)
+
+    # data = pd.read_csv('/HDD_sdb/wyw/zsx/avazu/avazu_first_3d.csv')
     # data = pd.read_csv('/HDD_sdb/wyw/zsx/avazu/avazu_first_3d.csv',nrows=50)
-    print(data[:5])
-    print(data['day'].unique())
 
     sparse_features = ['hour', 'C1', 'banner_pos', 'site_id', 'site_domain',
                        'site_category', 'app_id', 'app_domain', 'app_category', 'device_id',
                        'device_model', 'device_type', 'device_conn_type',  # 'device_ip', 
                        'C14',
                        'C15', 'C16', 'C17', 'C18', 'C19', 'C20', 'C21', ]
-    print(len(sparse_features))  # 去掉id click device_ip   不用day  25-4=21
+    print('len(sparse_features)',len(sparse_features))  # 去掉id click device_ip   不用day  25-4=21
 
-    data[sparse_features] = data[sparse_features].fillna('-1', )
+    # data[sparse_features] = data[sparse_features].fillna('-1', )
     target = ['click']
 
 
     # 1.Label Encoding for sparse features,and do simple Transformation for dense features
-    for feat in sparse_features:
-        lbe = LabelEncoder()
-        data[feat] = lbe.fit_transform(data[feat])
+    # for feat in sparse_features:
+    #     lbe = LabelEncoder()
+    #     data[feat] = lbe.fit_transform(data[feat])
+
+    # data.to_pickle('data_avazu_first_3d')
+    # input('to pickle ok')
+
+    data=pd.read_pickle('data_avazu_first_3d')
+    print('read pickle ok')
+    
+    print(data[:5])
+    print(data['day'].unique())
 
     # 2.count #unique features for each sparse field,and record dense feature field name
 
@@ -65,6 +74,7 @@ if __name__ == "__main__":
     model = DCNMix(linear_feature_columns=linear_feature_columns, dnn_feature_columns=dnn_feature_columns,
                    task='binary',
                    l2_reg_embedding=1e-5, device=device)
+    print('model',model)
 
     model.compile("adam", "binary_crossentropy",
                   # metrics=["binary_crossentropy", ], )

@@ -9,9 +9,8 @@ from deepctr_torch.inputs import SparseFeat, DenseFeat, get_feature_names
 from deepctr_torch.models import *
 
 if __name__ == "__main__":
-    epochs=5
-    batch_size=512
-    print('epochs',epochs,'batch_size',batch_size)
+    epochs=2
+    batch_size=1024
 
     # data = pd.read_csv('/HDD_sdb/wyw/zsx/avazu/avazu_first_3d.csv')
     # data = pd.read_csv('/HDD_sdb/wyw/zsx/avazu/avazu_first_3d.csv',nrows=50)
@@ -71,11 +70,12 @@ if __name__ == "__main__":
         print('cuda ready...')
         device = 'cuda:0'
 
-    model = DCNM(linear_feature_columns=linear_feature_columns, dnn_feature_columns=dnn_feature_columns,
+    model = AFM(linear_feature_columns=linear_feature_columns, dnn_feature_columns=dnn_feature_columns,
                    task='binary',
                    l2_reg_embedding=1e-5, device=device)
+    print('model',model)
 
-    model.compile("adam", "binary_crossentropy",
+    model.compile("adam_l2", "binary_crossentropy",
                   # metrics=["binary_crossentropy", ], )
                   metrics=["binary_crossentropy", "auc"], )
 
