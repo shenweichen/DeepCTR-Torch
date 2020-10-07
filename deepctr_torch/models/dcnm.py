@@ -65,7 +65,7 @@ class DCNM(BaseModel):
         self.dnn_linear = nn.Linear(dnn_linear_in_feature, 1, bias=False).to(
             device)
         self.crossnet = CrossNetM(in_features=self.compute_input_dim(dnn_feature_columns),
-                                 layer_num=cross_num, seed=1024, device=device)
+                                 layer_num=cross_num, device=device)
         self.add_regularization_loss(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
         self.add_regularization_loss(self.dnn_linear.weight, l2_reg_linear)
