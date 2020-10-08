@@ -411,17 +411,29 @@ class CrossNet(nn.Module):
         - **in_features** : Positive integer, dimensionality of input features.
         - **input_feature_num**: Positive integer, shape(Input tensor)[-1]
         - **layer_num**: Positive integer, the cross layer number
+        - **parameterization**: string, 'vector' or 'matrix',  how to parameterize the cross network.
         - **l2_reg**: float between 0 and 1. L2 regularizer strength applied to the kernel weights matrix
         - **seed**: A Python integer to use as random seed.
       References
         - [Wang R, Fu B, Fu G, et al. Deep & cross network for ad click predictions[C]//Proceedings of the ADKDD'17. ACM, 2017: 12.](https://arxiv.org/abs/1708.05123)
     """
 
-    def __init__(self, in_features, layer_num=2, seed=1024, device='cpu'):
+    def __init__(self, in_features, layer_num=2, parameterization='vector', seed=1024, device='cpu'):
         super(CrossNet, self).__init__()
         self.layer_num = layer_num
-        self.kernels = torch.nn.ParameterList(
-            [nn.Parameter(nn.init.xavier_normal_(torch.empty(in_features, 1))) for i in range(self.layer_num)])
+        self.parameterization = parameterization
+        if self.parameterization == 'vector':
+            # weight in DCN.  (in_features, 1)
+            self.kernels = torch.nn.ParameterList(
+                [nn.Parameter(nn.init.xavier_normal_(torch.empty(in_features, 1))) for i in range(self.layer_num)])
+        elif self.parameterization == 'matrix':
+            # weight matrix in DCN-M.  (in_features, in_features)
+            self.kernels = torch.nn.ParameterList([nn.Parameter(nn.init.xavier_normal_(
+                torch.empty(in_features, in_features))) for i in range(self.layer_num)])
+        else:  # error
+            print("parameterization should be 'vector' or 'matrix'")
+            pass
+
         self.bias = torch.nn.ParameterList(
             [nn.Parameter(nn.init.zeros_(torch.empty(in_features, 1))) for i in range(self.layer_num)])
         self.to(device)
@@ -430,47 +442,19 @@ class CrossNet(nn.Module):
         x_0 = inputs.unsqueeze(2)
         x_l = x_0
         for i in range(self.layer_num):
-            xl_w = torch.tensordot(x_l, self.kernels[i], dims=([1], [0]))
-            dot_ = torch.matmul(x_0, xl_w)
-            x_l = dot_ + self.bias[i] + x_l
+            if self.parameterization == 'vector':
+                xl_w = torch.tensordot(x_l, self.kernels[i], dims=([1], [0]))
+                dot_ = torch.matmul(x_0, xl_w)
+                x_l = dot_ + self.bias[i]
+            elif self.parameterization == 'matrix':
+                dot_ = torch.matmul(self.kernels[i], x_l)  # W * xi  (bs, in_features, 1)
+                dot_ = dot_ + self.bias[i]  # W * xi + b
+                dot_ = x_0 * dot_  # x0 · (W * xi + b)  Hadamard-product
+            else:  # error
+                print("parameterization should be 'vector' or 'matrix'")
+                pass
+            x_l = dot_ + x_l
         x_l = torch.squeeze(x_l, dim=2)
-        return x_l
-
-
-class CrossNetM(nn.Module):
-    """The Cross Network part of DCN-M model, which improves DCN by
-    parameterizing the cross network using matrices instead of vectors.
-      Input shape
-        - 2D tensor with shape: ``(batch_size, units)``.
-      Output shape
-        - 2D tensor with shape: ``(batch_size, units)``.
-      Arguments
-        - **in_features** : Positive integer, dimensionality of input features.
-        - **layer_num**: Positive integer, the cross layer number
-        - **device**: str, e.g. ``"cpu"`` or ``"cuda:0"``
-      References
-        - [Wang R, Shivanna R, Cheng D Z, et al. DCN-M: Improved Deep & Cross Network for Feature Cross Learning in Web-scale Learning to Rank Systems[J]. 2020.](https://arxiv.org/abs/2008.13535)
-    """
-
-    def __init__(self, in_features, layer_num=2, device='cpu'):
-        super(CrossNetM, self).__init__()
-        self.layer_num = layer_num
-        # weight: (in_features, in_features)
-        self.weight = torch.nn.ParameterList([nn.Parameter(nn.init.xavier_normal_(
-            torch.empty(in_features, in_features))) for i in range(self.layer_num)])
-        self.bias = torch.nn.ParameterList([nn.Parameter(nn.init.zeros_(
-            torch.empty(in_features, 1))) for i in range(self.layer_num)])
-        self.to(device)
-
-    def forward(self, inputs):
-        x_0 = inputs.unsqueeze(2)  # (bs, in_features, 1)
-        x_l = x_0
-        for i in range(self.layer_num):
-            dot_ = torch.matmul(self.weight[i], x_l)  # W * xi  (bs, in_features, 1)
-            dot_ = dot_ + self.bias[i]  # W * xi + b
-            dot_ = x_0 * dot_  # x0 · (W * xi + b)  Hadamard-product
-            x_l = dot_ + x_l  # x0 · (W * xi + b) + xi
-        x_l = torch.squeeze(x_l, dim=2)  # (bs, in_features)
         return x_l
 
 
