@@ -416,6 +416,7 @@ class CrossNet(nn.Module):
         - **seed**: A Python integer to use as random seed.
       References
         - [Wang R, Fu B, Fu G, et al. Deep & cross network for ad click predictions[C]//Proceedings of the ADKDD'17. ACM, 2017: 12.](https://arxiv.org/abs/1708.05123)
+        - [Wang R, Shivanna R, Cheng D Z, et al. DCN-M: Improved Deep & Cross Network for Feature Cross Learning in Web-scale Learning to Rank Systems[J]. 2020.](https://arxiv.org/abs/2008.13535)
     """
 
     def __init__(self, in_features, layer_num=2, parameterization='vector', seed=1024, device='cpu'):
