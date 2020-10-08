@@ -112,9 +112,11 @@ class BaseModel(nn.Module):
         self.linear_model = Linear(
             linear_feature_columns, self.feature_index, device=device)
 
-        self.add_regularization_loss(
+        self.regularization_weight = []
+
+        self.add_regularization_weight(
             self.embedding_dict.parameters(), l2_reg_embedding)
-        self.add_regularization_loss(
+        self.add_regularization_weight(
             self.linear_model.parameters(), l2_reg_linear)
 
         self.out = PredictionLayer(task, )
@@ -216,8 +218,9 @@ class BaseModel(nn.Module):
 
                         optim.zero_grad()
                         loss = loss_func(y_pred, y.squeeze(), reduction='sum')
+                        reg_loss = self.get_regularization_loss()
 
-                        total_loss = loss + self.reg_loss + self.aux_loss
+                        total_loss = loss + reg_loss + self.aux_loss
 
                         loss_epoch += loss.item()
                         total_loss_epoch += total_loss.item()
@@ -353,16 +356,33 @@ class BaseModel(nn.Module):
             input_dim += dense_input_dim
         return input_dim
 
-    def add_regularization_loss(self, weight_list, weight_decay, p=2):
-        reg_loss = torch.zeros((1,), device=self.device)
-        for w in weight_list:
-            if isinstance(w, tuple):
-                l2_reg = torch.norm(w[1], p=p, )
-            else:
-                l2_reg = torch.norm(w, p=p, )
-            reg_loss = reg_loss + l2_reg
-        reg_loss = weight_decay * reg_loss
-        self.reg_loss = self.reg_loss + reg_loss
+    def add_regularization_weight(self, weight_list, weight_decay, p=2):
+        self.regularization_weight.append((list(weight_list), weight_decay, p))
+
+    # def add_regularization_weight(self, weight_list, weight_decay, p=2):
+    #     reg_loss = torch.zeros((1,), device=self.device)
+    #     for w in weight_list:
+    #         if isinstance(w, tuple):
+    #             l2_reg = torch.norm(w[1], p=p, )
+    #         else:
+    #             l2_reg = torch.norm(w, p=p, )
+    #         reg_loss = reg_loss + l2_reg
+    #     reg_loss = weight_decay * reg_loss
+    #     self.reg_loss = self.reg_loss + reg_loss
+
+    def get_regularization_loss(self,):
+        total_reg_loss = torch.zeros((1,), device=self.device)
+        for weight_list, weight_decay, p in self.regularization_weight:
+            weight_reg_loss = torch.zeros((1,), device=self.device)
+            for w in weight_list:
+                if isinstance(w, tuple):
+                    l2_reg = torch.norm(w[1], p=p, )
+                else:
+                    l2_reg = torch.norm(w, p=p, )
+                weight_reg_loss = weight_reg_loss + l2_reg
+            reg_loss = weight_decay * weight_reg_loss
+            total_reg_loss += reg_loss
+        return total_reg_loss
 
     def add_auxiliary_loss(self, aux_loss, alpha):
         self.aux_loss = aux_loss * alpha
