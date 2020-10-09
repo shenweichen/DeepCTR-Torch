@@ -38,7 +38,6 @@ Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-St
 |                AutoInt                 | [CIKM 2019][AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks](https://arxiv.org/abs/1810.11921)                              |
 |                  ONN                   | [arxiv 2019][Operation-aware Neural Networks for User Response Prediction](https://arxiv.org/pdf/1904.12579.pdf)                                                |
 |                FiBiNET                 | [RecSys 2019][FiBiNET: Combining Feature Importance and Bilinear feature Interaction for Click-Through Rate Prediction](https://arxiv.org/pdf/1905.09433.pdf)   |
-|                DCN-M               | [arxiv 2020][DCN-M: Improved Deep & Cross Network for Feature Cross Learning in Web-scale Learning to Rank Systems](http://arxiv.org/abs/2008.13535)   |
 
 
 ## DisscussionGroup  
@@ -57,7 +56,7 @@ Please follow our wechat to join group:
       <td>
         ​ <a href="https://github.com/shenweichen"><img width="70" height="70" src="https://github.com/shenweichen.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/shenweichen">Shen Weichen</a> ​
-        <p>Core Dev<br>
+        <p>Founder<br>
         Zhejiang Unversity <br> <br>  </p>​
       </td>
       <td>
@@ -84,11 +83,6 @@ Please follow our wechat to join group:
       </td>
     </tr>
     <tr align="center">
-       <td>
-        ​ <a href="https://github.com/zanshuxun"><img width="70" height="70" src="https://github.com/zanshuxun.png?s=40" alt="pic"></a><br>
-        ​ <a href="https://github.com/zanshuxun">Zan Shuxun</a> ​
-         <p>Dev<br> Beijing University <br> of  Posts and <br> Telecommunications</p>​
-      </td>
       <td>
         ​ <a href="https://github.com/Zengai"><img width="70" height="70" src="https://github.com/Zengai.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/Zengai">Zeng Kai</a> ​
@@ -112,6 +106,9 @@ Please follow our wechat to join group:
         ​ <a href="https://github.com/uestc7d">Xu Qidi</a> ​
         <p>Dev<br>
         University of <br> Electronic  Science  and <br> Technology of China</p>​
+      </td>
+      <td>
+      <a href="https://github.com/shenweichen/DeepCTR-Torch/blob/master/CONTRIBUTING.md"> Welcome you !!</a>
       </td>
     </tr>
   </tbody>
