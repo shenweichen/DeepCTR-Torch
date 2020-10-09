@@ -87,8 +87,7 @@ Please follow our wechat to join group:
        <td>
         ​ <a href="https://github.com/zanshuxun"><img width="70" height="70" src="https://github.com/zanshuxun.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/zanshuxun">Zan Shuxun</a> ​
-        <p>Dev<br>
-        SenseTime <br> <br>  </p>​
+         <p>Dev<br> Beijing University <br> of  Posts and <br> Telecommunications</p>​
       </td>
       <td>
         ​ <a href="https://github.com/Zengai"><img width="70" height="70" src="https://github.com/Zengai.png?s=40" alt="pic"></a><br>
