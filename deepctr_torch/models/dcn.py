@@ -66,6 +66,7 @@ class DCN(BaseModel):
 
         self.dnn_linear = nn.Linear(dnn_linear_in_feature, 1, bias=False).to(
             device)
+        print('DCN parameterization:',parameterization)
         self.crossnet = CrossNet(in_features=self.compute_input_dim(dnn_feature_columns),
                                  layer_num=cross_num, parameterization=parameterization, device=device)
         self.add_regularization_weight(
