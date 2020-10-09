@@ -73,7 +73,7 @@ class ONN(BaseModel):
             dnn_feature_columns, embedding_size=embedding_size, sparse=False).to(device)
 
         # add regularization for second_order_embedding
-        self.add_regularization_loss(
+        self.add_regularization_weight(
             self.second_order_embedding_dict.parameters(), l2_reg_embedding)
 
         dim = self.__compute_nffm_dnn_dim(
@@ -85,9 +85,9 @@ class ONN(BaseModel):
                        init_std=init_std, device=device)
         self.dnn_linear = nn.Linear(
             dnn_hidden_units[-1], 1, bias=False).to(device)
-        self.add_regularization_loss(
+        self.add_regularization_weight(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
-        self.add_regularization_loss(self.dnn_linear.weight, l2_reg_dnn)
+        self.add_regularization_weight(self.dnn_linear.weight, l2_reg_dnn)
         self.to(device)
 
     def __compute_nffm_dnn_dim(self, feature_columns, embedding_size):

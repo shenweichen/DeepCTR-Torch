@@ -90,8 +90,8 @@ def test_DIEN(gru_type, use_neg):
 
     x, y, feature_columns, behavior_feature_list = get_xy_fd(use_neg=use_neg)
 
-    model = DIEN(feature_columns, behavior_feature_list,
-                 dnn_hidden_units=[4, 4, 4], dnn_dropout=0.5, gru_type=gru_type, device=get_device())
+    model = DIEN(feature_columns, behavior_feature_list, gru_type=gru_type, use_negsampling=use_neg,
+                 dnn_hidden_units=[4, 4, 4], dnn_dropout=0.5, device=get_device())
 
     check_model(model, model_name, x, y)
 
