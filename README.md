@@ -56,7 +56,7 @@ Please follow our wechat to join group:
       <td>
         ​ <a href="https://github.com/shenweichen"><img width="70" height="70" src="https://github.com/shenweichen.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/shenweichen">Shen Weichen</a> ​
-        <p>Founder<br>
+        <p>Core Dev<br>
         Zhejiang Unversity <br> <br>  </p>​
       </td>
       <td>

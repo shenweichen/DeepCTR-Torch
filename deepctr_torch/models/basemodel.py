@@ -359,17 +359,6 @@ class BaseModel(nn.Module):
     def add_regularization_weight(self, weight_list, weight_decay, p=2):
         self.regularization_weight.append((list(weight_list), weight_decay, p))
 
-    # def add_regularization_weight(self, weight_list, weight_decay, p=2):
-    #     reg_loss = torch.zeros((1,), device=self.device)
-    #     for w in weight_list:
-    #         if isinstance(w, tuple):
-    #             l2_reg = torch.norm(w[1], p=p, )
-    #         else:
-    #             l2_reg = torch.norm(w, p=p, )
-    #         reg_loss = reg_loss + l2_reg
-    #     reg_loss = weight_decay * reg_loss
-    #     self.reg_loss = self.reg_loss + reg_loss
-
     def get_regularization_loss(self,):
         total_reg_loss = torch.zeros((1,), device=self.device)
         for weight_list, weight_decay, p in self.regularization_weight:
