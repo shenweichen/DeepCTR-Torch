@@ -1,4 +1,5 @@
 # History
+- 10/09/2020 : [v0.2.2](https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.2) released.Improve the reproducibility & fix some bugs.
 - 03/27/2020 : [v0.2.1](https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.1) released.Add [DIN](./Features.html#din-deep-interest-network) and [DIEN](./Features.html#dien-deep-interest-evolution-network) .
 - 01/31/2020 : [v0.2.0](https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.0) released.Refactor [feature columns](./Features.html#feature-columns).Support to use double precision in metric calculation.
 - 10/03/2019 : [v0.1.3](https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.1.3) released.Simplify the input logic.

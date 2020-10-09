@@ -288,6 +288,9 @@ class AFMLayer(nn.Module):
         for tensor in [self.attention_W, self.projection_h, self.projection_p]:
             nn.init.xavier_normal_(tensor, )
 
+        for tensor in [self.attention_b]:
+            nn.init.zeros_(tensor, )
+
         self.dropout = nn.Dropout(dropout_rate)
 
         self.to(device)
