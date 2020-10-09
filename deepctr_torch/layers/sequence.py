@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from torch.nn.utils.rnn import PackedSequence
+
 from ..layers.core import LocalActivationUnit
 
 
@@ -117,33 +117,34 @@ class AttentionSequencePoolingLayer(nn.Module):
           - 3D tensor with shape: ``(batch_size, 1, embedding_size)``.
         """
         batch_size, max_length, dim = keys.size()
-        
+
         # Mask
         if self.supports_masking:
             if mask is None:
                 raise ValueError("When supports_masking=True,input must support masking")
             keys_masks = mask.unsqueeze(1)
         else:
-            keys_masks = torch.arange(max_length, device=keys_length.device, dtype=keys_length.dtype).repeat(batch_size, 1)  # [B, T]
+            keys_masks = torch.arange(max_length, device=keys_length.device, dtype=keys_length.dtype).repeat(batch_size,
+                                                                                                             1)  # [B, T]
             keys_masks = keys_masks < keys_length.view(-1, 1)  # 0, 1 mask
-            keys_masks = keys_masks.unsqueeze(1)               # [B, 1, T]
-            
-        attention_score = self.local_att(query, keys)          # [B, T, 1]
+            keys_masks = keys_masks.unsqueeze(1)  # [B, 1, T]
 
-        outputs = torch.transpose(attention_score, 1, 2)       # [B, 1, T]
+        attention_score = self.local_att(query, keys)  # [B, T, 1]
+
+        outputs = torch.transpose(attention_score, 1, 2)  # [B, 1, T]
 
         if self.weight_normalization:
             paddings = torch.ones_like(outputs) * (-2 ** 32 + 1)
         else:
             paddings = torch.zeros_like(outputs)
 
-        outputs = torch.where(keys_masks, outputs, paddings)   # [B, 1, T]
-        
+        outputs = torch.where(keys_masks, outputs, paddings)  # [B, 1, T]
+
         # Scale
-        #outputs = outputs / (keys.shape[-1] ** 0.05)
-        
+        # outputs = outputs / (keys.shape[-1] ** 0.05)
+
         if self.weight_normalization:
-            outputs = F.softmax(outputs,dim=-1)    # [B, 1, T]
+            outputs = F.softmax(outputs, dim=-1)  # [B, 1, T]
 
         if not self.return_score:
             # Weighted sum
@@ -212,6 +213,8 @@ class AGRUCell(nn.Module):
             # (b_hr|b_hz|b_hh)
             self.bias_hh = nn.Parameter(torch.Tensor(3 * hidden_size))
             self.register_parameter('bias_hh', self.bias_hh)
+            for tensor in [self.bias_ih, self.bias_hh]:
+                nn.init.zeros_(tensor, )
         else:
             self.register_parameter('bias_ih', None)
             self.register_parameter('bias_hh', None)
@@ -256,6 +259,8 @@ class AUGRUCell(nn.Module):
             # (b_hr|b_hz|b_hh)
             self.bias_hh = nn.Parameter(torch.Tensor(3 * hidden_size))
             self.register_parameter('bias_ih', self.bias_hh)
+            for tensor in [self.bias_ih, self.bias_hh]:
+                nn.init.zeros_(tensor, )
         else:
             self.register_parameter('bias_ih', None)
             self.register_parameter('bias_hh', None)
