@@ -75,7 +75,8 @@ class DCNMix(BaseModel):
         self.add_regularization_weight(self.crossnet.U_list, l2_reg_cross)
         self.add_regularization_weight(self.crossnet.V_list, l2_reg_cross)
         self.add_regularization_weight(self.crossnet.C_list, l2_reg_cross)
-        self.add_regularization_weight(self.crossnet.gating.weight, l2_reg_cross)
+        #  TODO:  self.crossnet.gating is a ModuleList, how to add reg weight?
+        # self.add_regularization_weight(self.crossnet.gating, l2_reg_cross)
         self.to(device)
 
     def forward(self, X):
