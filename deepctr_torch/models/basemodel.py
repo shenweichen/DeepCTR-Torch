@@ -144,7 +144,7 @@ class BaseModel(nn.Module):
         :param validation_split: Float between 0 and 1. Fraction of the training data to be used as validation data. The model will set apart this fraction of the training data, will not train on it, and will evaluate the loss and any model metrics on this data at the end of each epoch. The validation data is selected from the last samples in the `x` and `y` data provided, before shuffling.
         :param validation_data: tuple `(x_val, y_val)` or tuple `(x_val, y_val, val_sample_weights)` on which to evaluate the loss and any model metrics at the end of each epoch. The model will not be trained on this data. `validation_data` will override `validation_split`.
         :param shuffle: Boolean. Whether to shuffle the order of the batches at the beginning of each epoch.
-        :param use_double: Boolean. Whether to use double precision in metric calculation.
+        :param use_double: Boolean. Whether to use double precision for predicted values in metric calculation. Float precision may lead to nan/inf loss if lr is large.
 
         """
         if isinstance(x, dict):
@@ -256,22 +256,23 @@ class BaseModel(nn.Module):
                                 ": {0: .4f}".format(np.sum(result) / steps_per_epoch)
 
                 if len(val_x) and len(val_y):
-                    eval_result = self.evaluate(val_x, val_y, batch_size)
+                    eval_result = self.evaluate(val_x, val_y, batch_size, use_double=use_double)
 
                     for name, result in eval_result.items():
                         eval_str += " - val_" + name + \
                                     ": {0: .4f}".format(result)
                 print(eval_str)
 
-    def evaluate(self, x, y, batch_size=256):
+    def evaluate(self, x, y, batch_size=256, use_double=False):
         """
 
         :param x: Numpy array of test data (if the model has a single input), or list of Numpy arrays (if the model has multiple inputs).
         :param y: Numpy array of target (label) data (if the model has a single output), or list of Numpy arrays (if the model has multiple outputs).
         :param batch_size:
+        :param use_double: Boolean. Whether to use double precision for predicted values in metric calculation. Float precision may lead to nan/inf loss if lr is large.
         :return: Integer or `None`. Number of samples per evaluation step. If unspecified, `batch_size` will default to 256.
         """
-        pred_ans = self.predict(x, batch_size)
+        pred_ans = self.predict(x, batch_size, use_double=use_double)
         eval_result = {}
         for name, metric_fun in self.metrics.items():
             eval_result[name] = metric_fun(y, pred_ans)
@@ -282,6 +283,7 @@ class BaseModel(nn.Module):
 
         :param x: The input data, as a Numpy array (or list of Numpy arrays if the model has multiple inputs).
         :param batch_size: Integer. If unspecified, it will default to 256.
+        :param use_double: Boolean. Whether to use double precision for predicted values in metric calculation. Float precision may lead to nan/inf loss if lr is large.
         :return: Numpy array(s) of predictions.
         """
         model = self.eval()
