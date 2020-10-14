@@ -3,6 +3,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 
 from .activation import activation_layer
 
@@ -181,3 +182,72 @@ class Conv2dSame(nn.Conv2d):
         out = F.conv2d(x, self.weight, self.bias, self.stride,
                        self.padding, self.dilation, self.groups)
         return out
+
+
+class EarlyStopping:
+    """ Stop training when a monitored quantity has stopped improving.
+        Our implementation refers to tensorflow.python.keras.callbacks.
+
+    Arguments:
+        monitor: quantity to be monitored.
+        min_delta: minimum change in the monitored quantity
+              to qualify as an improvement, i.e. an absolute
+              change of less than min_delta, will count as no
+              improvement.
+        patience: number of epochs with no improvement
+              after which training will be stopped.
+        mode: one of {auto, min, max}. In `min` mode,
+              training will stop when the quantity
+              monitored has stopped decreasing; in `max`
+              mode it will stop when the quantity
+              monitored has stopped increasing; in `auto`
+              mode, the direction is automatically inferred
+              from the name of the monitored quantity.
+    """
+
+    def __init__(self, monitor='val_auc', min_delta=0, patience=0, mode='auto'):
+        self.monitor = monitor
+        self.patience = patience
+        self.min_delta = abs(min_delta)
+        self.wait = 0
+
+        if mode not in ['auto', 'min', 'max']:
+            print('EarlyStopping mode %s is unknown, '
+                            'fallback to auto mode.'% mode)
+            mode = 'auto'
+
+        if mode == 'min':
+            self.monitor_op = np.less
+        elif mode == 'max':
+            self.monitor_op = np.greater
+        else:
+            if self.monitor == "val_binary_crossentropy" or self.monitor == "val_logloss":
+                self.monitor_op = np.less
+            else:
+                self.monitor_op = np.greater
+
+        if self.monitor_op == np.greater:
+            self.min_delta *= 1
+            self.best = -np.Inf
+        else:
+            self.min_delta *= -1
+            self.best = np.Inf
+
+    def on_epoch_end(self, eval_result):
+        stop_training = False
+        try:
+            current = eval_result[self.monitor]
+            if self.monitor_op(current - self.min_delta, self.best):
+                self.best = current
+                self.wait = 0
+            else:
+                self.wait += 1
+                if self.wait >= self.patience:
+                    stop_training = True
+        except Exception as e:
+            print('Error! Early stopping conditioned on metric `%s` '
+                  'which is not available. Available metrics are: %s' %
+                  (self.monitor, ', '.join(list(eval_result.keys()))))
+            raise e
+        return stop_training
+
