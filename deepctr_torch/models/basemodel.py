@@ -209,6 +209,8 @@ class BaseModel(nn.Module):
         print("Train on {0} samples, validate on {1} samples, {2} steps per epoch".format(
             len(train_tensor_data), len(val_y), steps_per_epoch))
         for epoch in range(initial_epoch, epochs):
+            callbacks.on_epoch_begin(epoch)
+            epoch_logs = {}
             start_time = time.time()
             loss_epoch = 0
             total_loss_epoch = 0
@@ -247,34 +249,32 @@ class BaseModel(nn.Module):
             t.close()
 
             # evaluate
-            logs = {}
-
-            logs["loss"] = total_loss_epoch / sample_num
+            epoch_logs["loss"] = total_loss_epoch / sample_num
             for name, result in train_result.items():
-                logs[name] = np.sum(result) / steps_per_epoch
+                epoch_logs[name] = np.sum(result) / steps_per_epoch
 
             if len(val_x) and len(val_y):
                 eval_result = self.evaluate(val_x, val_y, batch_size)
                 for name, result in eval_result.items():
-                    logs[name] = result
+                    epoch_logs[name] = result
             # verbose
             if verbose > 0:
                 epoch_time = int(time.time() - start_time)
                 print('Epoch {0}/{1}'.format(epoch + 1, epochs))
 
                 eval_str = "{0}s - loss: {1: .4f}".format(
-                    epoch_time, logs["loss"])
+                    epoch_time, epoch_logs["loss"])
 
                 for name, result in train_result.items():
                     eval_str += " - " + name + \
-                                ": {0: .4f}".format(logs[name])
+                                ": {0: .4f}".format(epoch_logs[name])
 
                 if len(val_x) and len(val_y):
                     for name, result in eval_result.items():
                         eval_str += " - " + name + \
-                                    ": {0: .4f}".format(logs[name])
+                                    ": {0: .4f}".format(epoch_logs[name])
                 print(eval_str)
-            callback_list.on_epoch_end(epoch, logs)
+            callback_list.on_epoch_end(epoch, epoch_logs)
             if self.stop_training:
                 break
 
