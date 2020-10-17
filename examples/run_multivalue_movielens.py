@@ -42,8 +42,7 @@ if __name__ == "__main__":
                               for feat in sparse_features]
 
     varlen_feature_columns = [VarLenSparseFeat(SparseFeat('genres', vocabulary_size=len(
-        key2index) + 1, embedding_dim=4), maxlen=max_len, combiner='mean',
-                                               weight_name=None)]  # Notice : value 0 is for padding for sequence input feature
+        key2index) + 1, embedding_dim=4), maxlen=max_len, combiner='mean')]  # Notice : value 0 is for padding for sequence input feature
 
     linear_feature_columns = fixlen_feature_columns + varlen_feature_columns
     dnn_feature_columns = fixlen_feature_columns + varlen_feature_columns

@@ -247,28 +247,34 @@ class BaseModel(nn.Module):
             t.close()
 
             # evaluate
+            logs = {}
+
+            logs["loss"] = total_loss_epoch / sample_num
+            for name, result in train_result.items():
+                logs[name] = np.sum(result) / steps_per_epoch
+
             if len(val_x) and len(val_y):
                 eval_result = self.evaluate(val_x, val_y, batch_size)
-
+                for name, result in eval_result.items():
+                    logs[name] = result
             # verbose
-            epoch_time = int(time.time() - start_time)
             if verbose > 0:
+                epoch_time = int(time.time() - start_time)
                 print('Epoch {0}/{1}'.format(epoch + 1, epochs))
 
                 eval_str = "{0}s - loss: {1: .4f}".format(
-                    epoch_time, total_loss_epoch / sample_num)
+                    epoch_time, logs["loss"])
 
                 for name, result in train_result.items():
                     eval_str += " - " + name + \
-                                ": {0: .4f}".format(np.sum(result) / steps_per_epoch)
+                                ": {0: .4f}".format(logs[name])
 
                 if len(val_x) and len(val_y):
                     for name, result in eval_result.items():
                         eval_str += " - " + name + \
-                                    ": {0: .4f}".format(result)
+                                    ": {0: .4f}".format(logs[name])
                 print(eval_str)
-
-            callback_list.on_epoch_end(epoch, eval_result)
+            callback_list.on_epoch_end(epoch, logs)
             if self.stop_training:
                 break
 
