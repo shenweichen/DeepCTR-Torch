@@ -20,7 +20,7 @@ from tqdm import tqdm
 
 from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat, get_varlen_pooling_list, \
     create_embedding_matrix
-from ..layers import PredictionLayer
+from ..layers import *
 from ..layers.utils import slice_arrays
 
 
@@ -132,7 +132,7 @@ class BaseModel(nn.Module):
             validation_data=None,
             shuffle=True,
             use_double=False,
-            early_stopping=None,
+            callbacks=None,
             ):
         """
 
@@ -147,7 +147,7 @@ class BaseModel(nn.Module):
         :param validation_data: tuple `(x_val, y_val)` or tuple `(x_val, y_val, val_sample_weights)` on which to evaluate the loss and any model metrics at the end of each epoch. The model will not be trained on this data. `validation_data` will override `validation_split`.
         :param shuffle: Boolean. Whether to shuffle the order of the batches at the beginning of each epoch.
         :param use_double: Boolean. Whether to use double precision for predicted values in metric calculation. Float precision may lead to nan/inf loss if lr is large.
-        :param early_stopping: deepctr_torch.layers.EarlyStopping object. if None, do not use early stopping.
+        :param callbacks: List of callback instances. Now available: {EarlyStopping, ModelCheckpoint}. See deepctr_torch.layers.cores.
 
         """
         if isinstance(x, dict):
@@ -202,6 +202,10 @@ class BaseModel(nn.Module):
 
         sample_num = len(train_tensor_data)
         steps_per_epoch = (sample_num - 1) // batch_size + 1
+
+        callback_list = CallbackList(callbacks)
+        callback_list.set_model(model)
+        callback_list.on_train_begin()
 
         # Train
         print("Train on {0} samples, validate on {1} samples, {2} steps per epoch".format(
@@ -270,12 +274,12 @@ class BaseModel(nn.Module):
                                     ": {0: .4f}".format(result)
                 print(eval_str)
 
-            # EarlyStopping
-            if early_stopping is not None and len(val_x) and len(val_y):
-                stop_training = early_stopping.on_epoch_end(eval_result)
-                if stop_training:
-                    print('Epoch %d: early stopping' % (epoch + 1))
-                    break
+            callback_list.on_epoch_end(epoch, eval_result)
+            if callback_list.stop_training():
+                break
+
+        callback_list.on_train_end()
+
 
     def evaluate(self, x, y, batch_size=256, use_double=False):
         """

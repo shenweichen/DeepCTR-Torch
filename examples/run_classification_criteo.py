@@ -7,7 +7,7 @@ from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 
 from deepctr_torch.inputs import SparseFeat, DenseFeat, get_feature_names
 from deepctr_torch.models import *
-from deepctr_torch.layers import EarlyStopping
+from deepctr_torch.layers import EarlyStopping, ModelCheckpoint
 
 if __name__ == "__main__":
     data = pd.read_csv('./criteo_sample.txt')
@@ -59,10 +59,12 @@ if __name__ == "__main__":
     model.compile("adagrad", "binary_crossentropy",
                   metrics=["binary_crossentropy", "auc"], )
 
-    early_stopping = EarlyStopping(monitor='val_auc', min_delta=0, patience=0, mode='max')
+    early_stopping = EarlyStopping(monitor='val_auc', verbose=1, min_delta=0, patience=0, mode='max')
+    model_checkpoint = ModelCheckpoint(filepath='model.ckpt', monitor='val_auc', verbose=1, save_best_only=True, save_weights_only=False)
+
     model.fit(train_model_input, train[target].values,
               batch_size=32, epochs=10, validation_split=0.2, verbose=2,
-              use_double=True, early_stopping=early_stopping)
+              use_double=True, callbacks=[early_stopping, model_checkpoint])
 
     pred_ans = model.predict(test_model_input, 256)
     print("")
