@@ -2,9 +2,11 @@
 """
 Author:
     chen_kkkk, bgasdo36977@gmail.com
+
     zanshuxun, zanshuxun@aliyun.com
 Reference:
     [1] Wang R, Fu B, Fu G, et al. Deep & cross network for ad click predictions[C]//Proceedings of the ADKDD'17. ACM, 2017: 12. (https://arxiv.org/abs/1708.05123)
+
     [2] Wang R, Shivanna R, Cheng D Z, et al. DCN-M: Improved Deep & Cross Network for Feature Cross Learning in Web-scale Learning to Rank Systems[J]. 2020. (https://arxiv.org/abs/2008.13535)
 """
 import torch

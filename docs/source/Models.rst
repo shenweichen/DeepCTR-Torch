@@ -12,6 +12,7 @@ DeepCTR-PyTorch Models API
    NFM<deepctr_torch.models.nfm>
    AFM<deepctr_torch.models.afm>
    DCN<deepctr_torch.models.dcn>
+   DCN-Mix<deepctr_torch.models.dcnmix>
    DIN<deepctr_torch.models.din>
    DIEN<deepctr_torch.models.dien>
    DSIN<deepctr_torch.models.dsin>
@@ -20,5 +21,3 @@ DeepCTR-PyTorch Models API
    ONN<deepctr_torch.models.onn>
    FGCNN<deepctr_torch.models.fgcnn>
    FiBiNET<deepctr_torch.models.fibinet>
-   DCN<deepctr_torch.models.dcnmix>
-   
