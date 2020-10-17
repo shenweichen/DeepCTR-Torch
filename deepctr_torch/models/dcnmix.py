@@ -12,12 +12,11 @@ import torch.nn as nn
 
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
-from ..layers import CrossNet, DNN
+from ..layers import CrossNetMix, DNN
 
 
-class DCN(BaseModel):
-    """Instantiates the Deep&Cross Network architecture. Including DCN-V (parameterization='vector')
-    and DCN-M (parameterization='matrix').
+class DCNMix(BaseModel):
+    """Instantiates the DCN-Mix model.
 
     :param linear_feature_columns: An iterable containing all the features used by linear part of the model.
     :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
@@ -29,9 +28,10 @@ class DCN(BaseModel):
     :param init_std: float,to use as the initialize std of embedding vector
     :param seed: integer ,to use as random seed.
     :param dnn_dropout: float in [0,1), the probability we will drop out a given DNN coordinate.
-    :param parameterization: str, ``"vector"`` or ``"matrix"``, how to parameterize the cross network.
     :param dnn_use_bn: bool. Whether use BatchNormalization before activation or not DNN
     :param dnn_activation: Activation function to use in DNN
+    :param low_rank: Positive integer, dimensionality of low-rank sapce.
+    :param num_experts: Positive integer, number of experts.
     :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
     :param device: str, ``"cpu"`` or ``"cuda:0"``
     :return: A PyTorch model instance.
@@ -42,10 +42,10 @@ class DCN(BaseModel):
                  dnn_feature_columns, cross_num=2,
                  dnn_hidden_units=(128, 128), l2_reg_linear=0.00001,
                  l2_reg_embedding=0.00001, l2_reg_cross=0.00001, l2_reg_dnn=0, init_std=0.0001, seed=1024,
-                 dnn_dropout=0, parameterization='vector',
+                 dnn_dropout=0, low_rank=32, num_experts=4,
                  dnn_activation='relu', dnn_use_bn=False, task='binary', device='cpu'):
 
-        super(DCN, self).__init__(linear_feature_columns=linear_feature_columns,
+        super(DCNMix, self).__init__(linear_feature_columns=linear_feature_columns,
                                   dnn_feature_columns=dnn_feature_columns,
                                   dnn_hidden_units=dnn_hidden_units,
                                   l2_reg_embedding=l2_reg_embedding, l2_reg_dnn=l2_reg_dnn, init_std=init_std,
@@ -66,13 +66,15 @@ class DCN(BaseModel):
 
         self.dnn_linear = nn.Linear(dnn_linear_in_feature, 1, bias=False).to(
             device)
-        print('DCN parameterization:',parameterization)
-        self.crossnet = CrossNet(in_features=self.compute_input_dim(dnn_feature_columns),
-                                 layer_num=cross_num, parameterization=parameterization, device=device)
+        self.crossnet = CrossNetMix(in_features=self.compute_input_dim(dnn_feature_columns),
+                                    low_rank=low_rank, num_experts=num_experts,
+                                    layer_num=cross_num, device=device)
         self.add_regularization_weight(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
         self.add_regularization_weight(self.dnn_linear.weight, l2_reg_linear)
-        self.add_regularization_weight(self.crossnet.kernels, l2_reg_cross)
+        self.add_regularization_weight(self.crossnet.U_list, l2_reg_cross)
+        self.add_regularization_weight(self.crossnet.V_list, l2_reg_cross)
+        self.add_regularization_weight(self.crossnet.C_list, l2_reg_cross)
         self.to(device)
 
     def forward(self, X):

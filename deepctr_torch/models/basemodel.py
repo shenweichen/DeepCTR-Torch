@@ -21,6 +21,7 @@ from tqdm import tqdm
 from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat, get_varlen_pooling_list, \
     create_embedding_matrix
 from ..layers import PredictionLayer
+from tensorflow.python.keras.callbacks import CallbackList
 from ..layers.utils import slice_arrays
 
 
@@ -131,7 +132,9 @@ class BaseModel(nn.Module):
             validation_split=0.,
             validation_data=None,
             shuffle=True,
-            use_double=False):
+            use_double=False,
+            callbacks=None,
+            ):
         """
 
         :param x: Numpy array of training data (if the model has a single input), or list of Numpy arrays (if the model has multiple inputs).If input layers in the model are named, you can also pass a
@@ -144,7 +147,12 @@ class BaseModel(nn.Module):
         :param validation_split: Float between 0 and 1. Fraction of the training data to be used as validation data. The model will set apart this fraction of the training data, will not train on it, and will evaluate the loss and any model metrics on this data at the end of each epoch. The validation data is selected from the last samples in the `x` and `y` data provided, before shuffling.
         :param validation_data: tuple `(x_val, y_val)` or tuple `(x_val, y_val, val_sample_weights)` on which to evaluate the loss and any model metrics at the end of each epoch. The model will not be trained on this data. `validation_data` will override `validation_split`.
         :param shuffle: Boolean. Whether to shuffle the order of the batches at the beginning of each epoch.
-        :param use_double: Boolean. Whether to use double precision in metric calculation.
+        :param use_double: Boolean. Whether to use double precision for predicted values in metric calculation. Float precision may lead to nan/inf loss if lr is large.
+        :param callbacks:
+            List of `keras.callbacks.Callback` instances. See tensorflow.python.keras.callbacks.
+            Now available:
+                EarlyStopping (can be used directly)
+                ModelCheckpoint (overrode for PyTorch, see deepctr_torch.layers.core)
 
         """
         if isinstance(x, dict):
@@ -200,6 +208,12 @@ class BaseModel(nn.Module):
         sample_num = len(train_tensor_data)
         steps_per_epoch = (sample_num - 1) // batch_size + 1
 
+        callback_list = CallbackList(callbacks)
+        callback_list.set_model(self)
+        callback_list.on_train_begin()
+        self.stop_training = False  # used for early stopping
+
+        # Train
         print("Train on {0} samples, validate on {1} samples, {2} steps per epoch".format(
             len(train_tensor_data), len(val_y), steps_per_epoch))
         for epoch in range(initial_epoch, epochs):
@@ -244,6 +258,11 @@ class BaseModel(nn.Module):
                 raise
             t.close()
 
+            # evaluate
+            if len(val_x) and len(val_y):
+                eval_result = self.evaluate(val_x, val_y, batch_size, use_double=use_double)
+
+            # verbose
             epoch_time = int(time.time() - start_time)
             if verbose > 0:
                 print('Epoch {0}/{1}'.format(epoch + 1, epochs))
@@ -256,25 +275,30 @@ class BaseModel(nn.Module):
                                 ": {0: .4f}".format(np.sum(result) / steps_per_epoch)
 
                 if len(val_x) and len(val_y):
-                    eval_result = self.evaluate(val_x, val_y, batch_size)
-
                     for name, result in eval_result.items():
-                        eval_str += " - val_" + name + \
+                        eval_str += " - " + name + \
                                     ": {0: .4f}".format(result)
                 print(eval_str)
 
-    def evaluate(self, x, y, batch_size=256):
+            callback_list.on_epoch_end(epoch, eval_result)
+            if self.stop_training:
+                break
+
+        callback_list.on_train_end()
+
+    def evaluate(self, x, y, batch_size=256, use_double=False):
         """
 
         :param x: Numpy array of test data (if the model has a single input), or list of Numpy arrays (if the model has multiple inputs).
         :param y: Numpy array of target (label) data (if the model has a single output), or list of Numpy arrays (if the model has multiple outputs).
         :param batch_size:
+        :param use_double: Boolean. Whether to use double precision for predicted values in metric calculation. Float precision may lead to nan/inf loss if lr is large.
         :return: Integer or `None`. Number of samples per evaluation step. If unspecified, `batch_size` will default to 256.
         """
-        pred_ans = self.predict(x, batch_size)
+        pred_ans = self.predict(x, batch_size, use_double=use_double)
         eval_result = {}
         for name, metric_fun in self.metrics.items():
-            eval_result[name] = metric_fun(y, pred_ans)
+            eval_result["val_" + name] = metric_fun(y, pred_ans)
         return eval_result
 
     def predict(self, x, batch_size=256, use_double=False):
@@ -282,6 +306,7 @@ class BaseModel(nn.Module):
 
         :param x: The input data, as a Numpy array (or list of Numpy arrays if the model has multiple inputs).
         :param batch_size: Integer. If unspecified, it will default to 256.
+        :param use_double: Boolean. Whether to use double precision for predicted values in metric calculation. Float precision may lead to nan/inf loss if lr is large.
         :return: Numpy array(s) of predictions.
         """
         model = self.eval()
