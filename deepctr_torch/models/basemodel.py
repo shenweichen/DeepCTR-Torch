@@ -150,7 +150,7 @@ class BaseModel(nn.Module):
         :param use_double: Boolean. Whether to use double precision for predicted values in metric calculation. Float precision may lead to nan/inf loss if lr is large.
         :param callbacks:
             List of `keras.callbacks.Callback` instances. Now available: {EarlyStopping, ModelCheckpoint}.
-            See [callbacks](/api_docs/python/tf/keras/callbacks).
+            See tensorflow.python.keras.callbacks.
             Some callbacks (e.g. ModelCheckpoint) need to be inherited and overrode for PyTorch.
 
 
