@@ -20,4 +20,5 @@ DeepCTR-PyTorch Models API
    ONN<deepctr_torch.models.onn>
    FGCNN<deepctr_torch.models.fgcnn>
    FiBiNET<deepctr_torch.models.fibinet>
+   DCN<deepctr_torch.models.dcnmix>
    

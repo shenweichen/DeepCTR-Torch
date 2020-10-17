@@ -42,13 +42,9 @@ class AutoInt(BaseModel):
                  l2_reg_dnn=0, l2_reg_embedding=1e-5, dnn_use_bn=False, dnn_dropout=0, init_std=0.0001, seed=1024,
                  task='binary', device='cpu'):
 
-        super(AutoInt, self).__init__(linear_feature_columns, dnn_feature_columns,
-                                      dnn_hidden_units=dnn_hidden_units,
-                                      l2_reg_linear=0,
-                                      l2_reg_embedding=l2_reg_embedding, l2_reg_dnn=l2_reg_dnn, init_std=init_std,
-                                      seed=seed,
-                                      dnn_dropout=dnn_dropout, dnn_activation=dnn_activation,
-                                      task=task, device=device)
+        super(AutoInt, self).__init__(linear_feature_columns, dnn_feature_columns, l2_reg_linear=0,
+                                      l2_reg_embedding=l2_reg_embedding, init_std=init_std, seed=seed, task=task,
+                                      device=device)
 
         if len(dnn_hidden_units) <= 0 and att_layer_num <= 0:
             raise ValueError("Either hidden_layer or att_layer_num must > 0")

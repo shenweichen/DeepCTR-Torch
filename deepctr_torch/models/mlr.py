@@ -33,8 +33,7 @@ class MLR(BaseModel):
     def __init__(self, region_feature_columns, base_feature_columns=None, bias_feature_columns=None,
                  region_num=4, l2_reg_linear=1e-5, init_std=0.0001, seed=1024, task='binary', device='cpu'
                  ):
-        super(MLR, self).__init__(region_feature_columns,
-                                  region_feature_columns, task=task, device=device)
+        super(MLR, self).__init__(region_feature_columns, region_feature_columns, task=task, device=device)
 
         if region_num <= 1:
             raise ValueError("region_num must > 1")

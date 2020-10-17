@@ -86,11 +86,8 @@ class Linear(nn.Module):
 
 
 class BaseModel(nn.Module):
-    def __init__(self,
-                 linear_feature_columns, dnn_feature_columns, dnn_hidden_units=(128, 128),
-                 l2_reg_linear=1e-5,
-                 l2_reg_embedding=1e-5, l2_reg_dnn=0, init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation='relu',
-                 task='binary', device='cpu'):
+    def __init__(self, linear_feature_columns, dnn_feature_columns, l2_reg_linear=1e-5, l2_reg_embedding=1e-5,
+                 init_std=0.0001, seed=1024, task='binary', device='cpu'):
 
         super(BaseModel, self).__init__()
         torch.manual_seed(seed)
@@ -132,7 +129,6 @@ class BaseModel(nn.Module):
             validation_split=0.,
             validation_data=None,
             shuffle=True,
-            use_double=False,
             callbacks=None,
             ):
         """
@@ -147,12 +143,11 @@ class BaseModel(nn.Module):
         :param validation_split: Float between 0 and 1. Fraction of the training data to be used as validation data. The model will set apart this fraction of the training data, will not train on it, and will evaluate the loss and any model metrics on this data at the end of each epoch. The validation data is selected from the last samples in the `x` and `y` data provided, before shuffling.
         :param validation_data: tuple `(x_val, y_val)` or tuple `(x_val, y_val, val_sample_weights)` on which to evaluate the loss and any model metrics at the end of each epoch. The model will not be trained on this data. `validation_data` will override `validation_split`.
         :param shuffle: Boolean. Whether to shuffle the order of the batches at the beginning of each epoch.
-        :param use_double: Boolean. Whether to use double precision for predicted values in metric calculation. Float precision may lead to nan/inf loss if lr is large.
         :param callbacks:
             List of `keras.callbacks.Callback` instances. See tensorflow.python.keras.callbacks.
             Now available:
                 EarlyStopping (can be used directly)
-                ModelCheckpoint (overrode for PyTorch, see deepctr_torch.layers.core)
+                ModelCheckpoint (overrode for PyTorch, see deepctr_torch.callbacks)
 
         """
         if isinstance(x, dict):
@@ -245,13 +240,9 @@ class BaseModel(nn.Module):
                             for name, metric_fun in self.metrics.items():
                                 if name not in train_result:
                                     train_result[name] = []
+                                train_result[name].append(metric_fun(
+                                    y.cpu().data.numpy(), y_pred.cpu().data.numpy().astype("float64")))
 
-                                if use_double:
-                                    train_result[name].append(metric_fun(
-                                        y.cpu().data.numpy(), y_pred.cpu().data.numpy().astype("float64")))
-                                else:
-                                    train_result[name].append(metric_fun(
-                                        y.cpu().data.numpy(), y_pred.cpu().data.numpy()))
 
             except KeyboardInterrupt:
                 t.close()
@@ -260,7 +251,7 @@ class BaseModel(nn.Module):
 
             # evaluate
             if len(val_x) and len(val_y):
-                eval_result = self.evaluate(val_x, val_y, batch_size, use_double=use_double)
+                eval_result = self.evaluate(val_x, val_y, batch_size)
 
             # verbose
             epoch_time = int(time.time() - start_time)
@@ -286,27 +277,25 @@ class BaseModel(nn.Module):
 
         callback_list.on_train_end()
 
-    def evaluate(self, x, y, batch_size=256, use_double=False):
+    def evaluate(self, x, y, batch_size=256):
         """
 
         :param x: Numpy array of test data (if the model has a single input), or list of Numpy arrays (if the model has multiple inputs).
         :param y: Numpy array of target (label) data (if the model has a single output), or list of Numpy arrays (if the model has multiple outputs).
-        :param batch_size:
-        :param use_double: Boolean. Whether to use double precision for predicted values in metric calculation. Float precision may lead to nan/inf loss if lr is large.
-        :return: Integer or `None`. Number of samples per evaluation step. If unspecified, `batch_size` will default to 256.
+        :param batch_size: Integer or `None`. Number of samples per evaluation step. If unspecified, `batch_size` will default to 256.
+        :return:
         """
-        pred_ans = self.predict(x, batch_size, use_double=use_double)
+        pred_ans = self.predict(x, batch_size)
         eval_result = {}
         for name, metric_fun in self.metrics.items():
             eval_result["val_" + name] = metric_fun(y, pred_ans)
         return eval_result
 
-    def predict(self, x, batch_size=256, use_double=False):
+    def predict(self, x, batch_size=256):
         """
 
         :param x: The input data, as a Numpy array (or list of Numpy arrays if the model has multiple inputs).
         :param batch_size: Integer. If unspecified, it will default to 256.
-        :param use_double: Boolean. Whether to use double precision for predicted values in metric calculation. Float precision may lead to nan/inf loss if lr is large.
         :return: Numpy array(s) of predictions.
         """
         model = self.eval()
@@ -325,15 +314,12 @@ class BaseModel(nn.Module):
         with torch.no_grad():
             for index, x_test in enumerate(test_loader):
                 x = x_test[0].to(self.device).float()
-                # y = y_test.to(self.device).float()
 
                 y_pred = model(x).cpu().data.numpy()  # .squeeze()
                 pred_ans.append(y_pred)
 
-        if use_double:
-            return np.concatenate(pred_ans).astype("float64")
-        else:
-            return np.concatenate(pred_ans)
+        return np.concatenate(pred_ans).astype("float64")
+
 
     def input_from_feature_columns(self, X, feature_columns, embedding_dict, support_dense=True):
 

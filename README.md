@@ -38,14 +38,30 @@ Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-St
 |                AutoInt                 | [CIKM 2019][AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks](https://arxiv.org/abs/1810.11921)                              |
 |                  ONN                   | [arxiv 2019][Operation-aware Neural Networks for User Response Prediction](https://arxiv.org/pdf/1904.12579.pdf)                                                |
 |                FiBiNET                 | [RecSys 2019][FiBiNET: Combining Feature Importance and Bilinear feature Interaction for Click-Through Rate Prediction](https://arxiv.org/pdf/1905.09433.pdf)   |
+|                DCN-M                   | [arxiv 2020][DCN-M: Improved Deep & Cross Network for Feature Cross Learning in Web-scale Learning to Rank Systems](https://arxiv.org/abs/2008.13535)   |
 
 
 ## DisscussionGroup  
 
-Please follow our wechat to join group:  
-- 公众号：**浅梦的学习笔记**  
-- wechat ID: **deepctrbot**
-![wechat](./docs/pics/weichennote.png)
+<html>
+    <table style="margin-left: 20px; margin-right: auto;">
+        <tr>
+            <td>
+                公众号：<b>浅梦的学习笔记</b><br><br>
+                <a href="https://github.com/shenweichen/deepctr-torch">
+  <img align="center" src="./docs/pics/code.png" />
+</a>
+            </td>
+            <td>
+                微信：<b>deepctrbot</b><br><br>
+ <a href="https://github.com/shenweichen/deepctr-torch">
+  <img align="center" src="./docs/pics/deepctrbot.png" />
+</a>
+            </td>
+        </tr>
+    </table>
+</html>
+
 
 
 ## Contributors([welcome to join us!](./CONTRIBUTING.md))

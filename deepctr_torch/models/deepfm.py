@@ -41,13 +41,9 @@ class DeepFM(BaseModel):
                  dnn_dropout=0,
                  dnn_activation='relu', dnn_use_bn=False, task='binary', device='cpu'):
 
-        super(DeepFM, self).__init__(linear_feature_columns, dnn_feature_columns,
-                                     dnn_hidden_units=dnn_hidden_units,
-                                     l2_reg_linear=l2_reg_linear,
-                                     l2_reg_embedding=l2_reg_embedding, l2_reg_dnn=l2_reg_dnn, init_std=init_std,
-                                     seed=seed,
-                                     dnn_dropout=dnn_dropout, dnn_activation=dnn_activation,
-                                     task=task, device=device)
+        super(DeepFM, self).__init__(linear_feature_columns, dnn_feature_columns, l2_reg_linear=l2_reg_linear,
+                                     l2_reg_embedding=l2_reg_embedding, init_std=init_std, seed=seed, task=task,
+                                     device=device)
 
         self.use_fm = use_fm
         self.use_dnn = len(dnn_feature_columns) > 0 and len(

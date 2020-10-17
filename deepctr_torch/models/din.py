@@ -38,13 +38,8 @@ class DIN(BaseModel):
                  att_activation='Dice', att_weight_normalization=False, l2_reg_dnn=0.0,
                  l2_reg_embedding=1e-6, dnn_dropout=0, init_std=0.0001,
                  seed=1024, task='binary', device='cpu'):
-        super(DIN, self).__init__([], dnn_feature_columns,
-                                  dnn_hidden_units=dnn_hidden_units, l2_reg_linear=0,
-                                  l2_reg_dnn=l2_reg_dnn, init_std=init_std,
-                                  l2_reg_embedding=l2_reg_embedding,
-                                  dnn_dropout=dnn_dropout, dnn_activation=dnn_activation,
-                                  seed=seed, task=task, 
-                                  device=device)
+        super(DIN, self).__init__([], dnn_feature_columns, l2_reg_linear=0, l2_reg_embedding=l2_reg_embedding,
+                                  init_std=init_std, seed=seed, task=task, device=device)
 
         self.sparse_feature_columns = list(
             filter(lambda x: isinstance(x, SparseFeat), dnn_feature_columns)) if dnn_feature_columns else []

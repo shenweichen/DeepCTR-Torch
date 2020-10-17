@@ -43,13 +43,9 @@ class xDeepFM(BaseModel):
                  l2_reg_embedding=0.00001, l2_reg_dnn=0, l2_reg_cin=0, init_std=0.0001, seed=1024, dnn_dropout=0,
                  dnn_activation='relu', dnn_use_bn=False, task='binary', device='cpu'):
 
-        super(xDeepFM, self).__init__(linear_feature_columns, dnn_feature_columns,
-                                      dnn_hidden_units=dnn_hidden_units,
-                                      l2_reg_linear=l2_reg_linear,
-                                      l2_reg_embedding=l2_reg_embedding, l2_reg_dnn=l2_reg_dnn, init_std=init_std,
-                                      seed=seed,
-                                      dnn_dropout=dnn_dropout, dnn_activation=dnn_activation,
-                                      task=task, device=device)
+        super(xDeepFM, self).__init__(linear_feature_columns, dnn_feature_columns, l2_reg_linear=l2_reg_linear,
+                                      l2_reg_embedding=l2_reg_embedding, init_std=init_std, seed=seed, task=task,
+                                      device=device)
         self.dnn_hidden_units = dnn_hidden_units
         self.use_dnn = len(dnn_feature_columns) > 0 and len(dnn_hidden_units) > 0
         if self.use_dnn:

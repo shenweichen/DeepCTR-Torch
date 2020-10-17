@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from .activation import activation_layer
-from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
+
 
 class LocalActivationUnit(nn.Module):
     """The LocalActivationUnit used in DIN with which the representation of
@@ -34,16 +34,17 @@ class LocalActivationUnit(nn.Module):
         - [Zhou G, Zhu X, Song C, et al. Deep interest network for click-through rate prediction[C]//Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining. ACM, 2018: 1059-1068.](https://arxiv.org/pdf/1706.06978.pdf)
     """
 
-    def __init__(self, hidden_units=(64, 32), embedding_dim=4, activation='sigmoid', dropout_rate=0, dice_dim=3, l2_reg=0, use_bn=False):
+    def __init__(self, hidden_units=(64, 32), embedding_dim=4, activation='sigmoid', dropout_rate=0, dice_dim=3,
+                 l2_reg=0, use_bn=False):
         super(LocalActivationUnit, self).__init__()
 
         self.dnn = DNN(inputs_dim=4 * embedding_dim,
-                        hidden_units=hidden_units,
-                        activation=activation,
-                        l2_reg=l2_reg,
-                        dropout_rate=dropout_rate,
-                        dice_dim=dice_dim,
-                        use_bn=use_bn)
+                       hidden_units=hidden_units,
+                       activation=activation,
+                       l2_reg=l2_reg,
+                       dropout_rate=dropout_rate,
+                       dice_dim=dice_dim,
+                       use_bn=use_bn)
 
         self.dense = nn.Linear(hidden_units[-1], 1)
 
@@ -54,10 +55,11 @@ class LocalActivationUnit(nn.Module):
 
         queries = query.expand(-1, user_behavior_len, -1)
 
-        attention_input = torch.cat([queries, user_behavior, queries - user_behavior, queries * user_behavior], dim=-1)   # as the source code, subtraction simulates verctors' difference
+        attention_input = torch.cat([queries, user_behavior, queries - user_behavior, queries * user_behavior],
+                                    dim=-1)  # as the source code, subtraction simulates verctors' difference
         attention_output = self.dnn(attention_input)
-        
-        attention_score = self.dense(attention_output)    # [B, T, 1]
+
+        attention_score = self.dense(attention_output)  # [B, T, 1]
 
         return attention_score
 
@@ -181,40 +183,3 @@ class Conv2dSame(nn.Conv2d):
         out = F.conv2d(x, self.weight, self.bias, self.stride,
                        self.padding, self.dilation, self.groups)
         return out
-
-
-class ModelCheckpoint(ModelCheckpoint):
-    # use torch.save for torch models.
-    def on_epoch_end(self, epoch, logs=None):
-        logs = logs or {}
-        self.epochs_since_last_save += 1
-        if self.epochs_since_last_save >= self.period:
-            self.epochs_since_last_save = 0
-            filepath = self.filepath.format(epoch=epoch + 1, **logs)
-            if self.save_best_only:
-                current = logs.get(self.monitor)
-                if current is None:
-                    print('Can save best model only with %s available, skipping.' % self.monitor)
-                else:
-                    if self.monitor_op(current, self.best):
-                        if self.verbose > 0:
-                            print('Epoch %05d: %s improved from %0.5f to %0.5f,'
-                                  ' saving model to %s' % (epoch + 1, self.monitor, self.best,
-                                                           current, filepath))
-                        self.best = current
-                        if self.save_weights_only:
-                            torch.save(self.model.state_dict(), filepath)
-                        else:
-                            torch.save(self.model, filepath)
-                    else:
-                        if self.verbose > 0:
-                            print('Epoch %05d: %s did not improve from %0.5f' %
-                                  (epoch + 1, self.monitor, self.best))
-            else:
-                if self.verbose > 0:
-                    print('Epoch %05d: saving model to %s' %
-                          (epoch + 1, filepath))
-                if self.save_weights_only:
-                    torch.save(self.model.state_dict(), filepath)
-                else:
-                    torch.save(self.model, filepath)

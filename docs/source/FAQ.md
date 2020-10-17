@@ -20,7 +20,24 @@ torch.save(model, 'DeepFM.h5')
 model = torch.load('DeepFM.h5')
 ```
 
-## 2. How to add a long dense feature vector as a input to the model?
+## 2. Set learning rate and use earlystopping
+---------------------------------------------------
+You can use any models in DeepCTR like a keras model object.
+Here is a example of how to set learning rate and earlystopping:
+
+```python
+from torch.optim import Adam,Adagrad
+from deepctr_torch.models import DeepFM
+from deepctr_torch.callbacks import EarlyStopping
+
+model = DeepFM(linear_feature_columns,dnn_feature_columns)
+model.compile(Adagrad(model.parameters(),0.1024),'binary_crossentropy',metrics=['binary_crossentropy'])
+
+es = EarlyStopping(monitor='val_binary_crossentropy')
+history = model.fit(model_input, data[target].values,batch_size=256, epochs=10, verbose=2, validation_split=0.2,callbacks=[es] )
+```
+
+## 3. How to add a long dense feature vector as a input to the model?
 ```python
 from deepctr_torch.models import DeepFM
 from deepctr_torch.inputs import DenseFeat,SparseFeat,get_feature_names

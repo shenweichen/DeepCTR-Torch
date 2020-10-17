@@ -46,12 +46,8 @@ class DCN(BaseModel):
                  dnn_activation='relu', dnn_use_bn=False, task='binary', device='cpu'):
 
         super(DCN, self).__init__(linear_feature_columns=linear_feature_columns,
-                                  dnn_feature_columns=dnn_feature_columns,
-                                  dnn_hidden_units=dnn_hidden_units,
-                                  l2_reg_embedding=l2_reg_embedding, l2_reg_dnn=l2_reg_dnn, init_std=init_std,
-                                  seed=seed,
-                                  dnn_dropout=dnn_dropout, dnn_activation=dnn_activation,
-                                  task=task, device=device)
+                                  dnn_feature_columns=dnn_feature_columns, l2_reg_embedding=l2_reg_embedding,
+                                  init_std=init_std, seed=seed, task=task, device=device)
         self.dnn_hidden_units = dnn_hidden_units
         self.cross_num = cross_num
         self.dnn = DNN(self.compute_input_dim(dnn_feature_columns), dnn_hidden_units,
