@@ -60,7 +60,8 @@ if __name__ == "__main__":
                   metrics=["binary_crossentropy", "auc"], )
 
     early_stopping = EarlyStopping(monitor='val_auc', verbose=1, min_delta=0, patience=0, mode='max')
-    model_checkpoint = ModelCheckpoint(filepath='model.ckpt', monitor='val_auc', verbose=1, save_best_only=True, save_weights_only=False)
+    model_checkpoint = ModelCheckpoint(filepath='model.ckpt', monitor='val_auc', verbose=1, save_best_only=True,
+                                       save_weights_only=False)
 
     model.fit(train_model_input, train[target].values,
               batch_size=32, epochs=10, validation_split=0.2, verbose=2,
