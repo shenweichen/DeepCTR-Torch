@@ -59,9 +59,9 @@ if __name__ == "__main__":
     model.compile("adagrad", "binary_crossentropy",
                   metrics=["binary_crossentropy", "auc"], )
 
-    early_stopping = EarlyStopping(monitor='val_auc', verbose=1, min_delta=0, patience=0, mode='max')
+    early_stopping = EarlyStopping(monitor='val_auc', min_delta=0, verbose=1, patience=0, mode='max', baseline=None)
     model_checkpoint = ModelCheckpoint(filepath='model.ckpt', monitor='val_auc', verbose=1, save_best_only=True,
-                                       save_weights_only=False)
+                                       save_weights_only=False, mode='max', period=1)
 
     model.fit(train_model_input, train[target].values,
               batch_size=32, epochs=10, validation_split=0.2, verbose=2,
