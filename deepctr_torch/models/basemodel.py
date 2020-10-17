@@ -289,7 +289,7 @@ class BaseModel(nn.Module):
         :param x: Numpy array of test data (if the model has a single input), or list of Numpy arrays (if the model has multiple inputs).
         :param y: Numpy array of target (label) data (if the model has a single output), or list of Numpy arrays (if the model has multiple outputs).
         :param batch_size: Integer or `None`. Number of samples per evaluation step. If unspecified, `batch_size` will default to 256.
-        :return:
+        :return: Dict contains metric names and metric values.
         """
         pred_ans = self.predict(x, batch_size)
         eval_result = {}
