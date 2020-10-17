@@ -18,14 +18,14 @@ from sklearn.metrics import *
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat, get_varlen_pooling_list, \
-    create_embedding_matrix
-from ..layers import PredictionLayer
-
 try:
     from tensorflow.python.keras.callbacks import CallbackList
 except AttributeError:
     from tensorflow.python.keras._impl.keras.callbacks import CallbackList
+
+from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat, get_varlen_pooling_list, \
+    create_embedding_matrix
+from ..layers import PredictionLayer
 
 from ..layers.utils import slice_arrays
 
@@ -124,8 +124,7 @@ class BaseModel(nn.Module):
 
         self.out = PredictionLayer(task, )
         self.to(device)
-        self._is_graph_network = True # used for callbacks
-
+        self._is_graph_network = True  # used for callbacks
 
     def fit(self, x=None, y=None, batch_size=None, epochs=1, verbose=1, initial_epoch=0, validation_split=0.,
             validation_data=None, shuffle=True, callbacks=None):

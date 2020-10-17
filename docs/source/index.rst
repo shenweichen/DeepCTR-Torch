@@ -34,7 +34,7 @@ You can read the latest code at https://github.com/shenweichen/DeepCTR-Torch and
 
 News
 -----
-10/17/2020 : Improve the reproducibility & fix some bugs. `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.3>`_
+10/17/2020 : Add DCN-M and DCN-Mix. Add EarlyStopping and ModelCheckpoint callbacks. `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.3>`_
 
 10/09/2020 : Improve the reproducibility & fix some bugs. `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.2>`_
 
