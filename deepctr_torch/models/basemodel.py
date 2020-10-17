@@ -149,7 +149,10 @@ class BaseModel(nn.Module):
         """
         if isinstance(x, dict):
             x = [x[feature] for feature in self.feature_index]
+
+        do_validation = False
         if validation_data:
+            do_validation = True
             if len(validation_data) == 2:
                 val_x, val_y = validation_data
                 val_sample_weight = None
@@ -167,6 +170,7 @@ class BaseModel(nn.Module):
                 val_x = [val_x[feature] for feature in self.feature_index]
 
         elif validation_split and 0. < validation_split < 1.:
+            do_validation = True
             if hasattr(x[0], 'shape'):
                 split_at = int(x[0].shape[0] * (1. - validation_split))
             else:
@@ -200,9 +204,9 @@ class BaseModel(nn.Module):
         sample_num = len(train_tensor_data)
         steps_per_epoch = (sample_num - 1) // batch_size + 1
 
-        callback_list = CallbackList(callbacks)
-        callback_list.set_model(self)
-        callback_list.on_train_begin()
+        callbacks = CallbackList(callbacks)
+        callbacks.set_model(self)
+        callbacks.on_train_begin()
         self.stop_training = False  # used for early stopping
 
         # Train
@@ -214,7 +218,6 @@ class BaseModel(nn.Module):
             start_time = time.time()
             loss_epoch = 0
             total_loss_epoch = 0
-            # if abs(loss_last - loss_now) < 0.0
             train_result = {}
             try:
                 with tqdm(enumerate(train_loader), disable=verbose != 1) as t:
@@ -248,15 +251,15 @@ class BaseModel(nn.Module):
                 raise
             t.close()
 
-            # evaluate
+            # Add epoch_logs
             epoch_logs["loss"] = total_loss_epoch / sample_num
             for name, result in train_result.items():
                 epoch_logs[name] = np.sum(result) / steps_per_epoch
 
-            if len(val_x) and len(val_y):
+            if do_validation:
                 eval_result = self.evaluate(val_x, val_y, batch_size)
                 for name, result in eval_result.items():
-                    epoch_logs[name] = result
+                    epoch_logs["val_" + name] = result
             # verbose
             if verbose > 0:
                 epoch_time = int(time.time() - start_time)
@@ -265,20 +268,20 @@ class BaseModel(nn.Module):
                 eval_str = "{0}s - loss: {1: .4f}".format(
                     epoch_time, epoch_logs["loss"])
 
-                for name, result in train_result.items():
+                for name in self.metrics:
                     eval_str += " - " + name + \
                                 ": {0: .4f}".format(epoch_logs[name])
 
-                if len(val_x) and len(val_y):
-                    for name, result in eval_result.items():
-                        eval_str += " - " + name + \
-                                    ": {0: .4f}".format(epoch_logs[name])
+                if do_validation:
+                    for name in self.metrics:
+                        eval_str += " - " + "val_" + name + \
+                                    ": {0: .4f}".format(epoch_logs["val_" + name])
                 print(eval_str)
-            callback_list.on_epoch_end(epoch, epoch_logs)
+            callbacks.on_epoch_end(epoch, epoch_logs)
             if self.stop_training:
                 break
 
-        callback_list.on_train_end()
+        callbacks.on_train_end()
 
     def evaluate(self, x, y, batch_size=256):
         """
@@ -291,7 +294,7 @@ class BaseModel(nn.Module):
         pred_ans = self.predict(x, batch_size)
         eval_result = {}
         for name, metric_fun in self.metrics.items():
-            eval_result["val_" + name] = metric_fun(y, pred_ans)
+            eval_result[name] = metric_fun(y, pred_ans)
         return eval_result
 
     def predict(self, x, batch_size=256):
@@ -398,7 +401,7 @@ class BaseModel(nn.Module):
         :param loss: String (name of objective function) or objective function. See [losses](https://pytorch.org/docs/stable/nn.functional.html#loss-functions).
         :param metrics: List of metrics to be evaluated by the model during training and testing. Typically you will use `metrics=['accuracy']`.
         """
-
+        self.metrics_names = ["loss"]
         self.optim = self._get_optim(optimizer)
         self.loss_func = self._get_loss_func(loss)
         self.metrics = self._get_metrics(metrics)
@@ -458,6 +461,7 @@ class BaseModel(nn.Module):
                 if metric == "accuracy" or metric == "acc":
                     metrics_[metric] = lambda y_true, y_pred: accuracy_score(
                         y_true, np.where(y_pred > 0.5, 1, 0))
+                self.metrics_names.append(metric)
         return metrics_
 
     @property
