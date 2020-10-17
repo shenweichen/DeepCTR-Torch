@@ -63,8 +63,8 @@ if __name__ == "__main__":
     model_checkpoint = ModelCheckpoint(filepath='model.ckpt', monitor='val_auc', verbose=1, save_best_only=True,
                                        save_weights_only=False, mode='max', period=1)
 
-    model.fit(train_model_input, train[target].values,
-              batch_size=32, epochs=10, validation_split=0.2, verbose=2, callbacks=[early_stopping, model_checkpoint])
+    model.fit(train_model_input, train[target].values, batch_size=32, epochs=10, verbose=2, validation_split=0.2,
+              callbacks=[early_stopping, model_checkpoint])
 
     pred_ans = model.predict(test_model_input, 256)
     print("")

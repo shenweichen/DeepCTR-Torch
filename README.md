@@ -72,8 +72,7 @@ Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-St
       <td>
         ​ <a href="https://github.com/shenweichen"><img width="70" height="70" src="https://github.com/shenweichen.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/shenweichen">Shen Weichen</a> ​
-        <p>Founder<br>
-        Zhejiang Unversity <br> <br>  </p>​
+        <p>Core Dev<br> Zhejiang Unversity <br> <br>  </p>​
       </td>
       <td>
          <a href="https://github.com/weberrr"><img width="70" height="70" src="https://github.com/weberrr.png?s=40" alt="pic"></a><br>
@@ -100,6 +99,11 @@ Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-St
     </tr>
     <tr align="center">
       <td>
+        ​ <a href="https://github.com/zanshuxun"><img width="70" height="70" src="https://github.com/zanshuxun.png?s=40" alt="pic"></a><br>
+        ​ <a href="https://github.com/zanshuxun">Zan Shuxun</a>
+        <p>Dev<br> Beijing University <br> of  Posts and <br> Telecommunications</p>​
+      </td>
+      <td>
         ​ <a href="https://github.com/Zengai"><img width="70" height="70" src="https://github.com/Zengai.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/Zengai">Zeng Kai</a> ​
         <p>Dev<br>
@@ -122,9 +126,6 @@ Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-St
         ​ <a href="https://github.com/uestc7d">Xu Qidi</a> ​
         <p>Dev<br>
         University of <br> Electronic  Science  and <br> Technology of China</p>​
-      </td>
-      <td>
-      <a href="https://github.com/shenweichen/DeepCTR-Torch/blob/master/CONTRIBUTING.md"> Welcome you !!</a>
       </td>
     </tr>
   </tbody>

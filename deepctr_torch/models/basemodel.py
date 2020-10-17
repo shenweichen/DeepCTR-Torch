@@ -120,17 +120,8 @@ class BaseModel(nn.Module):
         self.out = PredictionLayer(task, )
         self.to(device)
 
-    def fit(self, x=None,
-            y=None,
-            batch_size=None,
-            epochs=1,
-            verbose=1,
-            initial_epoch=0,
-            validation_split=0.,
-            validation_data=None,
-            shuffle=True,
-            callbacks=None,
-            ):
+    def fit(self, x=None, y=None, batch_size=None, epochs=1, verbose=1, initial_epoch=0, validation_split=0.,
+            validation_data=None, shuffle=True, callbacks=None):
         """
 
         :param x: Numpy array of training data (if the model has a single input), or list of Numpy arrays (if the model has multiple inputs).If input layers in the model are named, you can also pass a
