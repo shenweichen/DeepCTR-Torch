@@ -41,7 +41,7 @@ Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-St
 |                DCN-M                   | [arxiv 2020][DCN-M: Improved Deep & Cross Network for Feature Cross Learning in Web-scale Learning to Rank Systems](https://arxiv.org/abs/2008.13535)   |
 
 
-## DisscussionGroup  
+## DisscussionGroup & Related Projects
 
 <html>
     <table style="margin-left: 20px; margin-right: auto;">
@@ -57,6 +57,15 @@ Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-St
  <a href="https://github.com/shenweichen/deepctr-torch">
   <img align="center" src="./docs/pics/deepctrbot.png" />
 </a>
+            </td>
+            <td>
+<ul>
+<li><a href="https://github.com/shenweichen/DeepCTR">DeepCTR</a>
+</li>
+<li><a href="https://github.com/shenweichen/DeepMatch">DeepMatch</a></li>
+<li><a href="https://github.com/shenweichen/AlgoNotes">AlgoNotes</a></li>
+
+</ul>
             </td>
         </tr>
     </table>

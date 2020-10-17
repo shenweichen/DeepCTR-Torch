@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 REQUIRED_PACKAGES = [
-    'torch>=1.1.0','tqdm','sklearn'
+    'torch>=1.1.0', 'tqdm', 'sklearn', 'tensorflow'
 ]
 
 setuptools.setup(
@@ -45,5 +45,5 @@ setuptools.setup(
     ),
     license="Apache-2.0",
     keywords=['ctr', 'click through rate',
-              'deep learning', 'torch', 'tensor', 'pytorch','deepctr'],
+              'deep learning', 'torch', 'tensor', 'pytorch', 'deepctr'],
 )

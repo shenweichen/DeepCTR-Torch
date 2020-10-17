@@ -21,7 +21,12 @@ from tqdm import tqdm
 from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat, get_varlen_pooling_list, \
     create_embedding_matrix
 from ..layers import PredictionLayer
-from tensorflow.python.keras.callbacks import CallbackList
+
+try:
+    from tensorflow.python.keras.callbacks import CallbackList
+except AttributeError:
+    from tensorflow.python.keras._impl.keras.callbacks import CallbackList
+
 from ..layers.utils import slice_arrays
 
 
@@ -311,7 +316,6 @@ class BaseModel(nn.Module):
 
         return np.concatenate(pred_ans).astype("float64")
 
-
     def input_from_feature_columns(self, X, feature_columns, embedding_dict, support_dense=True):
 
         sparse_feature_columns = list(
@@ -361,7 +365,7 @@ class BaseModel(nn.Module):
     def add_regularization_weight(self, weight_list, weight_decay, p=2):
         self.regularization_weight.append((list(weight_list), weight_decay, p))
 
-    def get_regularization_loss(self,):
+    def get_regularization_loss(self, ):
         total_reg_loss = torch.zeros((1,), device=self.device)
         for weight_list, weight_decay, p in self.regularization_weight:
             weight_reg_loss = torch.zeros((1,), device=self.device)
