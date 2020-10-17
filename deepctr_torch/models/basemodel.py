@@ -99,7 +99,6 @@ class BaseModel(nn.Module):
         self.reg_loss = torch.zeros((1,), device=device)
         self.aux_loss = torch.zeros((1,), device=device)
         self.device = device  # device
-        # self.stop_training=None
 
         self.feature_index = build_input_features(
             linear_feature_columns + dnn_feature_columns)
@@ -208,7 +207,7 @@ class BaseModel(nn.Module):
         callback_list = CallbackList(callbacks)
         callback_list.set_model(self)
         callback_list.on_train_begin()
-        self.stop_training = False
+        self.stop_training = False  # used for early stopping
 
         # Train
         print("Train on {0} samples, validate on {1} samples, {2} steps per epoch".format(
