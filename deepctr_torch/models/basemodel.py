@@ -20,7 +20,8 @@ from tqdm import tqdm
 
 from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat, get_varlen_pooling_list, \
     create_embedding_matrix
-from ..layers import *
+from ..layers import PredictionLayer
+from tensorflow.python.keras.callbacks import CallbackList
 from ..layers.utils import slice_arrays
 
 
@@ -98,6 +99,7 @@ class BaseModel(nn.Module):
         self.reg_loss = torch.zeros((1,), device=device)
         self.aux_loss = torch.zeros((1,), device=device)
         self.device = device  # device
+        # self.stop_training=None
 
         self.feature_index = build_input_features(
             linear_feature_columns + dnn_feature_columns)
@@ -204,8 +206,9 @@ class BaseModel(nn.Module):
         steps_per_epoch = (sample_num - 1) // batch_size + 1
 
         callback_list = CallbackList(callbacks)
-        callback_list.set_model(model)
+        callback_list.set_model(self)
         callback_list.on_train_begin()
+        self.stop_training = False
 
         # Train
         print("Train on {0} samples, validate on {1} samples, {2} steps per epoch".format(
@@ -275,7 +278,7 @@ class BaseModel(nn.Module):
                 print(eval_str)
 
             callback_list.on_epoch_end(epoch, eval_result)
-            if callback_list.stop_training():
+            if self.stop_training:
                 break
 
         callback_list.on_train_end()
