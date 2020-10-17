@@ -146,7 +146,7 @@ The output of Cross Net and MLP are concatenated.The concatenated vector are fee
 
 ![DCN](../pics/DCN.png)
 
-![Cross Net in DCN-M](../pics/xDeepFM.png)
+![Cross Net in DCN-M](../pics/DCN-M.png)
 
 [Wang R, Fu B, Fu G, et al. Deep & cross network for ad click predictions[C]//Proceedings of the ADKDD'17. ACM, 2017: 12.](https://arxiv.org/abs/1708.05123) 
 
