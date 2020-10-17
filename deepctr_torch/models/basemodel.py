@@ -149,11 +149,10 @@ class BaseModel(nn.Module):
         :param shuffle: Boolean. Whether to shuffle the order of the batches at the beginning of each epoch.
         :param use_double: Boolean. Whether to use double precision for predicted values in metric calculation. Float precision may lead to nan/inf loss if lr is large.
         :param callbacks:
-            List of `keras.callbacks.Callback` instances. Now available: {EarlyStopping, ModelCheckpoint}.
-            See tensorflow.python.keras.callbacks.
-            Some callbacks (e.g. ModelCheckpoint) need to be inherited and overrode for PyTorch.
-
-
+            List of `keras.callbacks.Callback` instances. See tensorflow.python.keras.callbacks.
+            Now available:
+                EarlyStopping (can be used directly)
+                ModelCheckpoint (overrode for PyTorch, see deepctr_torch.layers.core)
 
         """
         if isinstance(x, dict):
