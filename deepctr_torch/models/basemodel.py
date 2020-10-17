@@ -20,7 +20,7 @@ from tqdm import tqdm
 
 try:
     from tensorflow.python.keras.callbacks import CallbackList
-except AttributeError:
+except ImportError:
     from tensorflow.python.keras._impl.keras.callbacks import CallbackList
 
 from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat, get_varlen_pooling_list, \
