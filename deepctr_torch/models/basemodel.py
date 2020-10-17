@@ -148,7 +148,12 @@ class BaseModel(nn.Module):
         :param validation_data: tuple `(x_val, y_val)` or tuple `(x_val, y_val, val_sample_weights)` on which to evaluate the loss and any model metrics at the end of each epoch. The model will not be trained on this data. `validation_data` will override `validation_split`.
         :param shuffle: Boolean. Whether to shuffle the order of the batches at the beginning of each epoch.
         :param use_double: Boolean. Whether to use double precision for predicted values in metric calculation. Float precision may lead to nan/inf loss if lr is large.
-        :param callbacks: List of callback instances. Now available: {EarlyStopping, ModelCheckpoint}. See deepctr_torch.layers.cores.
+        :param callbacks:
+            List of `keras.callbacks.Callback` instances. Now available: {EarlyStopping, ModelCheckpoint}.
+            See [callbacks](/api_docs/python/tf/keras/callbacks).
+            Some callbacks (e.g. ModelCheckpoint) need to be inherited and overrode for PyTorch.
+
+
 
         """
         if isinstance(x, dict):
@@ -281,7 +286,6 @@ class BaseModel(nn.Module):
                 break
 
         callback_list.on_train_end()
-
 
     def evaluate(self, x, y, batch_size=256, use_double=False):
         """
