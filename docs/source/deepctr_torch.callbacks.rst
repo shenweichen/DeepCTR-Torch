@@ -1,7 +1,7 @@
-deepctr\_torch.layers.callbacks module
+deepctr\_torch.callbacks module
 ========================================
 
-.. automodule:: deepctr_torch.layers.callbacks
+.. automodule:: deepctr_torch.callbacks
     :members:
     :no-undoc-members:
     :no-show-inheritance:

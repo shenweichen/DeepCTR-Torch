@@ -23,10 +23,10 @@ def test_DeepFM(use_fm, hidden_size, sparse_feature_num):
                    dnn_hidden_units=hidden_size, dnn_dropout=0.5, device=get_device())
     check_model(model, model_name, x, y)
 
-    early_stopping = EarlyStopping(monitor='val_auc', min_delta=0, verbose=1, patience=0, mode='max', baseline=None)
-    model_checkpoint = ModelCheckpoint(filepath='model.ckpt', monitor='val_auc', verbose=1, save_best_only=True,
+    early_stopping = EarlyStopping(monitor='val_binary_crossentropy', min_delta=0, verbose=1, patience=0, mode='max', baseline=None)
+    model_checkpoint = ModelCheckpoint(filepath='model.ckpt', monitor='val_binary_crossentropy', verbose=1, save_best_only=True,
                                        save_weights_only=False, mode='max', period=1)
-    model.fit(x, y, batch_size=10, epochs=10, validation_split=0.5,callbacks=[early_stopping, model_checkpoint])
+    model.fit(x, y, batch_size=64, epochs=3, validation_split=0.5,callbacks=[early_stopping, model_checkpoint])
 
 
 if __name__ == "__main__":

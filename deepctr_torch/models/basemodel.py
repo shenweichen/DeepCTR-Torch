@@ -124,6 +124,8 @@ class BaseModel(nn.Module):
 
         self.out = PredictionLayer(task, )
         self.to(device)
+        self._is_graph_network = True # used for callbacks
+
 
     def fit(self, x=None, y=None, batch_size=None, epochs=1, verbose=1, initial_epoch=0, validation_split=0.,
             validation_data=None, shuffle=True, callbacks=None):
