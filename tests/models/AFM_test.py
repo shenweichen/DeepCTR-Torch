@@ -22,10 +22,19 @@ def test_AFM(use_attention, sparse_feature_num, dense_feature_num):
     check_model(model, model_name, x, y)
 
     early_stopping = EarlyStopping(monitor='val_binary_crossentropy', min_delta=0, verbose=1, patience=0, mode='min')
+
+    # test callbacks
     model_checkpoint = ModelCheckpoint(filepath='model.ckpt', monitor='val_binary_crossentropy', verbose=1,
                                        save_best_only=True,
                                        save_weights_only=False, mode='max', period=1)
     model.fit(x, y, batch_size=64, epochs=3, validation_split=0.5, callbacks=[early_stopping, model_checkpoint])
+
+    model_checkpoint = ModelCheckpoint(filepath='model.ckpt', monitor='val_binary_crossentropy', verbose=1,
+                                       save_best_only=False,
+                                       save_weights_only=False, mode='max', period=1)
+
+    model.fit(x, y, batch_size=64, epochs=3, validation_split=0.5, callbacks=[early_stopping, model_checkpoint])
+
 
 
 if __name__ == '__main__':
