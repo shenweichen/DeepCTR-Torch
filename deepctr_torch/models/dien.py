@@ -44,11 +44,8 @@ class DIEN(BaseModel):
                  att_hidden_units=(64, 16), att_activation="relu", att_weight_normalization=True,
                  l2_reg_dnn=0, l2_reg_embedding=1e-6, dnn_dropout=0, init_std=0.0001, seed=1024, task='binary',
                  device='cpu'):
-        super(DIEN, self).__init__([], dnn_feature_columns, dnn_hidden_units=dnn_hidden_units,
-                                   l2_reg_linear=0, l2_reg_embedding=l2_reg_embedding,
-                                   l2_reg_dnn=l2_reg_dnn, init_std=init_std, seed=seed,
-                                   dnn_dropout=dnn_dropout, dnn_activation=dnn_activation,
-                                   task=task, device=device)
+        super(DIEN, self).__init__([], dnn_feature_columns, l2_reg_linear=0, l2_reg_embedding=l2_reg_embedding,
+                                   init_std=init_std, seed=seed, task=task, device=device)
 
         self.item_features = history_feature_list
         self.use_negsampling = use_negsampling

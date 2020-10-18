@@ -13,5 +13,3 @@ from .pnn import PNN
 from .ccpm import CCPM
 from .dien import DIEN
 from .din import DIN
-
-NFFM = ONN

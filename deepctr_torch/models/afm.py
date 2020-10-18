@@ -34,13 +34,9 @@ class AFM(BaseModel):
     def __init__(self, linear_feature_columns, dnn_feature_columns, use_attention=True, attention_factor=8,
                  l2_reg_linear=1e-5, l2_reg_embedding=1e-5, l2_reg_att=1e-5, afm_dropout=0, init_std=0.0001, seed=1024,
                  task='binary', device='cpu'):
-        super(AFM, self).__init__(linear_feature_columns, dnn_feature_columns,
-                                  dnn_hidden_units=[],
-                                  l2_reg_linear=l2_reg_linear,
-                                  l2_reg_embedding=l2_reg_embedding, l2_reg_dnn=0, init_std=init_std,
-                                  seed=seed,
-                                  dnn_dropout=0, dnn_activation='relu',
-                                  task=task, device=device)
+        super(AFM, self).__init__(linear_feature_columns, dnn_feature_columns, l2_reg_linear=l2_reg_linear,
+                                  l2_reg_embedding=l2_reg_embedding, init_std=init_std, seed=seed, task=task,
+                                  device=device)
 
         self.use_attention = use_attention
 

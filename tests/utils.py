@@ -151,7 +151,7 @@ def check_model(model, model_name, x, y, check_model_io=True):
 
     model.compile('adam', 'binary_crossentropy',
                   metrics=['binary_crossentropy'])
-    model.fit(x, y, batch_size=100, epochs=1, validation_split=0.5,use_double=True)
+    model.fit(x, y, batch_size=100, epochs=1, validation_split=0.5)
 
     print(model_name + 'test, train valid pass!')
     torch.save(model.state_dict(), model_name + '_weights.h5')

@@ -7,7 +7,6 @@ from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 
 from deepctr_torch.inputs import SparseFeat, DenseFeat, get_feature_names
 from deepctr_torch.models import *
-from deepctr_torch.layers import EarlyStopping, ModelCheckpoint
 
 if __name__ == "__main__":
     data = pd.read_csv('./criteo_sample.txt')
@@ -59,15 +58,9 @@ if __name__ == "__main__":
     model.compile("adagrad", "binary_crossentropy",
                   metrics=["binary_crossentropy", "auc"], )
 
-    early_stopping = EarlyStopping(monitor='val_auc', min_delta=0, verbose=1, patience=0, mode='max', baseline=None)
-    model_checkpoint = ModelCheckpoint(filepath='model.ckpt', monitor='val_auc', verbose=1, save_best_only=True,
-                                       save_weights_only=False, mode='max', period=1)
+    model.fit(train_model_input, train[target].values, batch_size=32, epochs=10, verbose=2, validation_split=0.2)
 
-    model.fit(train_model_input, train[target].values,
-              batch_size=32, epochs=10, validation_split=0.2, verbose=2,
-              use_double=True, callbacks=[early_stopping, model_checkpoint])
-
-    pred_ans = model.predict(test_model_input, 256, use_double=True)
+    pred_ans = model.predict(test_model_input, 256)
     print("")
     print("test LogLoss", round(log_loss(test[target].values, pred_ans), 4))
     print("test AUC", round(roc_auc_score(test[target].values, pred_ans), 4))

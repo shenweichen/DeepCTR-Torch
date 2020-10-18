@@ -98,8 +98,7 @@ model = DeepFM(linear_feature_columns,dnn_feature_columns,task='binary',device=d
 model.compile("adam", "binary_crossentropy",
               metrics=['binary_crossentropy'], )
 
-history = model.fit(train_model_input, train[target].values,
-                    batch_size=256, epochs=10, verbose=2, validation_split=0.2, )
+history = model.fit(train_model_input,train[target].values,batch_size=256,epochs=10,verbose=2,validation_split=0.2)
 pred_ans = model.predict(test_model_input, batch_size=256)
 
 ```

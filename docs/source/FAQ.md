@@ -20,7 +20,24 @@ torch.save(model, 'DeepFM.h5')
 model = torch.load('DeepFM.h5')
 ```
 
-## 2. How to add a long dense feature vector as a input to the model?
+## 2. Set learning rate and use earlystopping
+---------------------------------------------------
+Here is a example of how to set learning rate and earlystopping:
+
+```python
+from torch.optim import Adagrad
+from deepctr_torch.models import DeepFM
+from deepctr_torch.callbacks import EarlyStopping, ModelCheckpoint
+
+model = DeepFM(linear_feature_columns,dnn_feature_columns)
+model.compile(Adagrad(model.parameters(),0.1024),'binary_crossentropy',metrics=['binary_crossentropy'])
+
+es = EarlyStopping(monitor='val_binary_crossentropy', min_delta=0, verbose=1, patience=0, mode='min')
+mdckpt = ModelCheckpoint(filepath='model.ckpt')
+history = model.fit(model_input,data[target].values,batch_size=256,epochs=10,verbose=2,validation_split=0.2,callbacks=[es,mdckpt])
+```
+
+## 3. How to add a long dense feature vector as a input to the model?
 ```python
 from deepctr_torch.models import DeepFM
 from deepctr_torch.inputs import DenseFeat,SparseFeat,get_feature_names
@@ -41,7 +58,7 @@ model.compile('adagrad','binary_crossentropy')
 model.fit(model_input,label)
 ```
 
-## 3. How to run the demo with GPU ?
+## 4. How to run the demo with GPU ?
 ```python
 import torch
 device = 'cpu'

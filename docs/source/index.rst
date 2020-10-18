@@ -34,11 +34,11 @@ You can read the latest code at https://github.com/shenweichen/DeepCTR-Torch and
 
 News
 -----
+10/18/2020 : Add `DCN-M <./Features.html#dcn-deep-cross-network>`_ and `DCN-Mix <./Features.html#dcn-mix-improved-deep-cross-network-with-mix-of-experts-and-matrix-kernel>`_ . Add EarlyStopping and ModelCheckpoint callbacks(`example <https://deepctr-torch.readthedocs.io/en/latest/FAQ.html#set-learning-rate-and-use-earlystopping>`_). `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.3>`_
+
 10/09/2020 : Improve the reproducibility & fix some bugs. `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.2>`_
 
 03/27/2020 : Add `DIN <./Features.html#din-deep-interest-network>`_ and `DIEN <./Features.html#dien-deep-interest-evolution-network>`_ . `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.1>`_
-
-01/31/2020 : Refactor `feature columns <./Features.html#feature-columns>`_ . Support double precision in metric calculation . `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.0>`_
 
 
 DisscussionGroup
@@ -46,7 +46,7 @@ DisscussionGroup
 
 公众号：**浅梦的学习笔记**  wechat ID: **deepctrbot**
 
-.. image:: ../pics/weichennote.png
+.. image:: ../pics/code.png
 
 .. toctree::
    :maxdepth: 2
@@ -64,6 +64,7 @@ DisscussionGroup
 
    Models<Models>
    Layers<Layers>
+   Callbacks<deepctr_torch.callbacks>
 
 
 

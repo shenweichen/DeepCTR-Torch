@@ -38,12 +38,8 @@ class PNN(BaseModel):
                  init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation='relu', use_inner=True, use_outter=False,
                  kernel_type='mat', task='binary', device='cpu', ):
 
-        super(PNN, self).__init__([], dnn_feature_columns,
-                                  dnn_hidden_units=dnn_hidden_units,
-                                  l2_reg_embedding=l2_reg_embedding, l2_reg_dnn=l2_reg_dnn,
-                                  l2_reg_linear=0, init_std=init_std, seed=seed,
-                                  dnn_dropout=dnn_dropout, dnn_activation=dnn_activation,
-                                  task=task, device=device)
+        super(PNN, self).__init__([], dnn_feature_columns, l2_reg_linear=0, l2_reg_embedding=l2_reg_embedding,
+                                  init_std=init_std, seed=seed, task=task, device=device)
 
         if kernel_type not in ['mat', 'vec', 'num']:
             raise ValueError("kernel_type must be mat,vec or num")

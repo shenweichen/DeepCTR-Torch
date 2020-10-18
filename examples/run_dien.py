@@ -65,4 +65,4 @@ if __name__ == "__main__":
 
     model.compile('adam', 'binary_crossentropy',
                   metrics=['binary_crossentropy', 'auc'])
-    history = model.fit(x, y, batch_size=2, verbose=1, epochs=10, validation_split=0, shuffle=False)
+    history = model.fit(x, y, batch_size=2, epochs=10, verbose=1, validation_split=0, shuffle=False)
