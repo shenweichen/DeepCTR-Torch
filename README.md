@@ -60,10 +60,10 @@ Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-St
             </td>
             <td>
 <ul>
+<li><a href="https://github.com/shenweichen/AlgoNotes">AlgoNotes</a></li>
 <li><a href="https://github.com/shenweichen/DeepCTR">DeepCTR</a></li>
 <li><a href="https://github.com/shenweichen/DeepMatch">DeepMatch</a></li>
 <li><a href="https://github.com/shenweichen/GraphEmbedding">GraphEmbedding</a></li>
-<li><a href="https://github.com/shenweichen/AlgoNotes">AlgoNotes</a></li>
 </ul>
             </td>
         </tr>
