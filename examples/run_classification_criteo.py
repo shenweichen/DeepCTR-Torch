@@ -39,8 +39,7 @@ if __name__ == "__main__":
 
     # 3.generate input data for model
 
-    train, test = train_test_split(data, test_size=0.2)
-
+    train, test = train_test_split(data, test_size=0.2, random_state=2020)
     train_model_input = {name: train[name] for name in feature_names}
     test_model_input = {name: test[name] for name in feature_names}
 
@@ -58,8 +57,8 @@ if __name__ == "__main__":
 
     model.compile("adagrad", "binary_crossentropy",
                   metrics=["binary_crossentropy", "auc"], )
-    model.fit(train_model_input, train[target].values,
-              batch_size=32, epochs=10, validation_split=0.0, verbose=2)
+
+    model.fit(train_model_input, train[target].values, batch_size=32, epochs=10, verbose=2, validation_split=0.2)
 
     pred_ans = model.predict(test_model_input, 256)
     print("")

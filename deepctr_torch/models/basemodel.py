@@ -18,9 +18,15 @@ from sklearn.metrics import *
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+try:
+    from tensorflow.python.keras.callbacks import CallbackList
+except ImportError:
+    from tensorflow.python.keras._impl.keras.callbacks import CallbackList
+
 from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat, get_varlen_pooling_list, \
     create_embedding_matrix
 from ..layers import PredictionLayer
+
 from ..layers.utils import slice_arrays
 
 
@@ -85,11 +91,8 @@ class Linear(nn.Module):
 
 
 class BaseModel(nn.Module):
-    def __init__(self,
-                 linear_feature_columns, dnn_feature_columns, dnn_hidden_units=(128, 128),
-                 l2_reg_linear=1e-5,
-                 l2_reg_embedding=1e-5, l2_reg_dnn=0, init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation='relu',
-                 task='binary', device='cpu'):
+    def __init__(self, linear_feature_columns, dnn_feature_columns, l2_reg_linear=1e-5, l2_reg_embedding=1e-5,
+                 init_std=0.0001, seed=1024, task='binary', device='cpu'):
 
         super(BaseModel, self).__init__()
         torch.manual_seed(seed)
@@ -121,17 +124,10 @@ class BaseModel(nn.Module):
 
         self.out = PredictionLayer(task, )
         self.to(device)
+        self._is_graph_network = True  # used for callbacks
 
-    def fit(self, x=None,
-            y=None,
-            batch_size=None,
-            epochs=1,
-            verbose=1,
-            initial_epoch=0,
-            validation_split=0.,
-            validation_data=None,
-            shuffle=True,
-            use_double=False):
+    def fit(self, x=None, y=None, batch_size=None, epochs=1, verbose=1, initial_epoch=0, validation_split=0.,
+            validation_data=None, shuffle=True, callbacks=None):
         """
 
         :param x: Numpy array of training data (if the model has a single input), or list of Numpy arrays (if the model has multiple inputs).If input layers in the model are named, you can also pass a
@@ -144,12 +140,15 @@ class BaseModel(nn.Module):
         :param validation_split: Float between 0 and 1. Fraction of the training data to be used as validation data. The model will set apart this fraction of the training data, will not train on it, and will evaluate the loss and any model metrics on this data at the end of each epoch. The validation data is selected from the last samples in the `x` and `y` data provided, before shuffling.
         :param validation_data: tuple `(x_val, y_val)` or tuple `(x_val, y_val, val_sample_weights)` on which to evaluate the loss and any model metrics at the end of each epoch. The model will not be trained on this data. `validation_data` will override `validation_split`.
         :param shuffle: Boolean. Whether to shuffle the order of the batches at the beginning of each epoch.
-        :param use_double: Boolean. Whether to use double precision in metric calculation.
+        :param callbacks: List of `deepctr_torch.callbacks.Callback` instances. List of callbacks to apply during training and validation (if ). See [callbacks](https://tensorflow.google.cn/api_docs/python/tf/keras/callbacks). Now available: `EarlyStopping` , `ModelCheckpoint`
 
         """
         if isinstance(x, dict):
             x = [x[feature] for feature in self.feature_index]
+
+        do_validation = False
         if validation_data:
+            do_validation = True
             if len(validation_data) == 2:
                 val_x, val_y = validation_data
                 val_sample_weight = None
@@ -167,6 +166,7 @@ class BaseModel(nn.Module):
                 val_x = [val_x[feature] for feature in self.feature_index]
 
         elif validation_split and 0. < validation_split < 1.:
+            do_validation = True
             if hasattr(x[0], 'shape'):
                 split_at = int(x[0].shape[0] * (1. - validation_split))
             else:
@@ -200,13 +200,20 @@ class BaseModel(nn.Module):
         sample_num = len(train_tensor_data)
         steps_per_epoch = (sample_num - 1) // batch_size + 1
 
+        callbacks = CallbackList(callbacks)
+        callbacks.set_model(self)
+        callbacks.on_train_begin()
+        self.stop_training = False  # used for early stopping
+
+        # Train
         print("Train on {0} samples, validate on {1} samples, {2} steps per epoch".format(
             len(train_tensor_data), len(val_y), steps_per_epoch))
         for epoch in range(initial_epoch, epochs):
+            callbacks.on_epoch_begin(epoch)
+            epoch_logs = {}
             start_time = time.time()
             loss_epoch = 0
             total_loss_epoch = 0
-            # if abs(loss_last - loss_now) < 0.0
             train_result = {}
             try:
                 with tqdm(enumerate(train_loader), disable=verbose != 1) as t:
@@ -231,45 +238,54 @@ class BaseModel(nn.Module):
                             for name, metric_fun in self.metrics.items():
                                 if name not in train_result:
                                     train_result[name] = []
+                                train_result[name].append(metric_fun(
+                                    y.cpu().data.numpy(), y_pred.cpu().data.numpy().astype("float64")))
 
-                                if use_double:
-                                    train_result[name].append(metric_fun(
-                                        y.cpu().data.numpy(), y_pred.cpu().data.numpy().astype("float64")))
-                                else:
-                                    train_result[name].append(metric_fun(
-                                        y.cpu().data.numpy(), y_pred.cpu().data.numpy()))
 
             except KeyboardInterrupt:
                 t.close()
                 raise
             t.close()
 
-            epoch_time = int(time.time() - start_time)
+            # Add epoch_logs
+            epoch_logs["loss"] = total_loss_epoch / sample_num
+            for name, result in train_result.items():
+                epoch_logs[name] = np.sum(result) / steps_per_epoch
+
+            if do_validation:
+                eval_result = self.evaluate(val_x, val_y, batch_size)
+                for name, result in eval_result.items():
+                    epoch_logs["val_" + name] = result
+            # verbose
             if verbose > 0:
+                epoch_time = int(time.time() - start_time)
                 print('Epoch {0}/{1}'.format(epoch + 1, epochs))
 
                 eval_str = "{0}s - loss: {1: .4f}".format(
-                    epoch_time, total_loss_epoch / sample_num)
+                    epoch_time, epoch_logs["loss"])
 
-                for name, result in train_result.items():
+                for name in self.metrics:
                     eval_str += " - " + name + \
-                                ": {0: .4f}".format(np.sum(result) / steps_per_epoch)
+                                ": {0: .4f}".format(epoch_logs[name])
 
-                if len(val_x) and len(val_y):
-                    eval_result = self.evaluate(val_x, val_y, batch_size)
-
-                    for name, result in eval_result.items():
-                        eval_str += " - val_" + name + \
-                                    ": {0: .4f}".format(result)
+                if do_validation:
+                    for name in self.metrics:
+                        eval_str += " - " + "val_" + name + \
+                                    ": {0: .4f}".format(epoch_logs["val_" + name])
                 print(eval_str)
+            callbacks.on_epoch_end(epoch, epoch_logs)
+            if self.stop_training:
+                break
+
+        callbacks.on_train_end()
 
     def evaluate(self, x, y, batch_size=256):
         """
 
         :param x: Numpy array of test data (if the model has a single input), or list of Numpy arrays (if the model has multiple inputs).
         :param y: Numpy array of target (label) data (if the model has a single output), or list of Numpy arrays (if the model has multiple outputs).
-        :param batch_size:
-        :return: Integer or `None`. Number of samples per evaluation step. If unspecified, `batch_size` will default to 256.
+        :param batch_size: Integer or `None`. Number of samples per evaluation step. If unspecified, `batch_size` will default to 256.
+        :return: Dict contains metric names and metric values.
         """
         pred_ans = self.predict(x, batch_size)
         eval_result = {}
@@ -277,7 +293,7 @@ class BaseModel(nn.Module):
             eval_result[name] = metric_fun(y, pred_ans)
         return eval_result
 
-    def predict(self, x, batch_size=256, use_double=False):
+    def predict(self, x, batch_size=256):
         """
 
         :param x: The input data, as a Numpy array (or list of Numpy arrays if the model has multiple inputs).
@@ -300,15 +316,11 @@ class BaseModel(nn.Module):
         with torch.no_grad():
             for index, x_test in enumerate(test_loader):
                 x = x_test[0].to(self.device).float()
-                # y = y_test.to(self.device).float()
 
                 y_pred = model(x).cpu().data.numpy()  # .squeeze()
                 pred_ans.append(y_pred)
 
-        if use_double:
-            return np.concatenate(pred_ans).astype("float64")
-        else:
-            return np.concatenate(pred_ans)
+        return np.concatenate(pred_ans).astype("float64")
 
     def input_from_feature_columns(self, X, feature_columns, embedding_dict, support_dense=True):
 
@@ -359,7 +371,7 @@ class BaseModel(nn.Module):
     def add_regularization_weight(self, weight_list, weight_decay, p=2):
         self.regularization_weight.append((list(weight_list), weight_decay, p))
 
-    def get_regularization_loss(self,):
+    def get_regularization_loss(self, ):
         total_reg_loss = torch.zeros((1,), device=self.device)
         for weight_list, weight_decay, p in self.regularization_weight:
             weight_reg_loss = torch.zeros((1,), device=self.device)
@@ -385,7 +397,7 @@ class BaseModel(nn.Module):
         :param loss: String (name of objective function) or objective function. See [losses](https://pytorch.org/docs/stable/nn.functional.html#loss-functions).
         :param metrics: List of metrics to be evaluated by the model during training and testing. Typically you will use `metrics=['accuracy']`.
         """
-
+        self.metrics_names = ["loss"]
         self.optim = self._get_optim(optimizer)
         self.loss_func = self._get_loss_func(loss)
         self.metrics = self._get_metrics(metrics)
@@ -445,6 +457,7 @@ class BaseModel(nn.Module):
                 if metric == "accuracy" or metric == "acc":
                     metrics_[metric] = lambda y_true, y_pred: accuracy_score(
                         y_true, np.where(y_pred > 0.5, 1, 0))
+                self.metrics_names.append(metric)
         return metrics_
 
     @property

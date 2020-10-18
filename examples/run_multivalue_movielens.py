@@ -42,8 +42,7 @@ if __name__ == "__main__":
                               for feat in sparse_features]
 
     varlen_feature_columns = [VarLenSparseFeat(SparseFeat('genres', vocabulary_size=len(
-        key2index) + 1, embedding_dim=4), maxlen=max_len, combiner='mean',
-                                               weight_name=None)]  # Notice : value 0 is for padding for sequence input feature
+        key2index) + 1, embedding_dim=4), maxlen=max_len, combiner='mean')]  # Notice : value 0 is for padding for sequence input feature
 
     linear_feature_columns = fixlen_feature_columns + varlen_feature_columns
     dnn_feature_columns = fixlen_feature_columns + varlen_feature_columns
@@ -65,5 +64,4 @@ if __name__ == "__main__":
     model = DeepFM(linear_feature_columns, dnn_feature_columns, task='regression', device=device)
 
     model.compile("adam", "mse", metrics=['mse'], )
-    history = model.fit(model_input, data[target].values,
-                        batch_size=256, epochs=10, verbose=2, validation_split=0.2, )
+    history = model.fit(model_input, data[target].values, batch_size=256, epochs=10, verbose=2, validation_split=0.2)

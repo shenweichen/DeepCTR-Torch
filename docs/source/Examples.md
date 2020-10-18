@@ -76,8 +76,7 @@ if __name__ == "__main__":
 
     model.compile("adagrad", "binary_crossentropy",
                   metrics=["binary_crossentropy", "auc"], )
-    model.fit(train_model_input, train[target].values,
-              batch_size=32, epochs=10, validation_split=0.0, verbose=2)
+    model.fit(train_model_input,train[target].values,batch_size=32,epochs=10,verbose=2,validation_split=0.0)
 
     pred_ans = model.predict(test_model_input, 256)
     print("")
@@ -141,8 +140,7 @@ if __name__ == "__main__":
     model = DeepFM(linear_feature_columns, dnn_feature_columns, task='regression', device=device)
     model.compile("adam", "mse", metrics=['mse'], )
 
-    history = model.fit(train_model_input, train[target].values,
-                        batch_size=256, epochs=10, verbose=2, validation_split=0.2, )
+    history = model.fit(train_model_input,train[target].values,batch_size=256,epochs=10,verbose=2,validation_split=0.2)
     pred_ans = model.predict(test_model_input, batch_size=256)
     print("test MSE", round(mean_squared_error(
         test[target].values, pred_ans), 4))
@@ -213,8 +211,7 @@ if __name__ == "__main__":
                               for feat in sparse_features]
 
     varlen_feature_columns = [VarLenSparseFeat(SparseFeat('genres', vocabulary_size=len(
-        key2index) + 1, embedding_dim=4), maxlen=max_len, combiner='mean',
-                                               weight_name=None)]  # Notice : value 0 is for padding for sequence input feature
+        key2index) + 1, embedding_dim=4), maxlen=max_len, combiner='mean')]  # Notice : value 0 is for padding for sequence input feature
 
     linear_feature_columns = fixlen_feature_columns + varlen_feature_columns
     dnn_feature_columns = fixlen_feature_columns + varlen_feature_columns
@@ -236,8 +233,7 @@ if __name__ == "__main__":
     model = DeepFM(linear_feature_columns, dnn_feature_columns, task='regression', device=device)
 
     model.compile("adam", "mse", metrics=['mse'], )
-    history = model.fit(model_input, data[target].values,
-                        batch_size=256, epochs=10, verbose=2, validation_split=0.2, )
+    history = model.fit(model_input,data[target].values,batch_size=256,epochs=10,verbose=2,validation_split=0.2)
 
 
 ```

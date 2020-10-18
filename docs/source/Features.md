@@ -146,7 +146,21 @@ The output of Cross Net and MLP are concatenated.The concatenated vector are fee
 
 ![DCN](../pics/DCN.png)
 
+![Cross Net in DCN-M](../pics/DCN-M.png)
+
 [Wang R, Fu B, Fu G, et al. Deep & cross network for ad click predictions[C]//Proceedings of the ADKDD'17. ACM, 2017: 12.](https://arxiv.org/abs/1708.05123) 
+
+
+### DCN-Mix (Improved Deep & Cross Network with mix of experts and matrix kernel)
+
+DCN-Mix uses a matrix kernel instead of vector kernel in CrossNet compared with DCN,and it uses mixture of experts to learn feature interactions. 
+
+[**DCN-Mix Model API**](./deepctr_torch.models.dcnmix.html)
+
+![DCN-Mix](../pics/DCN-Mix.png)
+
+[Wang R, Shivanna R, Cheng D Z, et al. DCN-M: Improved Deep & Cross Network for Feature Cross Learning in Web-scale Learning to Rank Systems[J]. arXiv preprint arXiv:2008.13535, 2020.
+](https://arxiv.org/abs/2008.13535) 
 
 
 ### DIN (Deep Interest Network)

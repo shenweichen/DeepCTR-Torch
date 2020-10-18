@@ -37,13 +37,9 @@ class NFM(BaseModel):
                  linear_feature_columns, dnn_feature_columns, dnn_hidden_units=(128, 128),
                  l2_reg_embedding=1e-5, l2_reg_linear=1e-5, l2_reg_dnn=0, init_std=0.0001, seed=1024, bi_dropout=0,
                  dnn_dropout=0, dnn_activation='relu', task='binary', device='cpu'):
-        super(NFM, self).__init__(linear_feature_columns, dnn_feature_columns,
-                                  dnn_hidden_units=dnn_hidden_units,
-                                  l2_reg_linear=l2_reg_linear,
-                                  l2_reg_embedding=l2_reg_embedding, l2_reg_dnn=l2_reg_dnn, init_std=init_std,
-                                  seed=seed,
-                                  dnn_dropout=dnn_dropout, dnn_activation=dnn_activation,
-                                  task=task, device=device)
+        super(NFM, self).__init__(linear_feature_columns, dnn_feature_columns, l2_reg_linear=l2_reg_linear,
+                                  l2_reg_embedding=l2_reg_embedding, init_std=init_std, seed=seed, task=task,
+                                  device=device)
 
         self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, include_sparse=False) + self.embedding_size,
                        dnn_hidden_units,

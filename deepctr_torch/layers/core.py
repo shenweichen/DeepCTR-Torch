@@ -34,16 +34,17 @@ class LocalActivationUnit(nn.Module):
         - [Zhou G, Zhu X, Song C, et al. Deep interest network for click-through rate prediction[C]//Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining. ACM, 2018: 1059-1068.](https://arxiv.org/pdf/1706.06978.pdf)
     """
 
-    def __init__(self, hidden_units=(64, 32), embedding_dim=4, activation='sigmoid', dropout_rate=0, dice_dim=3, l2_reg=0, use_bn=False):
+    def __init__(self, hidden_units=(64, 32), embedding_dim=4, activation='sigmoid', dropout_rate=0, dice_dim=3,
+                 l2_reg=0, use_bn=False):
         super(LocalActivationUnit, self).__init__()
 
         self.dnn = DNN(inputs_dim=4 * embedding_dim,
-                        hidden_units=hidden_units,
-                        activation=activation,
-                        l2_reg=l2_reg,
-                        dropout_rate=dropout_rate,
-                        dice_dim=dice_dim,
-                        use_bn=use_bn)
+                       hidden_units=hidden_units,
+                       activation=activation,
+                       l2_reg=l2_reg,
+                       dropout_rate=dropout_rate,
+                       dice_dim=dice_dim,
+                       use_bn=use_bn)
 
         self.dense = nn.Linear(hidden_units[-1], 1)
 
@@ -54,10 +55,11 @@ class LocalActivationUnit(nn.Module):
 
         queries = query.expand(-1, user_behavior_len, -1)
 
-        attention_input = torch.cat([queries, user_behavior, queries - user_behavior, queries * user_behavior], dim=-1)   # as the source code, subtraction simulates verctors' difference
+        attention_input = torch.cat([queries, user_behavior, queries - user_behavior, queries * user_behavior],
+                                    dim=-1)  # as the source code, subtraction simulates verctors' difference
         attention_output = self.dnn(attention_input)
-        
-        attention_score = self.dense(attention_output)    # [B, T, 1]
+
+        attention_score = self.dense(attention_output)  # [B, T, 1]
 
         return attention_score
 

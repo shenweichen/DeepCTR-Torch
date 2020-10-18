@@ -22,6 +22,5 @@ def test_DeepFM(use_fm, hidden_size, sparse_feature_num):
                    dnn_hidden_units=hidden_size, dnn_dropout=0.5, device=get_device())
     check_model(model, model_name, x, y)
 
-
 if __name__ == "__main__":
     pass
