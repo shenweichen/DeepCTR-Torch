@@ -1,4 +1,4 @@
-DeepCTR Layers API
+DeepCTR-Torch Layers API
 ======================
 
 
