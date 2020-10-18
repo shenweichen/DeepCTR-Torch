@@ -1,4 +1,4 @@
-DeepCTR-PyTorch Models API
+DeepCTR-Torch Models API
 ======================
 
 .. toctree::
