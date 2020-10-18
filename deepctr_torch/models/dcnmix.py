@@ -40,7 +40,7 @@ class DCNMix(BaseModel):
     
     """
 
-    def __init__(self,linear_feature_columns,
+    def __init__(self, linear_feature_columns,
                  dnn_feature_columns, cross_num=2,
                  dnn_hidden_units=(128, 128), l2_reg_linear=0.00001,
                  l2_reg_embedding=0.00001, l2_reg_cross=0.00001, l2_reg_dnn=0, init_std=0.0001, seed=1024,

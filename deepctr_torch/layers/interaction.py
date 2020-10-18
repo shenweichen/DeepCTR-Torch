@@ -414,7 +414,7 @@ class CrossNet(nn.Module):
         - **in_features** : Positive integer, dimensionality of input features.
         - **input_feature_num**: Positive integer, shape(Input tensor)[-1]
         - **layer_num**: Positive integer, the cross layer number
-        - **parameterization**: string, 'vector' or 'matrix',  how to parameterize the cross network.
+        - **parameterization**: string, ``"vector"``  or ``"matrix"`` ,  way to parameterize the cross network.
         - **l2_reg**: float between 0 and 1. L2 regularizer strength applied to the kernel weights matrix
         - **seed**: A Python integer to use as random seed.
       References
@@ -435,8 +435,7 @@ class CrossNet(nn.Module):
             self.kernels = torch.nn.ParameterList([nn.Parameter(nn.init.xavier_normal_(
                 torch.empty(in_features, in_features))) for i in range(self.layer_num)])
         else:  # error
-            print("parameterization should be 'vector' or 'matrix'")
-            pass
+            raise ValueError("parameterization should be 'vector' or 'matrix'")
 
         self.bias = torch.nn.ParameterList(
             [nn.Parameter(nn.init.zeros_(torch.empty(in_features, 1))) for i in range(self.layer_num)])
