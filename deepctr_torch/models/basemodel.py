@@ -231,7 +231,7 @@ class BaseModel(nn.Module):
 
                         loss_epoch += loss.item()
                         total_loss_epoch += total_loss.item()
-                        total_loss.backward(retain_graph=True)
+                        total_loss.backward()
                         optim.step()
 
                         if verbose > 0:
