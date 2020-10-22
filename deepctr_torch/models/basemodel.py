@@ -26,8 +26,8 @@ except ImportError:
 from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat, get_varlen_pooling_list, \
     create_embedding_matrix
 from ..layers import PredictionLayer
-
 from ..layers.utils import slice_arrays
+from ..callbacks import History
 
 
 class Linear(nn.Module):
@@ -124,7 +124,11 @@ class BaseModel(nn.Module):
 
         self.out = PredictionLayer(task, )
         self.to(device)
-        self._is_graph_network = True  # used for callbacks
+
+        # parameters of callbacks
+        self._is_graph_network = True  # used for ModelCheckpoint
+        self.stop_training = False  # used for EarlyStopping
+        self.history = History()
 
     def fit(self, x=None, y=None, batch_size=None, epochs=1, verbose=1, initial_epoch=0, validation_split=0.,
             validation_data=None, shuffle=True, callbacks=None):
@@ -142,6 +146,7 @@ class BaseModel(nn.Module):
         :param shuffle: Boolean. Whether to shuffle the order of the batches at the beginning of each epoch.
         :param callbacks: List of `deepctr_torch.callbacks.Callback` instances. List of callbacks to apply during training and validation (if ). See [callbacks](https://tensorflow.google.cn/api_docs/python/tf/keras/callbacks). Now available: `EarlyStopping` , `ModelCheckpoint`
 
+        :return: A `History` object. Its `History.history` attribute is a record of training loss values and metrics values at successive epochs, as well as validation loss values and validation metrics values (if applicable).
         """
         if isinstance(x, dict):
             x = [x[feature] for feature in self.feature_index]
@@ -200,10 +205,12 @@ class BaseModel(nn.Module):
         sample_num = len(train_tensor_data)
         steps_per_epoch = (sample_num - 1) // batch_size + 1
 
+        # configure callbacks
+        callbacks = (callbacks or []) + [self.history]  # add history callback
         callbacks = CallbackList(callbacks)
         callbacks.set_model(self)
         callbacks.on_train_begin()
-        self.stop_training = False  # used for early stopping
+        callbacks.model.stop_training = False
 
         # Train
         print("Train on {0} samples, validate on {1} samples, {2} steps per epoch".format(
@@ -278,6 +285,8 @@ class BaseModel(nn.Module):
                 break
 
         callbacks.on_train_end()
+
+        return self.history
 
     def evaluate(self, x, y, batch_size=256):
         """
