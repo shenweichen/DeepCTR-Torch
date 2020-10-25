@@ -512,7 +512,7 @@ class CrossNetMix(nn.Module):
 
                 # (2) E(x_l)
                 # project the input x_l to $\mathbb{R}^{r}$
-                v_x = torch.matmul(self.V_list[i][expert_id].T, x_l)  # (bs, low_rank, 1)
+                v_x = torch.matmul(self.V_list[i][expert_id].t(), x_l)  # (bs, low_rank, 1)
 
                 # nonlinear activation in low rank space
                 v_x = torch.tanh(v_x)
