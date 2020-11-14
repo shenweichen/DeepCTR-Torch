@@ -378,7 +378,11 @@ class BaseModel(nn.Module):
         return input_dim
 
     def add_regularization_weight(self, weight_list, weight_decay, p=2):
-        self.regularization_weight.append((list(weight_list), weight_decay, p))
+        # For a Parameter, we can directly compute its norm and there is no need to convert it to a list.
+        if isinstance(weight_list, torch.nn.parameter.Parameter):
+            self.regularization_weight.append((weight_list, weight_decay, p))
+        else:  # convert generator and filter to a list of tensors
+            self.regularization_weight.append((list(weight_list), weight_decay, p))
 
     def get_regularization_loss(self, ):
         total_reg_loss = torch.zeros((1,), device=self.device)
