@@ -378,22 +378,25 @@ class BaseModel(nn.Module):
         return input_dim
 
     def add_regularization_weight(self, weight_list, weight_decay, p=2):
+        # For a Parameter, put it in a list to keep Compatible with get_regularization_loss()
+        if isinstance(weight_list, torch.nn.parameter.Parameter):
+            weight_list = [weight_list]
+        # For generators, filters and ParameterLists, convert them to a list of tensors to avoid bugs.
+        # e.g., we can't pickle generator objects when we save the model.
+        else:
+            weight_list = list(weight_list)
         self.regularization_weight.append((weight_list, weight_decay, p))
 
     def get_regularization_loss(self, ):
         total_reg_loss = torch.zeros((1,), device=self.device)
         for weight_list, weight_decay, p in self.regularization_weight:
-            # For a Parameter, directly compute its norm
-            if isinstance(weight_list, torch.nn.parameter.Parameter):
-                weight_reg_loss = torch.norm(weight_list, p=p, )
-            else:  # generator, filter, ParameterList need traversal
-                weight_reg_loss = torch.zeros((1,), device=self.device)
-                for w in weight_list:
-                    if isinstance(w, tuple):
-                        l2_reg = torch.norm(w[1], p=p, )
-                    else:
-                        l2_reg = torch.norm(w, p=p, )
-                    weight_reg_loss = weight_reg_loss + l2_reg
+            weight_reg_loss = torch.zeros((1,), device=self.device)
+            for w in weight_list:
+                if isinstance(w, tuple):
+                    l2_reg = torch.norm(w[1], p=p, )
+                else:
+                    l2_reg = torch.norm(w, p=p, )
+                weight_reg_loss = weight_reg_loss + l2_reg
             reg_loss = weight_decay * weight_reg_loss
             total_reg_loss += reg_loss
         return total_reg_loss
