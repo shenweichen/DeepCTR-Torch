@@ -383,13 +383,17 @@ class BaseModel(nn.Module):
     def get_regularization_loss(self, ):
         total_reg_loss = torch.zeros((1,), device=self.device)
         for weight_list, weight_decay, p in self.regularization_weight:
-            weight_reg_loss = torch.zeros((1,), device=self.device)
-            for w in weight_list:
-                if isinstance(w, tuple):
-                    l2_reg = torch.norm(w[1], p=p, )
-                else:
-                    l2_reg = torch.norm(w, p=p, )
-                weight_reg_loss = weight_reg_loss + l2_reg
+            # For a Parameter, directly compute its norm
+            if isinstance(weight_list, torch.nn.parameter.Parameter):
+                weight_reg_loss = torch.norm(weight_list, p=p, )
+            else:  # generator, filter, ParameterList need traversal
+                weight_reg_loss = torch.zeros((1,), device=self.device)
+                for w in weight_list:
+                    if isinstance(w, tuple):
+                        l2_reg = torch.norm(w[1], p=p, )
+                    else:
+                        l2_reg = torch.norm(w, p=p, )
+                    weight_reg_loss = weight_reg_loss + l2_reg
             reg_loss = weight_decay * weight_reg_loss
             total_reg_loss += reg_loss
         return total_reg_loss
