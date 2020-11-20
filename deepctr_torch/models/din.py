@@ -63,7 +63,7 @@ class DIN(BaseModel):
 
         self.attention = AttentionSequencePoolingLayer(att_hidden_units=att_hidden_size,
                                                        embedding_dim=att_emb_dim,
-                                                       activation=att_activation,
+                                                       att_activation=att_activation,
                                                        return_score=False,
                                                        supports_masking=False,
                                                        weight_normalization=att_weight_normalization)
