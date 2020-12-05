@@ -25,10 +25,11 @@ class Dice(nn.Module):
         self.sigmoid = nn.Sigmoid()
         self.dim = dim
 
+        # wrap alpha in nn.Parameter to make it trainable
         if self.dim == 2:
-            self.alpha = torch.zeros((emb_size,)).to(device)
+            self.alpha = nn.Parameter(torch.zeros((emb_size,)).to(device))
         else:
-            self.alpha = torch.zeros((emb_size, 1)).to(device)
+            self.alpha = nn.Parameter(torch.zeros((emb_size, 1)).to(device))
 
     def forward(self, x):
         assert x.dim() == self.dim

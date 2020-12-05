@@ -1,6 +1,7 @@
 import torch
 from tensorflow.python.keras.callbacks import EarlyStopping
 from tensorflow.python.keras.callbacks import ModelCheckpoint
+from tensorflow.python.keras.callbacks import History
 
 EarlyStopping = EarlyStopping
 
