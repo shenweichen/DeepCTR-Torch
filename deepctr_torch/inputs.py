@@ -266,6 +266,6 @@ def get_dense_input(X, features, feature_columns):
 
 def maxlen_lookup(X, sparse_input_dict, maxlen_column):
     if maxlen_column is None or len(maxlen_column)==0:
-        raise ValueError('please add max length column for VarLenSparseFeat of DIEN input')
+        raise ValueError('please add max length column for VarLenSparseFeat of DIN/DIEN input')
     lookup_idx = np.array(sparse_input_dict[maxlen_column[0]])
     return X[:, lookup_idx[0]:lookup_idx[1]].long()

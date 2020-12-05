@@ -54,9 +54,9 @@ class xDeepFM(BaseModel):
                            init_std=init_std, device=device)
             self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False).to(device)
             self.add_regularization_weight(
-                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2_reg_dnn)
+                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2=l2_reg_dnn)
 
-            self.add_regularization_weight(self.dnn_linear.weight, l2_reg_dnn)
+            self.add_regularization_weight(self.dnn_linear.weight, l2=l2_reg_dnn)
 
         self.cin_layer_size = cin_layer_size
         self.use_cin = len(self.cin_layer_size) > 0 and len(dnn_feature_columns) > 0
@@ -70,8 +70,8 @@ class xDeepFM(BaseModel):
             self.cin = CIN(field_num, cin_layer_size,
                            cin_activation, cin_split_half, l2_reg_cin, seed, device=device)
             self.cin_linear = nn.Linear(self.featuremap_num, 1, bias=False).to(device)
-            self.add_regularization_weight(
-                filter(lambda x: 'weight' in x[0], self.cin.named_parameters()), l2_reg_cin)
+            self.add_regularization_weight(filter(lambda x: 'weight' in x[0], self.cin.named_parameters()),
+                                           l2=l2_reg_cin)
 
         self.to(device)
 

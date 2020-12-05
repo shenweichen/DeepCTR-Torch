@@ -58,8 +58,8 @@ if __name__ == "__main__":
     model.compile("adagrad", "binary_crossentropy",
                   metrics=["binary_crossentropy", "auc"], )
 
-    model.fit(train_model_input, train[target].values, batch_size=32, epochs=10, verbose=2, validation_split=0.2)
-
+    history = model.fit(train_model_input, train[target].values, batch_size=32, epochs=10, verbose=2,
+                        validation_split=0.2)
     pred_ans = model.predict(test_model_input, 256)
     print("")
     print("test LogLoss", round(log_loss(test[target].values, pred_ans), 4))

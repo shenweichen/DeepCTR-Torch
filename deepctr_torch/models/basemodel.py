@@ -26,8 +26,8 @@ except ImportError:
 from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat, get_varlen_pooling_list, \
     create_embedding_matrix
 from ..layers import PredictionLayer
-
 from ..layers.utils import slice_arrays
+from ..callbacks import History
 
 
 class Linear(nn.Module):
@@ -55,8 +55,8 @@ class Linear(nn.Module):
             nn.init.normal_(tensor.weight, mean=0, std=init_std)
 
         if len(self.dense_feature_columns) > 0:
-            self.weight = nn.Parameter(torch.Tensor(sum(fc.dimension for fc in self.dense_feature_columns), 1)).to(
-                device)
+            self.weight = nn.Parameter(torch.Tensor(sum(fc.dimension for fc in self.dense_feature_columns), 1).to(
+                device))
             torch.nn.init.normal_(self.weight, mean=0, std=init_std)
 
     def forward(self, X):
@@ -117,14 +117,16 @@ class BaseModel(nn.Module):
 
         self.regularization_weight = []
 
-        self.add_regularization_weight(
-            self.embedding_dict.parameters(), l2_reg_embedding)
-        self.add_regularization_weight(
-            self.linear_model.parameters(), l2_reg_linear)
+        self.add_regularization_weight(self.embedding_dict.parameters(), l2=l2_reg_embedding)
+        self.add_regularization_weight(self.linear_model.parameters(), l2=l2_reg_linear)
 
         self.out = PredictionLayer(task, )
         self.to(device)
-        self._is_graph_network = True  # used for callbacks
+
+        # parameters of callbacks
+        self._is_graph_network = True  # used for ModelCheckpoint
+        self.stop_training = False  # used for EarlyStopping
+        self.history = History()
 
     def fit(self, x=None, y=None, batch_size=None, epochs=1, verbose=1, initial_epoch=0, validation_split=0.,
             validation_data=None, shuffle=True, callbacks=None):
@@ -142,6 +144,7 @@ class BaseModel(nn.Module):
         :param shuffle: Boolean. Whether to shuffle the order of the batches at the beginning of each epoch.
         :param callbacks: List of `deepctr_torch.callbacks.Callback` instances. List of callbacks to apply during training and validation (if ). See [callbacks](https://tensorflow.google.cn/api_docs/python/tf/keras/callbacks). Now available: `EarlyStopping` , `ModelCheckpoint`
 
+        :return: A `History` object. Its `History.history` attribute is a record of training loss values and metrics values at successive epochs, as well as validation loss values and validation metrics values (if applicable).
         """
         if isinstance(x, dict):
             x = [x[feature] for feature in self.feature_index]
@@ -200,10 +203,14 @@ class BaseModel(nn.Module):
         sample_num = len(train_tensor_data)
         steps_per_epoch = (sample_num - 1) // batch_size + 1
 
+        # configure callbacks
+        callbacks = (callbacks or []) + [self.history]  # add history callback
         callbacks = CallbackList(callbacks)
-        callbacks.set_model(self)
         callbacks.on_train_begin()
-        self.stop_training = False  # used for early stopping
+        callbacks.set_model(self)
+        if not hasattr(callbacks, 'model'):
+            callbacks.__setattr__('model', self)
+        callbacks.model.stop_training = False
 
         # Train
         print("Train on {0} samples, validate on {1} samples, {2} steps per epoch".format(
@@ -231,7 +238,7 @@ class BaseModel(nn.Module):
 
                         loss_epoch += loss.item()
                         total_loss_epoch += total_loss.item()
-                        total_loss.backward(retain_graph=True)
+                        total_loss.backward()
                         optim.step()
 
                         if verbose > 0:
@@ -278,6 +285,8 @@ class BaseModel(nn.Module):
                 break
 
         callbacks.on_train_end()
+
+        return self.history
 
     def evaluate(self, x, y, batch_size=256):
         """
@@ -368,21 +377,32 @@ class BaseModel(nn.Module):
             input_dim += dense_input_dim
         return input_dim
 
-    def add_regularization_weight(self, weight_list, weight_decay, p=2):
-        self.regularization_weight.append((list(weight_list), weight_decay, p))
+    def add_regularization_weight(self, weight_list, l1=0.0, l2=0.0):
+        # For a Parameter, put it in a list to keep Compatible with get_regularization_loss()
+        if isinstance(weight_list, torch.nn.parameter.Parameter):
+            weight_list = [weight_list]
+        # For generators, filters and ParameterLists, convert them to a list of tensors to avoid bugs.
+        # e.g., we can't pickle generator objects when we save the model.
+        else:
+            weight_list = list(weight_list)
+        self.regularization_weight.append((weight_list, l1, l2))
 
     def get_regularization_loss(self, ):
         total_reg_loss = torch.zeros((1,), device=self.device)
-        for weight_list, weight_decay, p in self.regularization_weight:
-            weight_reg_loss = torch.zeros((1,), device=self.device)
+        for weight_list, l1, l2 in self.regularization_weight:
             for w in weight_list:
                 if isinstance(w, tuple):
-                    l2_reg = torch.norm(w[1], p=p, )
+                    parameter = w[1]  # named_parameters
                 else:
-                    l2_reg = torch.norm(w, p=p, )
-                weight_reg_loss = weight_reg_loss + l2_reg
-            reg_loss = weight_decay * weight_reg_loss
-            total_reg_loss += reg_loss
+                    parameter = w
+                if l1 > 0:
+                    total_reg_loss += torch.sum(l1 * torch.abs(parameter))
+                if l2 > 0:
+                    try:
+                        total_reg_loss += torch.sum(l2 * torch.square(parameter))
+                    except AttributeError:
+                        total_reg_loss += torch.sum(l2 * parameter * parameter)
+
         return total_reg_loss
 
     def add_auxiliary_loss(self, aux_loss, alpha):
