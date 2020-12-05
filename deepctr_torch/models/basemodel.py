@@ -117,10 +117,8 @@ class BaseModel(nn.Module):
 
         self.regularization_weight = []
 
-        self.add_regularization_weight(
-            self.embedding_dict.parameters(), l2_reg_embedding)
-        self.add_regularization_weight(
-            self.linear_model.parameters(), l2_reg_linear)
+        self.add_regularization_weight(self.embedding_dict.parameters(), l2=l2_reg_embedding)
+        self.add_regularization_weight(self.linear_model.parameters(), l2=l2_reg_linear)
 
         self.out = PredictionLayer(task, )
         self.to(device)
@@ -208,8 +206,10 @@ class BaseModel(nn.Module):
         # configure callbacks
         callbacks = (callbacks or []) + [self.history]  # add history callback
         callbacks = CallbackList(callbacks)
-        callbacks.set_model(self)
         callbacks.on_train_begin()
+        callbacks.set_model(self)
+        if not hasattr(callbacks, 'model'):
+            callbacks.__setattr__('model', self)
         callbacks.model.stop_training = False
 
         # Train
@@ -377,7 +377,7 @@ class BaseModel(nn.Module):
             input_dim += dense_input_dim
         return input_dim
 
-    def add_regularization_weight(self, weight_list, weight_decay, p=2):
+    def add_regularization_weight(self, weight_list, l1=0.0, l2=0.0):
         # For a Parameter, put it in a list to keep Compatible with get_regularization_loss()
         if isinstance(weight_list, torch.nn.parameter.Parameter):
             weight_list = [weight_list]
@@ -385,20 +385,24 @@ class BaseModel(nn.Module):
         # e.g., we can't pickle generator objects when we save the model.
         else:
             weight_list = list(weight_list)
-        self.regularization_weight.append((weight_list, weight_decay, p))
+        self.regularization_weight.append((weight_list, l1, l2))
 
     def get_regularization_loss(self, ):
         total_reg_loss = torch.zeros((1,), device=self.device)
-        for weight_list, weight_decay, p in self.regularization_weight:
-            weight_reg_loss = torch.zeros((1,), device=self.device)
+        for weight_list, l1, l2 in self.regularization_weight:
             for w in weight_list:
                 if isinstance(w, tuple):
-                    l2_reg = torch.norm(w[1], p=p, )
+                    parameter = w[1]  # named_parameters
                 else:
-                    l2_reg = torch.norm(w, p=p, )
-                weight_reg_loss = weight_reg_loss + l2_reg
-            reg_loss = weight_decay * weight_reg_loss
-            total_reg_loss += reg_loss
+                    parameter = w
+                if l1 > 0:
+                    total_reg_loss += torch.sum(l1 * torch.abs(parameter))
+                if l2 > 0:
+                    try:
+                        total_reg_loss += torch.sum(l2 * torch.square(parameter))
+                    except AttributeError:
+                        total_reg_loss += torch.sum(l2 * parameter * parameter)
+
         return total_reg_loss
 
     def add_auxiliary_loss(self, aux_loss, alpha):
