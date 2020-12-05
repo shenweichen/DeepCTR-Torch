@@ -7,7 +7,7 @@ from ..utils import check_model, get_test_data, SAMPLE_SIZE, get_device
 
 @pytest.mark.parametrize(
     'embedding_size,cross_num,hidden_size,sparse_feature_num,cross_parameterization',
-    [(8, 0, (32,), 2, 'vector'), (8, 0, (32,), 2, 'matrix'),
+    [(8, 2, (32,), 2, 'vector'), (8, 1, (32,), 2, 'matrix'),
      ]  # ('auto', 1, (32,), 3) , ('auto', 1, (), 1), ('auto', 1, (32,), 3)
 )
 def test_DCN(embedding_size, cross_num, hidden_size, sparse_feature_num, cross_parameterization):
