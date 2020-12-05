@@ -63,7 +63,7 @@ class DIN(BaseModel):
 
         self.attention = AttentionSequencePoolingLayer(att_hidden_units=att_hidden_size,
                                                        embedding_dim=att_emb_dim,
-                                                       activation=att_activation,
+                                                       att_activation=att_activation,
                                                        return_score=False,
                                                        supports_masking=False,
                                                        weight_normalization=att_weight_normalization)
@@ -79,16 +79,15 @@ class DIN(BaseModel):
 
 
     def forward(self, X):
-        sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
-                                                                                  self.embedding_dict)
+        _, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns, self.embedding_dict)
 
         # sequence pooling part
         query_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.sparse_feature_columns,
-                                          self.history_feature_list, self.history_feature_list, to_list=True)
+                                          return_feat_list=self.history_feature_list, to_list=True)
         keys_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.history_feature_columns,
-                                         self.history_fc_names, self.history_fc_names, to_list=True)
-        dnn_input_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.sparse_feature_columns, mask_feat_list=self.history_feature_list, to_list=True)
-
+                                         return_feat_list=self.history_fc_names, to_list=True)
+        dnn_input_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.sparse_feature_columns,
+                                              to_list=True)
 
         sequence_embed_dict = varlen_embedding_lookup(X, self.embedding_dict, self.feature_index,
                                                       self.sparse_varlen_feature_columns)
@@ -97,12 +96,15 @@ class DIN(BaseModel):
                                                       self.sparse_varlen_feature_columns, self.device)
 
         dnn_input_emb_list += sequence_embed_list
+        deep_input_emb = torch.cat(dnn_input_emb_list, dim=-1)
 
         # concatenate
         query_emb = torch.cat(query_emb_list, dim=-1)                     # [B, 1, E]
         keys_emb = torch.cat(keys_emb_list, dim=-1)                       # [B, T, E]
-        keys_length = torch.ones((query_emb.size(0), 1)).to(self.device)  # [B, 1]
-        deep_input_emb = torch.cat(dnn_input_emb_list, dim=-1)
+
+        keys_length_feature_name = [feat.length_name for feat in self.varlen_sparse_feature_columns if
+                                    feat.length_name is not None]
+        keys_length = torch.squeeze(maxlen_lookup(X, self.feature_index, keys_length_feature_name), 1)  # [B, 1]
 
         hist = self.attention(query_emb, keys_emb, keys_length)           # [B, 1, E]
 
