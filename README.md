@@ -93,23 +93,23 @@ Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-St
          <p>Core Dev<br> Beijing University <br> of  Posts and <br> Telecommunications</p>​
       </td>
       <td>
+        ​ <a href="https://github.com/zanshuxun"><img width="70" height="70" src="https://github.com/zanshuxun.png?s=40" alt="pic"></a><br>
+        ​ <a href="https://github.com/zanshuxun">Zan Shuxun</a>
+        <p>Core Dev<br> Beijing University <br> of  Posts and <br> Telecommunications</p>​
+      </td>
+      <td>
         ​ <a href="https://github.com/ZhangYuef"><img width="70" height="70" src="https://github.com/ZhangYuef.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/ZhangYuef">Zhang Yuefeng</a>
         <p>Core Dev<br>
         Peking University <br>  <br>  </p>​
       </td>
+    </tr>
+    <tr align="center">
       <td>
         ​ <a href="https://github.com/JyiHUO"><img width="70" height="70" src="https://github.com/JyiHUO.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/JyiHUO">Huo Junyi</a>
         <p>Core Dev<br>
         University of Southampton <br> <br>  </p>​
-      </td>
-    </tr>
-    <tr align="center">
-      <td>
-        ​ <a href="https://github.com/zanshuxun"><img width="70" height="70" src="https://github.com/zanshuxun.png?s=40" alt="pic"></a><br>
-        ​ <a href="https://github.com/zanshuxun">Zan Shuxun</a>
-        <p>Dev<br> Beijing University <br> of  Posts and <br> Telecommunications</p>​
       </td>
       <td>
         ​ <a href="https://github.com/Zengai"><img width="70" height="70" src="https://github.com/Zengai.png?s=40" alt="pic"></a><br>

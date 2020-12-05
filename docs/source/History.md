@@ -1,4 +1,5 @@
 # History
+- 12/05/2020 : [v0.2.4](https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.4) released.Imporve compatibility & fix issues.Add History callback.([example](https://deepctr-torch.readthedocs.io/en/latest/FAQ.html#set-learning-rate-and-use-earlystopping)).
 - 10/18/2020 : [v0.2.3](https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.3) released.Add [DCN-M](./Features.html#dcn-deep-cross-network)&[DCN-Mix](./Features.html#dcn-mix-improved-deep-cross-network-with-mix-of-experts-and-matrix-kernel).Add EarlyStopping and ModelCheckpoint callbacks([example](https://deepctr-torch.readthedocs.io/en/latest/FAQ.html#set-learning-rate-and-use-earlystopping)).
 - 10/09/2020 : [v0.2.2](https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.2) released.Improve the reproducibility & fix some bugs.
 - 03/27/2020 : [v0.2.1](https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.1) released.Add [DIN](./Features.html#din-deep-interest-network) and [DIEN](./Features.html#dien-deep-interest-evolution-network) .
