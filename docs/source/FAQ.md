@@ -33,8 +33,9 @@ model = DeepFM(linear_feature_columns,dnn_feature_columns)
 model.compile(Adagrad(model.parameters(),0.1024),'binary_crossentropy',metrics=['binary_crossentropy'])
 
 es = EarlyStopping(monitor='val_binary_crossentropy', min_delta=0, verbose=1, patience=0, mode='min')
-mdckpt = ModelCheckpoint(filepath='model.ckpt')
+mdckpt = ModelCheckpoint(filepath = 'model.ckpt', save_best_only= True)
 history = model.fit(model_input,data[target].values,batch_size=256,epochs=10,verbose=2,validation_split=0.2,callbacks=[es,mdckpt])
+print(history)
 ```
 
 ## 3. How to add a long dense feature vector as a input to the model?

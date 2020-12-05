@@ -34,11 +34,11 @@ You can read the latest code at https://github.com/shenweichen/DeepCTR-Torch and
 
 News
 -----
+12/05/2020 : Imporve compatibility & fix issues.Add History callback(`example <https://deepctr-torch.readthedocs.io/en/latest/FAQ.html#set-learning-rate-and-use-earlystopping>`_). `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.3>`_
+
 10/18/2020 : Add `DCN-M <./Features.html#dcn-deep-cross-network>`_ and `DCN-Mix <./Features.html#dcn-mix-improved-deep-cross-network-with-mix-of-experts-and-matrix-kernel>`_ . Add EarlyStopping and ModelCheckpoint callbacks(`example <https://deepctr-torch.readthedocs.io/en/latest/FAQ.html#set-learning-rate-and-use-earlystopping>`_). `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.3>`_
 
 10/09/2020 : Improve the reproducibility & fix some bugs. `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.2>`_
-
-03/27/2020 : Add `DIN <./Features.html#din-deep-interest-network>`_ and `DIEN <./Features.html#dien-deep-interest-evolution-network>`_ . `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.1>`_
 
 
 DisscussionGroup
