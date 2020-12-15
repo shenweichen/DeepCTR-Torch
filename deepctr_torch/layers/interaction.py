@@ -106,10 +106,11 @@ class BilinearInteraction(nn.Module):
       Input shape
         - A list of 3D tensor with shape: ``(batch_size,filed_size, embedding_size)``.
       Output shape
-        - 3D tensor with shape: ``(batch_size,filed_size, embedding_size)``.
+        - 3D tensor with shape: ``(batch_size,filed_size*(filed_size-1)/2, embedding_size)``.
       Arguments
         - **filed_size** : Positive integer, number of feature groups.
-        - **str** : String, types of bilinear functions used in this layer.
+        - **embedding_size** : Positive integer, embedding size of sparse features.
+        - **bilinear_type** : String, types of bilinear functions used in this layer.
         - **seed** : A Python integer to use as random seed.
       References
         - [FiBiNET: Combining Feature Importance and Bilinear feature Interaction for Click-Through Rate Prediction
