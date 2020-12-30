@@ -129,7 +129,7 @@ class BaseModel(nn.Module):
         self.history = History()
 
     def fit(self, x=None, y=None, batch_size=None, epochs=1, verbose=1, initial_epoch=0, validation_split=0.,
-            validation_data=None, shuffle=True, callbacks=None):
+            validation_data=None, shuffle=True, callbacks=None, gpus=None):
         """
 
         :param x: Numpy array of training data (if the model has a single input), or list of Numpy arrays (if the model has multiple inputs).If input layers in the model are named, you can also pass a
@@ -143,6 +143,7 @@ class BaseModel(nn.Module):
         :param validation_data: tuple `(x_val, y_val)` or tuple `(x_val, y_val, val_sample_weights)` on which to evaluate the loss and any model metrics at the end of each epoch. The model will not be trained on this data. `validation_data` will override `validation_split`.
         :param shuffle: Boolean. Whether to shuffle the order of the batches at the beginning of each epoch.
         :param callbacks: List of `deepctr_torch.callbacks.Callback` instances. List of callbacks to apply during training and validation (if ). See [callbacks](https://tensorflow.google.cn/api_docs/python/tf/keras/callbacks). Now available: `EarlyStopping` , `ModelCheckpoint`
+        :param gpus: list of int or torch.device for multi gpus running. If None, run on a single gpu. `gpus[0]` is the output_device.
 
         :return: A `History` object. Its `History.history` attribute is a record of training loss values and metrics values at successive epochs, as well as validation loss values and validation metrics values (if applicable).
         """
@@ -192,13 +193,20 @@ class BaseModel(nn.Module):
             torch.from_numpy(y))
         if batch_size is None:
             batch_size = 256
-        train_loader = DataLoader(
-            dataset=train_tensor_data, shuffle=shuffle, batch_size=batch_size)
 
-        print(self.device, end="\n")
         model = self.train()
         loss_func = self.loss_func
         optim = self.optim
+
+        if gpus:
+            print('parallel running on these gpus:', gpus)
+            model = torch.nn.DataParallel(model, device_ids=gpus)
+            batch_size *= len(gpus)  # input `batch_size` is batch_size per gpu
+        else:
+            print(self.device)
+
+        train_loader = DataLoader(
+            dataset=train_tensor_data, shuffle=shuffle, batch_size=batch_size)
 
         sample_num = len(train_tensor_data)
         steps_per_epoch = (sample_num - 1) // batch_size + 1
