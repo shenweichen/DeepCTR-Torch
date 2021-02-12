@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 """
 Author:
-    Weichen Shen,wcshen1994@163.com
+    Weichen Shen,weichenswc@163.com
 """
 
 from collections import OrderedDict, namedtuple, defaultdict
