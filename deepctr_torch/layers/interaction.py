@@ -448,15 +448,13 @@ class CrossNet(nn.Module):
             if self.parameterization == 'vector':
                 xl_w = torch.tensordot(x_l, self.kernels[i], dims=([1], [0]))
                 dot_ = torch.matmul(x_0, xl_w)
-                x_l = dot_ + self.bias[i]
+                x_l = dot_ + self.bias[i] + x_l
             elif self.parameterization == 'matrix':
-                dot_ = torch.matmul(self.kernels[i], x_l)  # W * xi  (bs, in_features, 1)
-                dot_ = dot_ + self.bias[i]  # W * xi + b
-                dot_ = x_0 * dot_  # x0 · (W * xi + b)  Hadamard-product
+                xl_w = torch.matmul(self.kernels[i], x_l)  # W * xi  (bs, in_features, 1)
+                dot_ = xl_w + self.bias[i]  # W * xi + b
+                x_l = x_0 * dot_ + x_l  # x0 · (W * xi + b) +xl  Hadamard-product
             else:  # error
-                print("parameterization should be 'vector' or 'matrix'")
-                pass
-            x_l = dot_ + x_l
+                raise ValueError("parameterization should be 'vector' or 'matrix'")
         x_l = torch.squeeze(x_l, dim=2)
         return x_l
 
