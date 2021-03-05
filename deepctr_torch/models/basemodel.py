@@ -92,7 +92,7 @@ class Linear(nn.Module):
 
 class BaseModel(nn.Module):
     def __init__(self, linear_feature_columns, dnn_feature_columns, l2_reg_linear=1e-5, l2_reg_embedding=1e-5,
-                 init_std=0.0001, seed=1024, task='binary', device='cpu'):
+                 init_std=0.0001, seed=1024, task='binary', device='cpu', gpus=None):
 
         super(BaseModel, self).__init__()
         torch.manual_seed(seed)
@@ -100,7 +100,11 @@ class BaseModel(nn.Module):
 
         self.reg_loss = torch.zeros((1,), device=device)
         self.aux_loss = torch.zeros((1,), device=device)
-        self.device = device  # device
+        self.device = device
+        self.gpus = gpus
+        if gpus and str(self.gpus[0]) not in self.device:
+            raise ValueError(
+                "`gpus[0]` should be the same gpu with `device`")
 
         self.feature_index = build_input_features(
             linear_feature_columns + dnn_feature_columns)
@@ -129,7 +133,7 @@ class BaseModel(nn.Module):
         self.history = History()
 
     def fit(self, x=None, y=None, batch_size=None, epochs=1, verbose=1, initial_epoch=0, validation_split=0.,
-            validation_data=None, shuffle=True, callbacks=None, gpus=None):
+            validation_data=None, shuffle=True, callbacks=None):
         """
 
         :param x: Numpy array of training data (if the model has a single input), or list of Numpy arrays (if the model has multiple inputs).If input layers in the model are named, you can also pass a
@@ -143,7 +147,6 @@ class BaseModel(nn.Module):
         :param validation_data: tuple `(x_val, y_val)` or tuple `(x_val, y_val, val_sample_weights)` on which to evaluate the loss and any model metrics at the end of each epoch. The model will not be trained on this data. `validation_data` will override `validation_split`.
         :param shuffle: Boolean. Whether to shuffle the order of the batches at the beginning of each epoch.
         :param callbacks: List of `deepctr_torch.callbacks.Callback` instances. List of callbacks to apply during training and validation (if ). See [callbacks](https://tensorflow.google.cn/api_docs/python/tf/keras/callbacks). Now available: `EarlyStopping` , `ModelCheckpoint`
-        :param gpus: list of int or torch.device for multi gpus running. If None, run on a single gpu. `gpus[0]` is the output_device.
 
         :return: A `History` object. Its `History.history` attribute is a record of training loss values and metrics values at successive epochs, as well as validation loss values and validation metrics values (if applicable).
         """
@@ -198,10 +201,10 @@ class BaseModel(nn.Module):
         loss_func = self.loss_func
         optim = self.optim
 
-        if gpus:
-            print('parallel running on these gpus:', gpus)
-            model = torch.nn.DataParallel(model, device_ids=gpus)
-            batch_size *= len(gpus)  # input `batch_size` is batch_size per gpu
+        if self.gpus:
+            print('parallel running on these gpus:', self.gpus)
+            model = torch.nn.DataParallel(model, device_ids=self.gpus)
+            batch_size *= len(self.gpus)  # input `batch_size` is batch_size per gpu
         else:
             print(self.device)
 
