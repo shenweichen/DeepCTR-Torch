@@ -30,16 +30,17 @@ class PNN(BaseModel):
     :param kernel_type: str,kernel_type used in outter-product,can be ``'mat'`` , ``'vec'`` or ``'num'``
     :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
     :param device: str, ``"cpu"`` or ``"cuda:0"``
+    :param gpus: list of int or torch.device for multiple gpus. If None, run on `device`. `gpus[0]` should be the same gpu with `device`.
     :return: A PyTorch model instance.
     
     """
 
     def __init__(self, dnn_feature_columns, dnn_hidden_units=(128, 128), l2_reg_embedding=1e-5, l2_reg_dnn=0,
                  init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation='relu', use_inner=True, use_outter=False,
-                 kernel_type='mat', task='binary', device='cpu', ):
+                 kernel_type='mat', task='binary', device='cpu', gpus=None):
 
         super(PNN, self).__init__([], dnn_feature_columns, l2_reg_linear=0, l2_reg_embedding=l2_reg_embedding,
-                                  init_std=init_std, seed=seed, task=task, device=device)
+                                  init_std=init_std, seed=seed, task=task, device=device, gpus=gpus)
 
         if kernel_type not in ['mat', 'vec', 'num']:
             raise ValueError("kernel_type must be mat,vec or num")
