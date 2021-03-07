@@ -59,7 +59,7 @@ class Linear(nn.Module):
                 device))
             torch.nn.init.normal_(self.weight, mean=0, std=init_std)
 
-    def forward(self, X):
+    def forward(self, X, sparse_feat_refine_weight=None):
 
         sparse_embedding_list = [self.embedding_dict[feat.embedding_name](
             X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()) for
@@ -75,13 +75,18 @@ class Linear(nn.Module):
 
         linear_logit = torch.zeros([X.shape[0], 1])
         if len(sparse_embedding_list) > 0:
-            sparse_feat_logit = torch.sum(
-                torch.cat(sparse_embedding_list, dim=-1), dim=-1, keepdim=False)
+            sparse_embedding_cat = torch.cat(sparse_embedding_list, dim=-1)
+            if sparse_feat_refine_weight is not None:
+                print('sparse_embedding_cat',sparse_embedding_cat.shape)
+                print('sparse_feat_refine_weight.unsqueeze(1)',sparse_feat_refine_weight.unsqueeze(1).shape)
+                sparse_embedding_cat = sparse_embedding_cat * sparse_feat_refine_weight.unsqueeze(1)
+            sparse_feat_logit = torch.sum(sparse_embedding_cat, dim=-1, keepdim=False)
             linear_logit += sparse_feat_logit
         if len(dense_value_list) > 0:
             dense_value_logit = torch.cat(
                 dense_value_list, dim=-1).matmul(self.weight)
             linear_logit += dense_value_logit
+
         return linear_logit
 
 
