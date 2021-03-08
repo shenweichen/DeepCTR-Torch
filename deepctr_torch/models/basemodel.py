@@ -73,7 +73,7 @@ class Linear(nn.Module):
 
         sparse_embedding_list += varlen_embedding_list
 
-        linear_logit = torch.zeros([X.shape[0], 1])
+        linear_logit = torch.zeros([X.shape[0], 1]).to(sparse_embedding_list[0].device)
         if len(sparse_embedding_list) > 0:
             sparse_embedding_cat = torch.cat(sparse_embedding_list, dim=-1)
             if sparse_feat_refine_weight is not None:

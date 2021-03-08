@@ -35,7 +35,7 @@ class DIFM(BaseModel):
     """
 
     def __init__(self,
-                 linear_feature_columns, dnn_feature_columns, att_embedding_size=8, att_head_num=2,
+                 linear_feature_columns, dnn_feature_columns, att_embedding_size=8, att_head_num=8,
                  att_res=True, dnn_hidden_units=(256, 128),
                  l2_reg_linear=0.00001, l2_reg_embedding=0.00001, l2_reg_dnn=0, init_std=0.0001, seed=1024,
                  dnn_dropout=0,
