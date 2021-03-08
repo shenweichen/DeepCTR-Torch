@@ -49,9 +49,6 @@ class DCN(BaseModel):
         super(DCN, self).__init__(linear_feature_columns=linear_feature_columns,
                                   dnn_feature_columns=dnn_feature_columns, l2_reg_embedding=l2_reg_embedding,
                                   init_std=init_std, seed=seed, task=task, device=device, gpus=gpus)
-        if gpus:
-            raise ValueError(
-                "dcn, dcnmix and din are not supported with multi gpus now!")
         self.dnn_hidden_units = dnn_hidden_units
         self.cross_num = cross_num
         self.dnn = DNN(self.compute_input_dim(dnn_feature_columns), dnn_hidden_units,

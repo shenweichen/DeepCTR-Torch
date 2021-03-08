@@ -77,4 +77,4 @@ model = DeepFM(...,device=device)
 ```python
     model = DeepFM(..., device=device, gpus=[0, 1])
 ```
-Note: dcn, dcnmix and din are not supported with multi gpus now.
+Note: DIN is not supported with multi gpus now.

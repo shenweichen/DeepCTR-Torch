@@ -431,17 +431,21 @@ class CrossNet(nn.Module):
         self.parameterization = parameterization
         if self.parameterization == 'vector':
             # weight in DCN.  (in_features, 1)
-            self.kernels = torch.nn.ParameterList(
-                [nn.Parameter(nn.init.xavier_normal_(torch.empty(in_features, 1))) for i in range(self.layer_num)])
+            nn.ParameterList
+            self.kernels = nn.Parameter(torch.Tensor(self.layer_num, in_features, 1))
         elif self.parameterization == 'matrix':
             # weight matrix in DCN-M.  (in_features, in_features)
-            self.kernels = torch.nn.ParameterList([nn.Parameter(nn.init.xavier_normal_(
-                torch.empty(in_features, in_features))) for i in range(self.layer_num)])
+            self.kernels = nn.Parameter(torch.Tensor(self.layer_num, in_features, in_features))
         else:  # error
             raise ValueError("parameterization should be 'vector' or 'matrix'")
 
-        self.bias = torch.nn.ParameterList(
-            [nn.Parameter(nn.init.zeros_(torch.empty(in_features, 1))) for i in range(self.layer_num)])
+        self.bias = nn.Parameter(torch.Tensor(self.layer_num, in_features, 1))
+
+        for i in range(self.kernels.shape[0]):
+            nn.init.xavier_normal_(self.kernels[i])
+        for i in range(self.bias.shape[0]):
+            nn.init.zeros_(self.bias[i])
+
         self.to(device)
 
     def forward(self, inputs):
@@ -486,18 +490,23 @@ class CrossNetMix(nn.Module):
         self.num_experts = num_experts
 
         # U: (in_features, low_rank)
-        self.U_list = torch.nn.ParameterList([nn.Parameter(nn.init.xavier_normal_(
-            torch.empty(num_experts, in_features, low_rank))) for i in range(self.layer_num)])
+        self.U_list = nn.Parameter(torch.Tensor(self.layer_num, num_experts, in_features, low_rank))
         # V: (in_features, low_rank)
-        self.V_list = torch.nn.ParameterList([nn.Parameter(nn.init.xavier_normal_(
-            torch.empty(num_experts, in_features, low_rank))) for i in range(self.layer_num)])
+        self.V_list = nn.Parameter(torch.Tensor(self.layer_num, num_experts, in_features, low_rank))
         # C: (low_rank, low_rank)
-        self.C_list = torch.nn.ParameterList([nn.Parameter(nn.init.xavier_normal_(
-            torch.empty(num_experts, low_rank, low_rank))) for i in range(self.layer_num)])
+        self.C_list = nn.Parameter(torch.Tensor(self.layer_num, num_experts, low_rank, low_rank))
         self.gating = nn.ModuleList([nn.Linear(in_features, 1, bias=False) for i in range(self.num_experts)])
 
-        self.bias = torch.nn.ParameterList([nn.Parameter(nn.init.zeros_(
-            torch.empty(in_features, 1))) for i in range(self.layer_num)])
+        self.bias = nn.Parameter(torch.Tensor(self.layer_num, in_features, 1))
+
+        init_para_list = [self.U_list, self.V_list, self.C_list]
+        for i in range(len(init_para_list)):
+            for j in range(self.layer_num):
+                nn.init.xavier_normal_(init_para_list[i][j])
+
+        for i in range(len(self.bias)):
+            nn.init.zeros_(self.bias[i])
+
         self.to(device)
 
     def forward(self, inputs):
