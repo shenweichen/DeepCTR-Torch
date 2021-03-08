@@ -73,7 +73,7 @@ class IFM(BaseModel):
         if not len(sparse_embedding_list) > 0:
             raise ValueError("there are no sparse features")
 
-        dnn_input = combined_dnn_input(sparse_embedding_list, [])
+        dnn_input = combined_dnn_input(sparse_embedding_list, [])  # (batch_size, feat_num * embedding_size)
         dnn_output = self.factor_estimating_net(dnn_input)
         dnn_output = self.transform_weight_matrix_P(dnn_output)  # m'_{x}
         dnn_output = self.sparse_feat_num * dnn_output.softmax(1)  # m_{x,i}

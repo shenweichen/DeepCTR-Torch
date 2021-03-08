@@ -77,8 +77,7 @@ class Linear(nn.Module):
         if len(sparse_embedding_list) > 0:
             sparse_embedding_cat = torch.cat(sparse_embedding_list, dim=-1)
             if sparse_feat_refine_weight is not None:
-                print('sparse_embedding_cat',sparse_embedding_cat.shape)
-                print('sparse_feat_refine_weight.unsqueeze(1)',sparse_feat_refine_weight.unsqueeze(1).shape)
+                # w_{x,i}=m_{x,i} * w_i (in IFM and DIFM)
                 sparse_embedding_cat = sparse_embedding_cat * sparse_feat_refine_weight.unsqueeze(1)
             sparse_feat_logit = torch.sum(sparse_embedding_cat, dim=-1, keepdim=False)
             linear_logit += sparse_feat_logit
