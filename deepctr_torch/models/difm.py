@@ -14,7 +14,7 @@ from ..layers import FM, DNN, InteractingLayer, concat_fun
 
 
 class DIFM(BaseModel):
-    """Instantiates the DeepFM Network architecture.
+    """Instantiates the DIFM Network architecture.
 
     :param linear_feature_columns: An iterable containing all the features used by linear part of the model.
     :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
