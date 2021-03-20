@@ -93,7 +93,7 @@ class DIFM(BaseModel):
         dnn_output = self.bit_wise_net(dnn_input)
         m_bit = self.transform_matrix_P_bit(dnn_output)
 
-        m_x = m_vec + m_bit
+        m_x = m_vec + m_bit  # m_x is the complete input-aware factor
 
         logit = self.linear_model(X, sparse_feat_refine_weight=m_x)
 

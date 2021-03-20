@@ -76,12 +76,12 @@ class IFM(BaseModel):
         dnn_input = combined_dnn_input(sparse_embedding_list, [])  # (batch_size, feat_num * embedding_size)
         dnn_output = self.factor_estimating_net(dnn_input)
         dnn_output = self.transform_weight_matrix_P(dnn_output)  # m'_{x}
-        dnn_output = self.sparse_feat_num * dnn_output.softmax(1)  # m_{x,i}
+        input_aware_factor = self.sparse_feat_num * dnn_output.softmax(1)  # input_aware_factor m_{x,i}
 
-        logit = self.linear_model(X, sparse_feat_refine_weight=dnn_output)
+        logit = self.linear_model(X, sparse_feat_refine_weight=input_aware_factor)
 
         fm_input = torch.cat(sparse_embedding_list, dim=1)
-        refined_fm_input = fm_input * dnn_output.unsqueeze(-1)  # \textbf{v}_{x,i}=m_{x,i}\textbf{v}_i
+        refined_fm_input = fm_input * input_aware_factor.unsqueeze(-1)  # \textbf{v}_{x,i}=m_{x,i}\textbf{v}_i
         logit += self.fm(refined_fm_input)
 
         y_pred = self.out(logit)
