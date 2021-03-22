@@ -431,7 +431,6 @@ class CrossNet(nn.Module):
         self.parameterization = parameterization
         if self.parameterization == 'vector':
             # weight in DCN.  (in_features, 1)
-            nn.ParameterList
             self.kernels = nn.Parameter(torch.Tensor(self.layer_num, in_features, 1))
         elif self.parameterization == 'matrix':
             # weight matrix in DCN-M.  (in_features, in_features)
