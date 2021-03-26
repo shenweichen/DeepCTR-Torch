@@ -42,9 +42,6 @@ class DIN(BaseModel):
                  seed=1024, task='binary', device='cpu', gpus=None):
         super(DIN, self).__init__([], dnn_feature_columns, l2_reg_linear=0, l2_reg_embedding=l2_reg_embedding,
                                   init_std=init_std, seed=seed, task=task, device=device, gpus=gpus)
-        if gpus:
-            raise ValueError(
-                "din is not supported with multi gpus now!")
 
         self.sparse_feature_columns = list(
             filter(lambda x: isinstance(x, SparseFeat), dnn_feature_columns)) if dnn_feature_columns else []

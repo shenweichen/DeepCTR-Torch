@@ -77,4 +77,3 @@ model = DeepFM(...,device=device)
 ```python
     model = DeepFM(..., device=device, gpus=[0, 1])
 ```
-Note: DIN is not supported with multi gpus now.
