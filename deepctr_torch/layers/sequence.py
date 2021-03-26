@@ -39,7 +39,7 @@ class SequencePoolingLayer(nn.Module):
         # Returns a mask tensor representing the first N positions of each cell.
         if maxlen is None:
             maxlen = lengths.max()
-        row_vector = torch.arange(0, maxlen, 1).to(self.device)
+        row_vector = torch.arange(0, maxlen, 1).to(lengths.device)
         matrix = torch.unsqueeze(lengths, dim=-1)
         mask = row_vector < matrix
 
@@ -70,6 +70,7 @@ class SequencePoolingLayer(nn.Module):
         hist = torch.sum(hist, dim=1, keepdim=False)
 
         if self.mode == 'mean':
+            self.eps = self.eps.to(user_behavior_length.device)
             hist = torch.div(hist, user_behavior_length.type(torch.float32) + self.eps)
 
         hist = torch.unsqueeze(hist, dim=1)
