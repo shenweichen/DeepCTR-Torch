@@ -10,6 +10,7 @@ Submodules
    deepctr_torch.models.autoint
    deepctr_torch.models.basemodel
    deepctr_torch.models.dcn
+   deepctr_torch.models.dcnmix
    deepctr_torch.models.deepfm
    deepctr_torch.models.fibinet
    deepctr_torch.models.mlr
@@ -20,6 +21,8 @@ Submodules
    deepctr_torch.models.xdeepfm
    deepctr_torch.models.din
    deepctr_torch.models.dien
+   deepctr_torch.models.ifm
+   deepctr_torch.models.difm
 
 Module contents
 ---------------

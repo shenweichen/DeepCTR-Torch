@@ -60,6 +60,7 @@ model.fit(model_input,label)
 ```
 
 ## 4. How to run the demo with GPU ?
+
 ```python
 import torch
 device = 'cpu'
@@ -69,4 +70,10 @@ if use_cuda and torch.cuda.is_available():
     device = 'cuda:0'
 
 model = DeepFM(...,device=device)
+```
+
+## 5. How to run the demo with multiple GPUs ?
+
+```python
+model = DeepFM(..., device=device, gpus=[0, 1])
 ```

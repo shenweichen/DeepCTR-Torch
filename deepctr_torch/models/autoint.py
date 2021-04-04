@@ -32,19 +32,20 @@ class AutoInt(BaseModel):
     :param seed: integer ,to use as random seed.
     :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
     :param device: str, ``"cpu"`` or ``"cuda:0"``
+    :param gpus: list of int or torch.device for multiple gpus. If None, run on `device`. `gpus[0]` should be the same gpu with `device`.
     :return: A PyTorch model instance.
-    
+
     """
 
     def __init__(self, linear_feature_columns, dnn_feature_columns, att_layer_num=3, att_embedding_size=8, att_head_num=2,
                  att_res=True,
                  dnn_hidden_units=(256, 128), dnn_activation='relu',
                  l2_reg_dnn=0, l2_reg_embedding=1e-5, dnn_use_bn=False, dnn_dropout=0, init_std=0.0001, seed=1024,
-                 task='binary', device='cpu'):
+                 task='binary', device='cpu', gpus=None):
 
         super(AutoInt, self).__init__(linear_feature_columns, dnn_feature_columns, l2_reg_linear=0,
                                       l2_reg_embedding=l2_reg_embedding, init_std=init_std, seed=seed, task=task,
-                                      device=device)
+                                      device=device, gpus=gpus)
 
         if len(dnn_hidden_units) <= 0 and att_layer_num <= 0:
             raise ValueError("Either hidden_layer or att_layer_num must > 0")

@@ -50,18 +50,19 @@ class ONN(BaseModel):
     :param reduce_sum: bool,whether apply reduce_sum on cross vector
     :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
     :param device: str, ``"cpu"`` or ``"cuda:0"``
+    :param gpus: list of int or torch.device for multiple gpus. If None, run on `device`. `gpus[0]` should be the same gpu with `device`.
     :return: A PyTorch model instance.
-    
+
     """
 
     def __init__(self, linear_feature_columns, dnn_feature_columns,
                  dnn_hidden_units=(128, 128),
                  l2_reg_embedding=1e-5, l2_reg_linear=1e-5, l2_reg_dnn=0,
                  dnn_dropout=0, init_std=0.0001, seed=1024, dnn_use_bn=False, dnn_activation='relu',
-                 task='binary', device='cpu'):
+                 task='binary', device='cpu', gpus=None):
         super(ONN, self).__init__(linear_feature_columns, dnn_feature_columns, l2_reg_linear=l2_reg_linear,
                                   l2_reg_embedding=l2_reg_embedding, init_std=init_std, seed=seed, task=task,
-                                  device=device)
+                                  device=device, gpus=gpus)
 
         # second order part
         embedding_size = self.embedding_size

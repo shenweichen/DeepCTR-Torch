@@ -34,6 +34,7 @@ class CCPM(BaseModel):
     :param seed: integer ,to use as random seed.
     :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
     :param device: str, ``"cpu"`` or ``"cuda:0"``
+    :param gpus: list of int or torch.device for multiple gpus. If None, run on `device`. `gpus[0]` should be the same gpu with `device`.
     :return: A PyTorch model instance.
 
     """
@@ -41,11 +42,11 @@ class CCPM(BaseModel):
     def __init__(self, linear_feature_columns, dnn_feature_columns, conv_kernel_width=(6, 5),
                  conv_filters=(4, 4),
                  dnn_hidden_units=(256,), l2_reg_linear=1e-5, l2_reg_embedding=1e-5, l2_reg_dnn=0, dnn_dropout=0,
-                 init_std=0.0001, seed=1024, task='binary', device='cpu', dnn_use_bn=False, dnn_activation='relu'):
+                 init_std=0.0001, seed=1024, task='binary', device='cpu', dnn_use_bn=False, dnn_activation='relu', gpus=None):
 
         super(CCPM, self).__init__(linear_feature_columns, dnn_feature_columns, l2_reg_linear=l2_reg_linear,
                                    l2_reg_embedding=l2_reg_embedding, init_std=init_std, seed=seed, task=task,
-                                   device=device)
+                                   device=device, gpus=gpus)
 
         if len(conv_kernel_width) != len(conv_filters):
             raise ValueError(

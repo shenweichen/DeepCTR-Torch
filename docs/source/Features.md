@@ -241,6 +241,27 @@ Feature Importance and Bilinear feature Interaction NETwork is proposed to dynam
 
 [Huang T, Zhang Z, Zhang J. FiBiNET: Combining Feature Importance and Bilinear feature Interaction for Click-Through Rate Prediction[J]. arXiv preprint arXiv:1905.09433, 2019.](https://arxiv.org/pdf/1905.09433.pdf)
 
+### IFM(Input-aware Factorization Machine)
+
+Input-aware Factorization Machine (IFM) learns a unique input-aware factor for the same feature in different instances via a neural network.
+
+[**IFM Model API**](./deepctr_torch.models.ifm.html)  
+
+![IFM](../pics/IFM.png)
+
+[Yu Y, Wang Z, Yuan B. An Input-aware Factorization Machine for Sparse Prediction[C]//IJCAI. 2019: 1466-1472.](https://www.ijcai.org/Proceedings/2019/0203.pdf)
+
+### DIFM(Dual Input-aware Factorization Machine)
+
+Dual Inputaware Factorization Machines (DIFM) can adaptively reweight the original feature representations at the bit-wise and vector-wise levels simultaneously.Furthermore, DIFMs strategically integrate various components including Multi-Head Self-Attention, Residual Networks and DNNs into a unified end-to-end model.
+
+[**DFM Model API**](./deepctr_torch.models.difm.html)  
+
+![DIFM](../pics/DIFM.png)
+
+[Lu W, Yu Y, Chang Y, et al. A Dual Input-aware Factorization Machine for CTR Prediction[C]//IJCAI. 2020: 3139-3145.](https://www.ijcai.org/Proceedings/2020/0434.pdf)
+
+
 
 ## Layers
 

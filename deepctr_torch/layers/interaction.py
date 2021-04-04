@@ -106,10 +106,11 @@ class BilinearInteraction(nn.Module):
       Input shape
         - A list of 3D tensor with shape: ``(batch_size,filed_size, embedding_size)``.
       Output shape
-        - 3D tensor with shape: ``(batch_size,filed_size, embedding_size)``.
+        - 3D tensor with shape: ``(batch_size,filed_size*(filed_size-1)/2, embedding_size)``.
       Arguments
         - **filed_size** : Positive integer, number of feature groups.
-        - **str** : String, types of bilinear functions used in this layer.
+        - **embedding_size** : Positive integer, embedding size of sparse features.
+        - **bilinear_type** : String, types of bilinear functions used in this layer.
         - **seed** : A Python integer to use as random seed.
       References
         - [FiBiNET: Combining Feature Importance and Bilinear feature Interaction for Click-Through Rate Prediction
@@ -125,7 +126,7 @@ Tongwen](https://arxiv.org/pdf/1905.09433.pdf)
             self.bilinear = nn.Linear(
                 embedding_size, embedding_size, bias=False)
         elif self.bilinear_type == "each":
-            for i in range(filed_size):
+            for _ in range(filed_size):
                 self.bilinear.append(
                     nn.Linear(embedding_size, embedding_size, bias=False))
         elif self.bilinear_type == "interaction":
@@ -340,13 +341,14 @@ class InteractingLayer(nn.Module):
             - [Song W, Shi C, Xiao Z, et al. AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks[J]. arXiv preprint arXiv:1810.11921, 2018.](https://arxiv.org/abs/1810.11921)
     """
 
-    def __init__(self, in_features, att_embedding_size=8, head_num=2, use_res=True, seed=1024, device='cpu'):
+    def __init__(self, in_features, att_embedding_size=8, head_num=2, use_res=True, scaling=False, seed=1024, device='cpu'):
         super(InteractingLayer, self).__init__()
         if head_num <= 0:
             raise ValueError('head_num must be a int > 0')
         self.att_embedding_size = att_embedding_size
         self.head_num = head_num
         self.use_res = use_res
+        self.scaling = scaling
         self.seed = seed
 
         embedding_size = in_features
@@ -388,7 +390,8 @@ class InteractingLayer(nn.Module):
             values, self.att_embedding_size, dim=2))
         inner_product = torch.einsum(
             'bnik,bnjk->bnij', querys, keys)  # head_num None F F
-
+        if self.scaling:
+            inner_product /= self.att_embedding_size ** 0.5
         self.normalized_att_scores = F.softmax(
             inner_product, dim=-1)  # head_num None F F
         result = torch.matmul(self.normalized_att_scores,
@@ -428,17 +431,20 @@ class CrossNet(nn.Module):
         self.parameterization = parameterization
         if self.parameterization == 'vector':
             # weight in DCN.  (in_features, 1)
-            self.kernels = torch.nn.ParameterList(
-                [nn.Parameter(nn.init.xavier_normal_(torch.empty(in_features, 1))) for i in range(self.layer_num)])
+            self.kernels = nn.Parameter(torch.Tensor(self.layer_num, in_features, 1))
         elif self.parameterization == 'matrix':
             # weight matrix in DCN-M.  (in_features, in_features)
-            self.kernels = torch.nn.ParameterList([nn.Parameter(nn.init.xavier_normal_(
-                torch.empty(in_features, in_features))) for i in range(self.layer_num)])
+            self.kernels = nn.Parameter(torch.Tensor(self.layer_num, in_features, in_features))
         else:  # error
             raise ValueError("parameterization should be 'vector' or 'matrix'")
 
-        self.bias = torch.nn.ParameterList(
-            [nn.Parameter(nn.init.zeros_(torch.empty(in_features, 1))) for i in range(self.layer_num)])
+        self.bias = nn.Parameter(torch.Tensor(self.layer_num, in_features, 1))
+
+        for i in range(self.kernels.shape[0]):
+            nn.init.xavier_normal_(self.kernels[i])
+        for i in range(self.bias.shape[0]):
+            nn.init.zeros_(self.bias[i])
+
         self.to(device)
 
     def forward(self, inputs):
@@ -483,18 +489,23 @@ class CrossNetMix(nn.Module):
         self.num_experts = num_experts
 
         # U: (in_features, low_rank)
-        self.U_list = torch.nn.ParameterList([nn.Parameter(nn.init.xavier_normal_(
-            torch.empty(num_experts, in_features, low_rank))) for i in range(self.layer_num)])
+        self.U_list = nn.Parameter(torch.Tensor(self.layer_num, num_experts, in_features, low_rank))
         # V: (in_features, low_rank)
-        self.V_list = torch.nn.ParameterList([nn.Parameter(nn.init.xavier_normal_(
-            torch.empty(num_experts, in_features, low_rank))) for i in range(self.layer_num)])
+        self.V_list = nn.Parameter(torch.Tensor(self.layer_num, num_experts, in_features, low_rank))
         # C: (low_rank, low_rank)
-        self.C_list = torch.nn.ParameterList([nn.Parameter(nn.init.xavier_normal_(
-            torch.empty(num_experts, low_rank, low_rank))) for i in range(self.layer_num)])
+        self.C_list = nn.Parameter(torch.Tensor(self.layer_num, num_experts, low_rank, low_rank))
         self.gating = nn.ModuleList([nn.Linear(in_features, 1, bias=False) for i in range(self.num_experts)])
 
-        self.bias = torch.nn.ParameterList([nn.Parameter(nn.init.zeros_(
-            torch.empty(in_features, 1))) for i in range(self.layer_num)])
+        self.bias = nn.Parameter(torch.Tensor(self.layer_num, in_features, 1))
+
+        init_para_list = [self.U_list, self.V_list, self.C_list]
+        for i in range(len(init_para_list)):
+            for j in range(self.layer_num):
+                nn.init.xavier_normal_(init_para_list[i][j])
+
+        for i in range(len(self.bias)):
+            nn.init.zeros_(self.bias[i])
+
         self.to(device)
 
     def forward(self, inputs):

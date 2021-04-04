@@ -31,17 +31,18 @@ class FiBiNET(BaseModel):
     :param dnn_activation: Activation function to use in DNN
     :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
     :param device: str, ``"cpu"`` or ``"cuda:0"``
+    :param gpus: list of int or torch.device for multiple gpus. If None, run on `device`. `gpus[0]` should be the same gpu with `device`.
     :return: A PyTorch model instance.
-    
+
     """
 
     def __init__(self, linear_feature_columns, dnn_feature_columns, bilinear_type='interaction',
                  reduction_ratio=3, dnn_hidden_units=(128, 128), l2_reg_linear=1e-5,
                  l2_reg_embedding=1e-5, l2_reg_dnn=0, init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation='relu',
-                 task='binary', device='cpu'):
+                 task='binary', device='cpu', gpus=None):
         super(FiBiNET, self).__init__(linear_feature_columns, dnn_feature_columns, l2_reg_linear=l2_reg_linear,
                                       l2_reg_embedding=l2_reg_embedding, init_std=init_std, seed=seed, task=task,
-                                      device=device)
+                                      device=device, gpus=gpus)
         self.linear_feature_columns = linear_feature_columns
         self.dnn_feature_columns = dnn_feature_columns
         self.filed_size = len(self.embedding_dict)

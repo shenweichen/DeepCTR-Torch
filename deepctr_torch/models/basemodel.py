@@ -59,7 +59,7 @@ class Linear(nn.Module):
                 device))
             torch.nn.init.normal_(self.weight, mean=0, std=init_std)
 
-    def forward(self, X):
+    def forward(self, X, sparse_feat_refine_weight=None):
 
         sparse_embedding_list = [self.embedding_dict[feat.embedding_name](
             X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()) for
@@ -73,26 +73,25 @@ class Linear(nn.Module):
 
         sparse_embedding_list += varlen_embedding_list
 
-        if len(sparse_embedding_list) > 0 and len(dense_value_list) > 0:
-            linear_sparse_logit = torch.sum(
-                torch.cat(sparse_embedding_list, dim=-1), dim=-1, keepdim=False)
-            linear_dense_logit = torch.cat(
+        linear_logit = torch.zeros([X.shape[0], 1]).to(sparse_embedding_list[0].device)
+        if len(sparse_embedding_list) > 0:
+            sparse_embedding_cat = torch.cat(sparse_embedding_list, dim=-1)
+            if sparse_feat_refine_weight is not None:
+                # w_{x,i}=m_{x,i} * w_i (in IFM and DIFM)
+                sparse_embedding_cat = sparse_embedding_cat * sparse_feat_refine_weight.unsqueeze(1)
+            sparse_feat_logit = torch.sum(sparse_embedding_cat, dim=-1, keepdim=False)
+            linear_logit += sparse_feat_logit
+        if len(dense_value_list) > 0:
+            dense_value_logit = torch.cat(
                 dense_value_list, dim=-1).matmul(self.weight)
-            linear_logit = linear_sparse_logit + linear_dense_logit
-        elif len(sparse_embedding_list) > 0:
-            linear_logit = torch.sum(
-                torch.cat(sparse_embedding_list, dim=-1), dim=-1, keepdim=False)
-        elif len(dense_value_list) > 0:
-            linear_logit = torch.cat(
-                dense_value_list, dim=-1).matmul(self.weight)
-        else:
-            linear_logit = torch.zeros([X.shape[0], 1])
+            linear_logit += dense_value_logit
+
         return linear_logit
 
 
 class BaseModel(nn.Module):
     def __init__(self, linear_feature_columns, dnn_feature_columns, l2_reg_linear=1e-5, l2_reg_embedding=1e-5,
-                 init_std=0.0001, seed=1024, task='binary', device='cpu'):
+                 init_std=0.0001, seed=1024, task='binary', device='cpu', gpus=None):
 
         super(BaseModel, self).__init__()
         torch.manual_seed(seed)
@@ -100,7 +99,11 @@ class BaseModel(nn.Module):
 
         self.reg_loss = torch.zeros((1,), device=device)
         self.aux_loss = torch.zeros((1,), device=device)
-        self.device = device  # device
+        self.device = device
+        self.gpus = gpus
+        if gpus and str(self.gpus[0]) not in self.device:
+            raise ValueError(
+                "`gpus[0]` should be the same gpu with `device`")
 
         self.feature_index = build_input_features(
             linear_feature_columns + dnn_feature_columns)
@@ -192,13 +195,20 @@ class BaseModel(nn.Module):
             torch.from_numpy(y))
         if batch_size is None:
             batch_size = 256
-        train_loader = DataLoader(
-            dataset=train_tensor_data, shuffle=shuffle, batch_size=batch_size)
 
-        print(self.device, end="\n")
         model = self.train()
         loss_func = self.loss_func
         optim = self.optim
+
+        if self.gpus:
+            print('parallel running on these gpus:', self.gpus)
+            model = torch.nn.DataParallel(model, device_ids=self.gpus)
+            batch_size *= len(self.gpus)  # input `batch_size` is batch_size per gpu
+        else:
+            print(self.device)
+
+        train_loader = DataLoader(
+            dataset=train_tensor_data, shuffle=shuffle, batch_size=batch_size)
 
         sample_num = len(train_tensor_data)
         steps_per_epoch = (sample_num - 1) // batch_size + 1
@@ -224,7 +234,7 @@ class BaseModel(nn.Module):
             train_result = {}
             try:
                 with tqdm(enumerate(train_loader), disable=verbose != 1) as t:
-                    for index, (x_train, y_train) in t:
+                    for _, (x_train, y_train) in t:
                         x = x_train.to(self.device).float()
                         y = y_train.to(self.device).float()
 
@@ -323,7 +333,7 @@ class BaseModel(nn.Module):
 
         pred_ans = []
         with torch.no_grad():
-            for index, x_test in enumerate(test_loader):
+            for _, x_test in enumerate(test_loader):
                 x = x_test[0].to(self.device).float()
 
                 y_pred = model(x).cpu().data.numpy()  # .squeeze()

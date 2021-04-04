@@ -34,18 +34,19 @@ class xDeepFM(BaseModel):
     :param dnn_use_bn: bool. Whether use BatchNormalization before activation or not in DNN
     :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
     :param device: str, ``"cpu"`` or ``"cuda:0"``
+    :param gpus: list of int or torch.device for multiple gpus. If None, run on `device`. `gpus[0]` should be the same gpu with `device`.
     :return: A PyTorch model instance.
-    
+
     """
 
     def __init__(self, linear_feature_columns, dnn_feature_columns, dnn_hidden_units=(256, 256),
                  cin_layer_size=(256, 128,), cin_split_half=True, cin_activation='relu', l2_reg_linear=0.00001,
                  l2_reg_embedding=0.00001, l2_reg_dnn=0, l2_reg_cin=0, init_std=0.0001, seed=1024, dnn_dropout=0,
-                 dnn_activation='relu', dnn_use_bn=False, task='binary', device='cpu'):
+                 dnn_activation='relu', dnn_use_bn=False, task='binary', device='cpu', gpus=None):
 
         super(xDeepFM, self).__init__(linear_feature_columns, dnn_feature_columns, l2_reg_linear=l2_reg_linear,
                                       l2_reg_embedding=l2_reg_embedding, init_std=init_std, seed=seed, task=task,
-                                      device=device)
+                                      device=device, gpus=gpus)
         self.dnn_hidden_units = dnn_hidden_units
         self.use_dnn = len(dnn_feature_columns) > 0 and len(dnn_hidden_units) > 0
         if self.use_dnn:

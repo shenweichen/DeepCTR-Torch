@@ -36,8 +36,9 @@ class DCNMix(BaseModel):
     :param num_experts: Positive integer, number of experts.
     :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
     :param device: str, ``"cpu"`` or ``"cuda:0"``
+    :param gpus: list of int or torch.device for multiple gpus. If None, run on `device`. `gpus[0]` should be the same gpu with `device`.
     :return: A PyTorch model instance.
-    
+
     """
 
     def __init__(self, linear_feature_columns,
@@ -45,11 +46,11 @@ class DCNMix(BaseModel):
                  dnn_hidden_units=(128, 128), l2_reg_linear=0.00001,
                  l2_reg_embedding=0.00001, l2_reg_cross=0.00001, l2_reg_dnn=0, init_std=0.0001, seed=1024,
                  dnn_dropout=0, low_rank=32, num_experts=4,
-                 dnn_activation='relu', dnn_use_bn=False, task='binary', device='cpu'):
+                 dnn_activation='relu', dnn_use_bn=False, task='binary', device='cpu', gpus=None):
 
         super(DCNMix, self).__init__(linear_feature_columns=linear_feature_columns,
                                      dnn_feature_columns=dnn_feature_columns, l2_reg_embedding=l2_reg_embedding,
-                                     init_std=init_std, seed=seed, task=task, device=device)
+                                     init_std=init_std, seed=seed, task=task, device=device, gpus=gpus)
         self.dnn_hidden_units = dnn_hidden_units
         self.cross_num = cross_num
         self.dnn = DNN(self.compute_input_dim(dnn_feature_columns), dnn_hidden_units,
