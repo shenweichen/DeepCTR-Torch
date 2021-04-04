@@ -1,2 +1,2 @@
 Cython>=0.28.5
-tensorflow==1.15.4
+tensorflow==2.4.0
