@@ -29,6 +29,8 @@ class DIN(BaseModel):
     :param init_std: float,to use as the initialize std of embedding vector
     :param seed: integer ,to use as random seed.
     :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
+    :param device: str, ``"cpu"`` or ``"cuda:0"``
+    :param gpus: list of int or torch.device for multiple gpus. If None, run on `device`. `gpus[0]` should be the same gpu with `device`.
     :return:  A PyTorch model instance.
 
     """
@@ -37,9 +39,9 @@ class DIN(BaseModel):
                  dnn_hidden_units=(256, 128), dnn_activation='relu', att_hidden_size=(64, 16),
                  att_activation='Dice', att_weight_normalization=False, l2_reg_dnn=0.0,
                  l2_reg_embedding=1e-6, dnn_dropout=0, init_std=0.0001,
-                 seed=1024, task='binary', device='cpu'):
+                 seed=1024, task='binary', device='cpu', gpus=None):
         super(DIN, self).__init__([], dnn_feature_columns, l2_reg_linear=0, l2_reg_embedding=l2_reg_embedding,
-                                  init_std=init_std, seed=seed, task=task, device=device)
+                                  init_std=init_std, seed=seed, task=task, device=device, gpus=gpus)
 
         self.sparse_feature_columns = list(
             filter(lambda x: isinstance(x, SparseFeat), dnn_feature_columns)) if dnn_feature_columns else []
