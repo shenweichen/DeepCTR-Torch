@@ -3,7 +3,7 @@
 Author:
     zanshuxun, zanshuxun@aliyun.com
 Reference:
-    Yu Y, Wang Z, Yuan B. An Input-aware Factorization Machine for Sparse Prediction[C]//IJCAI. 2019: 1466-1472.
+    [1] Yu Y, Wang Z, Yuan B. An Input-aware Factorization Machine for Sparse Prediction[C]//IJCAI. 2019: 1466-1472.(https://www.ijcai.org/Proceedings/2019/0203.pdf)
 """
 import torch
 import torch.nn as nn

@@ -34,12 +34,11 @@ You can read the latest code at https://github.com/shenweichen/DeepCTR-Torch and
 
 News
 -----
+04/04/2021 : Add `IFM <./Features.html#dcn-deep-cross-network>`_ and `IDFM <./Features.html#dcn-mix-improved-deep-cross-network-with-mix-of-experts-and-matrix-kernel>`_ . Support multi-gpus running(`example <https://deepctr-torch.readthedocs.io/en/latest/FAQ.html#set-learning-rate-and-use-earlystopping>`_). `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.6>`_
+
 02/12/2021 : Fix bug in DCN-M. `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.4>`_
 
 12/05/2020 : Imporve compatibility & fix issues.Add History callback(`example <https://deepctr-torch.readthedocs.io/en/latest/FAQ.html#set-learning-rate-and-use-earlystopping>`_). `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.3>`_
-
-10/18/2020 : Add `DCN-M <./Features.html#dcn-deep-cross-network>`_ and `DCN-Mix <./Features.html#dcn-mix-improved-deep-cross-network-with-mix-of-experts-and-matrix-kernel>`_ . Add EarlyStopping and ModelCheckpoint callbacks(`example <https://deepctr-torch.readthedocs.io/en/latest/FAQ.html#set-learning-rate-and-use-earlystopping>`_). `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.3>`_
-
 
 DisscussionGroup
 -----------------------

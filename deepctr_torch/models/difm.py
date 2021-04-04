@@ -3,7 +3,7 @@
 Author:
     zanshuxun, zanshuxun@aliyun.com
 Reference:
-    Lu W, Yu Y, Chang Y, et al. A Dual Input-aware Factorization Machine for CTR Prediction[C]//IJCAI. 2020: 3139-3145.
+    [1] Lu W, Yu Y, Chang Y, et al. A Dual Input-aware Factorization Machine for CTR Prediction[C]//IJCAI. 2020: 3139-3145.(https://www.ijcai.org/Proceedings/2020/0434.pdf)
 """
 import torch
 import torch.nn as nn
