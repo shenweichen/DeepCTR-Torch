@@ -244,6 +244,7 @@ Feature Importance and Bilinear feature Interaction NETwork is proposed to dynam
 ### IFM(Input-aware Factorization Machine)
 
 Input-aware Factorization Machine (IFM) learns a unique input-aware factor for the same feature in different instances via a neural network.
+
 [**IFM Model API**](./deepctr_torch.models.ifm.html)  
 
 ![IFM](../pics/IFM.png)
@@ -252,7 +253,9 @@ Input-aware Factorization Machine (IFM) learns a unique input-aware factor for t
 
 ### DIFM(Dual Input-aware Factorization Machine)
 
-Dual Inputaware Factorization Machines (DIFM) can adaptively reweight the original feature representations at the bit-wise and vector-wise levels simultaneously.Furthermore, DIFMs strategically integrate various components including Multi-Head Self-Attention, Residual Networks and DNNs into a unified end-to-end model.[**IFM Model API**](./deepctr_torch.models.ifm.html)  
+Dual Inputaware Factorization Machines (DIFM) can adaptively reweight the original feature representations at the bit-wise and vector-wise levels simultaneously.Furthermore, DIFMs strategically integrate various components including Multi-Head Self-Attention, Residual Networks and DNNs into a unified end-to-end model.
+
+[**DFM Model API**](./deepctr_torch.models.difm.html)  
 
 ![DIFM](../pics/DIFM.png)
 

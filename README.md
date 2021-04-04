@@ -85,6 +85,11 @@ Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-St
         <p>Core Dev<br> Zhejiang Unversity <br> <br>  </p>​
       </td>
       <td>
+        ​ <a href="https://github.com/zanshuxun"><img width="70" height="70" src="https://github.com/zanshuxun.png?s=40" alt="pic"></a><br>
+        ​ <a href="https://github.com/zanshuxun">Zan Shuxun</a>
+        <p>Core Dev<br> Beijing University <br> of  Posts and <br> Telecommunications</p>​
+      </td>
+      <td>
          <a href="https://github.com/weberrr"><img width="70" height="70" src="https://github.com/weberrr.png?s=40" alt="pic"></a><br>
          <a href="https://github.com/weberrr">Wang Ze</a> ​
         <p>Core Dev<br> Beihang University <br> <br>  </p>​
@@ -93,11 +98,6 @@ Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-St
         ​ <a href="https://github.com/wutongzhang"><img width="70" height="70" src="https://github.com/wutongzhang.png?s=40" alt="pic"></a><br>
          <a href="https://github.com/wutongzhang">Zhang Wutong</a>
          <p>Core Dev<br> Beijing University <br> of  Posts and <br> Telecommunications</p>​
-      </td>
-      <td>
-        ​ <a href="https://github.com/zanshuxun"><img width="70" height="70" src="https://github.com/zanshuxun.png?s=40" alt="pic"></a><br>
-        ​ <a href="https://github.com/zanshuxun">Zan Shuxun</a>
-        <p>Core Dev<br> Beijing University <br> of  Posts and <br> Telecommunications</p>​
       </td>
       <td>
         ​ <a href="https://github.com/ZhangYuef"><img width="70" height="70" src="https://github.com/ZhangYuef.png?s=40" alt="pic"></a><br>
