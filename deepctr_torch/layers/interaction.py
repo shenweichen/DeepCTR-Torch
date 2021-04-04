@@ -126,7 +126,7 @@ Tongwen](https://arxiv.org/pdf/1905.09433.pdf)
             self.bilinear = nn.Linear(
                 embedding_size, embedding_size, bias=False)
         elif self.bilinear_type == "each":
-            for i in range(filed_size):
+            for _ in range(filed_size):
                 self.bilinear.append(
                     nn.Linear(embedding_size, embedding_size, bias=False))
         elif self.bilinear_type == "interaction":

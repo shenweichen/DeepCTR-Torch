@@ -28,7 +28,7 @@ class MLR(BaseModel):
     :param device: str, ``"cpu"`` or ``"cuda:0"``
     :param gpus: list of int or torch.device for multiple gpus. If None, run on `device`. `gpus[0]` should be the same gpu with `device`.
     :return: A PyTorch model instance.
-    
+
     """
 
     def __init__(self, region_feature_columns, base_feature_columns=None, bias_feature_columns=None,

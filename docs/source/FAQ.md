@@ -75,5 +75,5 @@ model = DeepFM(...,device=device)
 ## 5. How to run the demo with multiple GPUs ?
 
 ```python
-    model = DeepFM(..., device=device, gpus=[0, 1])
+model = DeepFM(..., device=device, gpus=[0, 1])
 ```

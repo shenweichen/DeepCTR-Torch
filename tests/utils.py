@@ -70,7 +70,7 @@ def layer_test(layer_cls, kwargs = {}, input_shape=None,
                input_dtype=torch.float32, input_data=None, expected_output=None, 
                expected_output_shape=None, expected_output_dtype=None, fixed_batch_size=False):
     '''check layer is valid or not
-    
+
     :param layer_cls:
     :param input_shape:
     :param input_dtype:

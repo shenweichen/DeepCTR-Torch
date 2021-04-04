@@ -234,7 +234,7 @@ class BaseModel(nn.Module):
             train_result = {}
             try:
                 with tqdm(enumerate(train_loader), disable=verbose != 1) as t:
-                    for index, (x_train, y_train) in t:
+                    for _, (x_train, y_train) in t:
                         x = x_train.to(self.device).float()
                         y = y_train.to(self.device).float()
 
@@ -333,7 +333,7 @@ class BaseModel(nn.Module):
 
         pred_ans = []
         with torch.no_grad():
-            for index, x_test in enumerate(test_loader):
+            for _, x_test in enumerate(test_loader):
                 x = x_test[0].to(self.device).float()
 
                 y_pred = model(x).cpu().data.numpy()  # .squeeze()

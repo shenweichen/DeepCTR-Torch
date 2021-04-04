@@ -3,7 +3,7 @@
 Author:
     zanshuxun, zanshuxun@aliyun.com
 Reference:
-    Yu Y, Wang Z, Yuan B. An Input-aware Factorization Machine for Sparse Prediction[C]//IJCAI. 2019: 1466-1472.
+    [1] Yu Y, Wang Z, Yuan B. An Input-aware Factorization Machine for Sparse Prediction[C]//IJCAI. 2019: 1466-1472.(https://www.ijcai.org/Proceedings/2019/0203.pdf)
 """
 import torch
 import torch.nn as nn
@@ -29,9 +29,9 @@ class IFM(BaseModel):
     :param dnn_use_bn: bool. Whether use BatchNormalization before activation or not in DNN
     :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
     :param device: str, ``"cpu"`` or ``"cuda:0"``
-    :param gpus: list of int or torch.device for multiple gpus. If None, run on `device`. `gpus[0]` should be the same gpu with `device`.
+    :param gpus: list of int or torch.device for multiple gpus. If None, run on ``device`` .  ``gpus[0]``  should be the same gpu with ``device`` .
     :return: A PyTorch model instance.
-    
+
     """
 
     def __init__(self,
