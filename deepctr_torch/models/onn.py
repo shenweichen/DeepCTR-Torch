@@ -52,7 +52,7 @@ class ONN(BaseModel):
     :param device: str, ``"cpu"`` or ``"cuda:0"``
     :param gpus: list of int or torch.device for multiple gpus. If None, run on `device`. `gpus[0]` should be the same gpu with `device`.
     :return: A PyTorch model instance.
-    
+
     """
 
     def __init__(self, linear_feature_columns, dnn_feature_columns,
