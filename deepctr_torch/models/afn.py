@@ -222,8 +222,8 @@ class AFN(BaseModel):
                         x = x_train.to(self.device).float()
                         y = y_train.to(self.device).float()
 
-                        y_pred, afn_pred, dnn_pred = [output.squeeze() for output in model(x)]
-                        #                         y_pred = model(x).squeeze()
+                        y_pred, afn_pred, dnn_pred = [output.squeeze() if output is not None
+                                                      else None for output in model(x)]
 
                         optim.zero_grad()
                         loss = loss_func(y_pred, y.squeeze(), reduction='sum')
