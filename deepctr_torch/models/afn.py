@@ -22,7 +22,7 @@ except ImportError:
 
 from .basemodel import BaseModel, create_embedding_matrix
 from ..inputs import combined_dnn_input
-from ..layers import AFNLayer, DNN, PredictionLayer
+from ..layers import LogTransformLayer, DNN, PredictionLayer
 from ..layers.utils import slice_arrays
 
 
@@ -31,7 +31,6 @@ class AFN(BaseModel):
 
     :param linear_feature_columns: An iterable containing all the features used by linear part of the model.
     :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
-    :param use_afn: bool, use AFN part or not
     :param ltl_hidden_size: integer, the number of logarithmic neurons in AFN
     :param afn_dnn_hidden_units: list, list of positive integer or empty list, the layer number and units in each layer of DNN layers in AFN
     :param dnn_hidden_units: list, list of positive integer or empty list, the layer number and units in each layer of DNN model of AFN+
@@ -52,7 +51,7 @@ class AFN(BaseModel):
 
     def __init__(self,
                  linear_feature_columns, dnn_feature_columns,
-                 use_afn=True, ltl_hidden_size=600, afn_dnn_hidden_units=(400, 400, 400),
+                 ltl_hidden_size=600, afn_dnn_hidden_units=(400, 400, 400),
                  dnn_hidden_units=(256, 128), l2_reg_linear=0.00001, l2_reg_embedding=0.00001, l2_reg_dnn=0,
                  init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation='relu', dnn_use_bn=True,
                  task='binary', device='cpu', gpus=None):
@@ -61,18 +60,19 @@ class AFN(BaseModel):
                                   l2_reg_embedding=l2_reg_embedding, init_std=init_std, seed=seed, task=task,
                                   device=device, gpus=gpus)
 
-        self.use_afn = use_afn
         self.use_dnn = len(dnn_feature_columns) > 0 and len(dnn_hidden_units) > 0
-        if use_afn:
-            self.afn = AFNLayer(len(self.embedding_dict), self.embedding_size, ltl_hidden_size, afn_dnn_hidden_units,
-                                dnn_activation, l2_reg_dnn, dnn_dropout, init_std, device)
+        self.ltl = LogTransformLayer(len(self.embedding_dict), self.embedding_size, ltl_hidden_size)
+        self.afn_dnn = DNN(self.embedding_size * ltl_hidden_size, afn_dnn_hidden_units,
+                       activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=True,
+                       init_std=init_std, device=device)
+        self.afn_dnn_linear = nn.Linear(afn_dnn_hidden_units[-1], 1)
 
         if self.use_dnn:
             self.dnn_embedding_dict = create_embedding_matrix(dnn_feature_columns, init_std, sparse=False,
                                                               device=device)
             self.dnn = DNN(self.compute_input_dim(dnn_feature_columns), dnn_hidden_units,
-                           activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
-                           init_std=init_std, device=device)
+                           activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout,
+                           use_bn=dnn_use_bn, init_std=init_std, device=device)
             self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False).to(device)
             self.add_regularization_weight(
                 filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2=l2_reg_dnn)
@@ -88,19 +88,25 @@ class AFN(BaseModel):
 
     def forward(self, X):
 
-        sparse_embedding_list, _ = self.input_from_feature_columns(X, self.dnn_feature_columns, self.embedding_dict)
-        self.sparse_embedding_list = sparse_embedding_list
-        dnn_sparse_embedding_list, dnn_dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
-                                                                                          self.dnn_embedding_dict)
+        sparse_embedding_list, _ = self.input_from_feature_columns(X, self.dnn_feature_columns,
+                                                                   self.embedding_dict)
+        if self.use_dnn:
+            dnn_sparse_embedding_list, dnn_dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns, self.dnn_embedding_dict)
         y_pred = 0
         afn_pred = None
-        dnn_pred = None
 
-        if self.use_afn and len(sparse_embedding_list) > 0:
+        if len(sparse_embedding_list) > 0:
             afn_input = torch.cat(sparse_embedding_list, dim=1)
-            afn_logit = self.afn(afn_input)
+            ltl_result = self.ltl(afn_input)
+            afn_logit = self.afn_dnn(ltl_result)
+            afn_logit = self.afn_dnn_linear(afn_logit)
             afn_pred = self.afn_out(afn_logit)
             y_pred += self.w_afn * afn_logit.detach()
+        elif not self.use_dnn:
+            raise ValueError('Sparse embeddings should be provided when not using dnn.')
+        else:
+            raise Warning('Sparse embeddings not provided, afn is not used.')
+
 
         if self.use_dnn:
             dnn_input = combined_dnn_input(
@@ -112,8 +118,11 @@ class AFN(BaseModel):
 
         y_pred = self.ensemble_out(y_pred + self.b)
 
-        # Output the prediction of the ensembled model, afn, and dnn, respectively, for the ensembled training in AFN paper.
-        return y_pred, afn_pred, dnn_pred
+        if self.use_dnn:
+            # Output the prediction of the ensembled model, afn, and dnn, respectively, for the ensembled training in AFN paper.
+            return y_pred, afn_pred, dnn_pred
+        else:
+            return afn_pred
 
     def fit(self, x=None, y=None, batch_size=None, epochs=1, verbose=1, initial_epoch=0, validation_split=0.,
             validation_data=None, shuffle=True, callbacks=None):
@@ -221,16 +230,20 @@ class AFN(BaseModel):
                     for _, (x_train, y_train) in t:
                         x = x_train.to(self.device).float()
                         y = y_train.to(self.device).float()
-
-                        y_pred, afn_pred, dnn_pred = [output.squeeze() for output in model(x)]
-                        #                         y_pred = model(x).squeeze()
+                        
+                        if self.use_dnn:
+                            # Ensembled training of AFN+
+                            y_pred, afn_pred, dnn_pred = [output.squeeze() if output is not None
+                                                      else None for output in model(x)]
+                            loss = loss_func(y_pred, y.squeeze(), reduction='sum')
+                            if afn_pred is not None:
+                                loss += loss_func(afn_pred, y.squeeze(), reduction='sum')
+                            loss += loss_func(dnn_pred, y.squeeze(), reduction='sum')
+                        else:
+                            y_pred = model(x).squeeze()
+                            loss = loss_func(y_pred, y.squeeze(), reduction='sum')
 
                         optim.zero_grad()
-                        loss = loss_func(y_pred, y.squeeze(), reduction='sum')
-                        if self.use_afn and len(self.sparse_embedding_list) > 0:
-                            loss += loss_func(afn_pred, y.squeeze(), reduction='sum')
-                        if self.use_dnn:
-                            loss += loss_func(dnn_pred, y.squeeze(), reduction='sum')
                         reg_loss = self.get_regularization_loss()
 
                         total_loss = loss + reg_loss + self.aux_loss
@@ -310,8 +323,11 @@ class AFN(BaseModel):
         with torch.no_grad():
             for _, x_test in enumerate(test_loader):
                 x = x_test[0].to(self.device).float()
-                # Only use the ensembled output for prediction.
-                y_pred = model(x)[0].cpu().data.numpy()
+                if self.use_dnn:
+                    # Only use the ensembled output for prediction.
+                    y_pred = model(x)[0].cpu().data.numpy()
+                else:
+                    y_pred = model(x).cpu().data.numpy()
                 pred_ans.append(y_pred)
 
         return np.concatenate(pred_ans).astype("float64")
