@@ -341,8 +341,7 @@ class InteractingLayer(nn.Module):
             - [Song W, Shi C, Xiao Z, et al. AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks[J]. arXiv preprint arXiv:1810.11921, 2018.](https://arxiv.org/abs/1810.11921)
     """
 
-    def __init__(self, in_features, att_embedding_size=8, head_num=2, use_res=True, scaling=False, seed=1024,
-                 device='cpu'):
+    def __init__(self, in_features, att_embedding_size=8, head_num=2, use_res=True, scaling=False, seed=1024, device='cpu'):
         super(InteractingLayer, self).__init__()
         if head_num <= 0:
             raise ValueError('head_num must be a int > 0')
@@ -730,8 +729,8 @@ class ConvLayer(nn.Module):
         return self.conv_layer(inputs)
 
 
-class AFNLayer(nn.Module):
-    """Adaptive factorization network models arbitrary-order cross features with logarithmic transformation layer.
+class LogTransformLayer(nn.Module):
+    """Logarithmic Transformation Layer in Adaptive factorization network, which models arbitrary-order cross features.
 
       Input shape
         - 3D tensor with shape: ``(batch_size,field_size,embedding_size)``.
@@ -741,28 +740,17 @@ class AFNLayer(nn.Module):
         - **field_size** : positive integer, number of feature groups
         - **embedding_size** : positive integer, embedding size of sparse features
         - **ltl_hidden_size** : integer, the number of logarithmic neurons in AFN
-        - **dnn_hidden_units** : list, list of positive integer or empty list, the layer number and units in each layer of DNN layers in AFN
-        - **dnn_activation** : activation function to use in DNN layers in AFN
-        - **l2_reg_dnn** : float, L2 regularizer strength applied to DNN layers in AFN
-        - **dnn_dropout** : float in [0,1), the probability we will drop out a given DNN coordinate
-        - **init_std** : float,to use as the initialize std of embedding vector
-        - **device** : str, ``"cpu"`` or ``"cuda:0"``
       References
         - Cheng, W., Shen, Y. and Huang, L. 2020. Adaptive Factorization Network: Learning Adaptive-Order Feature
          Interactions. Proceedings of the AAAI Conference on Artificial Intelligence. 34, 04 (Apr. 2020), 3609-3616.
     """
 
-    def __init__(self, field_size, embedding_size, ltl_hidden_size, dnn_hidden_units,
-                 dnn_activation, l2_reg_dnn, dnn_dropout, init_std, device):
-        super(AFNLayer, self).__init__()
+    def __init__(self, field_size, embedding_size, ltl_hidden_size):
+        super(LogTransformLayer, self).__init__()
 
         self.ltl_weights = nn.Parameter(torch.Tensor(field_size, ltl_hidden_size))
         self.ltl_biases = nn.Parameter(torch.Tensor(1, 1, ltl_hidden_size))
         self.bn = nn.ModuleList([nn.BatchNorm1d(embedding_size) for i in range(2)])
-        self.dnn = DNN(embedding_size * ltl_hidden_size, dnn_hidden_units,
-                       activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=True,
-                       init_std=init_std, device=device)
-        self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1)
         nn.init.xavier_normal_(self.ltl_weights, )
         nn.init.zeros_(self.ltl_biases, )
 
@@ -778,7 +766,4 @@ class AFNLayer(nn.Module):
         ltl_result = torch.exp(ltl_result)
         ltl_result = self.bn[1](ltl_result)
         ltl_result = torch.flatten(ltl_result, start_dim=1)
-        # DNN layers
-        afn_result = self.dnn(ltl_result)
-        afn_result = self.dnn_linear(afn_result)
-        return afn_result
+        return ltl_result
