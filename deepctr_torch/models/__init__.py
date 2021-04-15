@@ -14,5 +14,5 @@ from .onn import ONN
 from .pnn import PNN
 from .ccpm import CCPM
 from .dien import DIEN
-from .din import DIN
+from .din import DIN 
 from .afn import AFN
