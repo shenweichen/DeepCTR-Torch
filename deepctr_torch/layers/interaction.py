@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from ..layers.activation import activation_layer
-from ..layers.core import Conv2dSame, DNN
+from ..layers.core import Conv2dSame
 from ..layers.sequence import KMaxPooling
 
 
