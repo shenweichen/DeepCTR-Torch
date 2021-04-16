@@ -47,8 +47,6 @@ class IFM(BaseModel):
         if not len(dnn_hidden_units) > 0:
             raise ValueError("dnn_hidden_units is null!")
 
-        self.use_dnn = len(dnn_feature_columns) > 0 and len(
-            dnn_hidden_units) > 0
         self.fm = FM()
 
         self.factor_estimating_net = DNN(self.compute_input_dim(dnn_feature_columns, include_dense=False),

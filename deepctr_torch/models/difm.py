@@ -18,6 +18,9 @@ class DIFM(BaseModel):
 
     :param linear_feature_columns: An iterable containing all the features used by linear part of the model.
     :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
+    :param att_embedding_size: integer, the embedding size in multi-head self-attention network.
+    :param att_head_num: int. The head number in multi-head  self-attention network.
+    :param att_res: bool. Whether or not use standard residual connections before output.
     :param dnn_hidden_units: list,list of positive integer or empty list, the layer number and units in each layer of DNN
     :param l2_reg_linear: float. L2 regularizer strength applied to linear part
     :param l2_reg_embedding: float. L2 regularizer strength applied to embedding vector
@@ -47,8 +50,6 @@ class DIFM(BaseModel):
         if not len(dnn_hidden_units) > 0:
             raise ValueError("dnn_hidden_units is null!")
 
-        self.use_dnn = len(dnn_feature_columns) > 0 and len(
-            dnn_hidden_units) > 0
         self.fm = FM()
 
         # InteractingLayer (used in AutoInt) = multi-head self-attention + Residual Network

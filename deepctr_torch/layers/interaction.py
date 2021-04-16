@@ -334,7 +334,7 @@ class InteractingLayer(nn.Module):
       Arguments
             - **in_features** : Positive integer, dimensionality of input features.
             - **att_embedding_size**: int.The embedding size in multi-head self-attention network.
-            - **head_num**: int.The head number in multi-head  self-attention network.
+            - **head_num**: int.The head number in multi-head self-attention network.
             - **use_res**: bool.Whether or not use standard residual connections before output.
             - **seed**: A Python integer to use as random seed.
       References
