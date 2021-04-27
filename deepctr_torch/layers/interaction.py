@@ -733,9 +733,9 @@ class LogTransformLayer(nn.Module):
     """Logarithmic Transformation Layer in Adaptive factorization network, which models arbitrary-order cross features.
 
       Input shape
-        - 3D tensor with shape: ``(batch_size,field_size,embedding_size)``.
+        - 3D tensor with shape: ``(batch_size, field_size, embedding_size)``.
       Output shape
-        - 2D tensor with shape: ``(batch_size, 1)``.
+        - 2D tensor with shape: ``(batch_size, ltl_hidden_size*embedding_size)``.
       Arguments
         - **field_size** : positive integer, number of feature groups
         - **embedding_size** : positive integer, embedding size of sparse features
