@@ -180,33 +180,6 @@ def create_embedding_matrix(feature_columns, init_std=0.0001, linear=False, spar
     return embedding_dict.to(device)
 
 
-def input_from_feature_columns(self, X, feature_columns, embedding_dict, support_dense=True):
-    sparse_feature_columns = list(
-        filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
-    dense_feature_columns = list(
-        filter(lambda x: isinstance(x, DenseFeat), feature_columns)) if len(feature_columns) else []
-
-    varlen_sparse_feature_columns = list(
-        filter(lambda x: isinstance(x, VarLenSparseFeat), feature_columns)) if feature_columns else []
-
-    if not support_dense and len(dense_feature_columns) > 0:
-        raise ValueError(
-            "DenseFeat is not supported in dnn_feature_columns")
-
-    sparse_embedding_list = [embedding_dict[feat.embedding_name](
-        X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()) for
-        feat in sparse_feature_columns]
-
-    varlen_sparse_embedding_list = get_varlen_pooling_list(self.embedding_dict, X, self.feature_index,
-                                                           varlen_sparse_feature_columns, self.device)
-
-    dense_value_list = [X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]] for feat in
-                        dense_feature_columns]
-
-    return sparse_embedding_list + varlen_sparse_embedding_list, dense_value_list
-
-
-
 def embedding_lookup(X, sparse_embedding_dict, sparse_input_dict, sparse_feature_columns, return_feat_list=(),
                      mask_feat_list=(), to_list=False):
     """
