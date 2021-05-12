@@ -58,6 +58,10 @@ class VarLenSparseFeat(namedtuple('VarLenSparseFeat',
         return self.sparsefeat.embedding_dim
 
     @property
+    def use_hash(self):
+        return self.sparsefeat.use_hash
+
+    @property
     def dtype(self):
         return self.sparsefeat.dtype
 
@@ -136,18 +140,15 @@ def combined_dnn_input(sparse_embedding_list, dense_value_list):
 
 def get_varlen_pooling_list(embedding_dict, features, feature_index, varlen_sparse_feature_columns, device):
     varlen_sparse_embedding_list = []
-
     for feat in varlen_sparse_feature_columns:
-        seq_emb = embedding_dict[feat.embedding_name](
-            features[:, feature_index[feat.name][0]:feature_index[feat.name][1]].long())
+        seq_emb = embedding_dict[feat.embedding_name]
         if feat.length_name is None:
             seq_mask = features[:, feature_index[feat.name][0]:feature_index[feat.name][1]].long() != 0
 
             emb = SequencePoolingLayer(mode=feat.combiner, supports_masking=True, device=device)(
                 [seq_emb, seq_mask])
         else:
-            seq_length = features[:,
-                         feature_index[feat.length_name][0]:feature_index[feat.length_name][1]].long()
+            seq_length = features[:, feature_index[feat.length_name][0]:feature_index[feat.length_name][1]].long()
             emb = SequencePoolingLayer(mode=feat.combiner, supports_masking=False, device=device)(
                 [seq_emb, seq_length])
         varlen_sparse_embedding_list.append(emb)

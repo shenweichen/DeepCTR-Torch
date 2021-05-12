@@ -24,7 +24,7 @@ except ImportError:
     from tensorflow.python.keras._impl.keras.callbacks import CallbackList
 
 from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat, get_varlen_pooling_list, \
-    create_embedding_matrix
+    create_embedding_matrix, varlen_embedding_lookup
 from ..layers import PredictionLayer
 from ..layers.utils import slice_arrays
 from ..callbacks import History
@@ -359,7 +359,9 @@ class BaseModel(nn.Module):
             X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()) for
             feat in sparse_feature_columns]
 
-        varlen_sparse_embedding_list = get_varlen_pooling_list(self.embedding_dict, X, self.feature_index,
+        sequence_embed_dict = varlen_embedding_lookup(X, self.embedding_dict, self.feature_index,
+                                                      self.varlen_sparse_feature_columns)
+        varlen_sparse_embedding_list = get_varlen_pooling_list(sequence_embed_dict, X, self.feature_index,
                                                                varlen_sparse_feature_columns, self.device)
 
         dense_value_list = [X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]] for feat in
