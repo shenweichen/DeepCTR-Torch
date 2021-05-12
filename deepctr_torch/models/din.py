@@ -51,15 +51,17 @@ class DIN(BaseModel):
         self.history_feature_list = history_feature_list
 
         self.history_feature_columns = []
-        self.sparse_varlen_feature_columns = []
+        self.other_varlen_feature_columns = []
         self.history_fc_names = list(map(lambda x: "hist_" + x, history_feature_list))
 
         for fc in self.varlen_sparse_feature_columns:
+            # divide varlen_sparse_feature_columns into two types
             feature_name = fc.name
             if feature_name in self.history_fc_names:
                 self.history_feature_columns.append(fc)
             else:
-                self.sparse_varlen_feature_columns.append(fc)
+                # other varlen feature columns, not history feature columns.
+                self.other_varlen_feature_columns.append(fc)
 
         att_emb_dim = self._compute_interest_dim()
 
@@ -92,10 +94,10 @@ class DIN(BaseModel):
                                               to_list=True)
 
         sequence_embed_dict = varlen_embedding_lookup(X, self.embedding_dict, self.feature_index,
-                                                      self.sparse_varlen_feature_columns)
+                                                      self.other_varlen_feature_columns)
 
         sequence_embed_list = get_varlen_pooling_list(sequence_embed_dict, X, self.feature_index,
-                                                      self.sparse_varlen_feature_columns, self.device)
+                                                      self.other_varlen_feature_columns, self.device)
 
         dnn_input_emb_list += sequence_embed_list
         deep_input_emb = torch.cat(dnn_input_emb_list, dim=-1)
