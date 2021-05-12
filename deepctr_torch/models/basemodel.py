@@ -360,7 +360,7 @@ class BaseModel(nn.Module):
             feat in sparse_feature_columns]
 
         sequence_embed_dict = varlen_embedding_lookup(X, self.embedding_dict, self.feature_index,
-                                                      self.varlen_sparse_feature_columns)
+                                                      varlen_sparse_feature_columns)
         varlen_sparse_embedding_list = get_varlen_pooling_list(sequence_embed_dict, X, self.feature_index,
                                                                varlen_sparse_feature_columns, self.device)
 
