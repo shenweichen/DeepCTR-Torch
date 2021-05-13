@@ -340,19 +340,17 @@ class InteractingLayer(nn.Module):
             - [Song W, Shi C, Xiao Z, et al. AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks[J]. arXiv preprint arXiv:1810.11921, 2018.](https://arxiv.org/abs/1810.11921)
     """
 
-    def __init__(self, in_features, head_num=2, use_res=True, scaling=False, seed=1024, device='cpu'):
+    def __init__(self, embedding_size, head_num=2, use_res=True, scaling=False, seed=1024, device='cpu'):
         super(InteractingLayer, self).__init__()
         if head_num <= 0:
             raise ValueError('head_num must be a int > 0')
-        if in_features % head_num != 0:
-            raise ValueError('in_features is not an integer multiple of head_num!')
-        self.att_embedding_size = in_features // head_num
+        if embedding_size % head_num != 0:
+            raise ValueError('embedding_size is not an integer multiple of head_num!')
+        self.att_embedding_size = embedding_size // head_num
         self.head_num = head_num
         self.use_res = use_res
         self.scaling = scaling
         self.seed = seed
-
-        embedding_size = in_features
 
         self.W_Query = nn.Parameter(torch.Tensor(embedding_size, embedding_size))
         self.W_key = nn.Parameter(torch.Tensor(embedding_size, embedding_size))
