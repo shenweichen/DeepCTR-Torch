@@ -369,10 +369,12 @@ class InteractingLayer(nn.Module):
             raise ValueError(
                 "Unexpected inputs dimensions %d, expect to be 3 dimensions" % (len(inputs.shape)))
 
-        querys = torch.tensordot(inputs, self.W_Query, dims=([-1], [0]))  # None F D
+        # None F D
+        querys = torch.tensordot(inputs, self.W_Query, dims=([-1], [0]))
         keys = torch.tensordot(inputs, self.W_key, dims=([-1], [0]))
         values = torch.tensordot(inputs, self.W_Value, dims=([-1], [0]))
 
+        # head_num None F D/head_num
         querys = torch.stack(torch.split(querys, self.att_embedding_size, dim=2))
         keys = torch.stack(torch.split(keys, self.att_embedding_size, dim=2))
         values = torch.stack(torch.split(values, self.att_embedding_size, dim=2))
@@ -381,10 +383,10 @@ class InteractingLayer(nn.Module):
         if self.scaling:
             inner_product /= self.att_embedding_size ** 0.5
         self.normalized_att_scores = F.softmax(inner_product, dim=-1)  # head_num None F F
-        result = torch.matmul(self.normalized_att_scores, values)  # head_num None F D
+        result = torch.matmul(self.normalized_att_scores, values)  # head_num None F D/head_num
 
         result = torch.cat(torch.split(result, 1, ), dim=-1)
-        result = torch.squeeze(result, dim=0)  # None F D*head_num
+        result = torch.squeeze(result, dim=0)  # None F D
         if self.use_res:
             result += torch.tensordot(inputs, self.W_Res, dims=([-1], [0]))
         result = F.relu(result)
