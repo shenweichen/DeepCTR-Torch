@@ -330,10 +330,9 @@ class InteractingLayer(nn.Module):
       Input shape
             - A 3D tensor with shape: ``(batch_size,field_size,embedding_size)``.
       Output shape
-            - 3D tensor with shape:``(batch_size,field_size,att_embedding_size * head_num)``.
+            - 3D tensor with shape:``(batch_size,field_size,embedding_size)``.
       Arguments
             - **in_features** : Positive integer, dimensionality of input features.
-            - **att_embedding_size**: int.The embedding size in multi-head self-attention network.
             - **head_num**: int.The head number in multi-head self-attention network.
             - **use_res**: bool.Whether or not use standard residual connections before output.
             - **seed**: A Python integer to use as random seed.
@@ -341,11 +340,13 @@ class InteractingLayer(nn.Module):
             - [Song W, Shi C, Xiao Z, et al. AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks[J]. arXiv preprint arXiv:1810.11921, 2018.](https://arxiv.org/abs/1810.11921)
     """
 
-    def __init__(self, in_features, att_embedding_size=8, head_num=2, use_res=True, scaling=False, seed=1024, device='cpu'):
+    def __init__(self, in_features, head_num=2, use_res=True, scaling=False, seed=1024, device='cpu'):
         super(InteractingLayer, self).__init__()
         if head_num <= 0:
             raise ValueError('head_num must be a int > 0')
-        self.att_embedding_size = att_embedding_size
+        if in_features % head_num != 0:
+            raise ValueError('in_features is not an integer multiple of head_num!')
+        self.att_embedding_size = in_features // head_num
         self.head_num = head_num
         self.use_res = use_res
         self.scaling = scaling
@@ -353,18 +354,12 @@ class InteractingLayer(nn.Module):
 
         embedding_size = in_features
 
-        self.W_Query = nn.Parameter(torch.Tensor(
-            embedding_size, self.att_embedding_size * self.head_num))
-
-        self.W_key = nn.Parameter(torch.Tensor(
-            embedding_size, self.att_embedding_size * self.head_num))
-
-        self.W_Value = nn.Parameter(torch.Tensor(
-            embedding_size, self.att_embedding_size * self.head_num))
+        self.W_Query = nn.Parameter(torch.Tensor(embedding_size, embedding_size))
+        self.W_key = nn.Parameter(torch.Tensor(embedding_size, embedding_size))
+        self.W_Value = nn.Parameter(torch.Tensor(embedding_size, embedding_size))
 
         if self.use_res:
-            self.W_Res = nn.Parameter(torch.Tensor(
-                embedding_size, self.att_embedding_size * self.head_num))
+            self.W_Res = nn.Parameter(torch.Tensor(embedding_size, embedding_size))
         for tensor in self.parameters():
             nn.init.normal_(tensor, mean=0.0, std=0.05)
 
@@ -376,26 +371,19 @@ class InteractingLayer(nn.Module):
             raise ValueError(
                 "Unexpected inputs dimensions %d, expect to be 3 dimensions" % (len(inputs.shape)))
 
-        querys = torch.tensordot(inputs, self.W_Query,
-                                 dims=([-1], [0]))  # None F D*head_num
+        querys = torch.tensordot(inputs, self.W_Query, dims=([-1], [0]))  # None F D
         keys = torch.tensordot(inputs, self.W_key, dims=([-1], [0]))
         values = torch.tensordot(inputs, self.W_Value, dims=([-1], [0]))
 
-        # head_num None F D
-
-        querys = torch.stack(torch.split(
-            querys, self.att_embedding_size, dim=2))
+        querys = torch.stack(torch.split(querys, self.att_embedding_size, dim=2))
         keys = torch.stack(torch.split(keys, self.att_embedding_size, dim=2))
-        values = torch.stack(torch.split(
-            values, self.att_embedding_size, dim=2))
-        inner_product = torch.einsum(
-            'bnik,bnjk->bnij', querys, keys)  # head_num None F F
+        values = torch.stack(torch.split(values, self.att_embedding_size, dim=2))
+
+        inner_product = torch.einsum('bnik,bnjk->bnij', querys, keys)  # head_num None F F
         if self.scaling:
             inner_product /= self.att_embedding_size ** 0.5
-        self.normalized_att_scores = F.softmax(
-            inner_product, dim=-1)  # head_num None F F
-        result = torch.matmul(self.normalized_att_scores,
-                              values)  # head_num None F D
+        self.normalized_att_scores = F.softmax(inner_product, dim=-1)  # head_num None F F
+        result = torch.matmul(self.normalized_att_scores, values)  # head_num None F D
 
         result = torch.cat(torch.split(result, 1, ), dim=-1)
         result = torch.squeeze(result, dim=0)  # None F D*head_num
