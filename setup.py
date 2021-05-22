@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 REQUIRED_PACKAGES = [
-    'torch>=1.1.0', 'tqdm', 'sklearn', 'tensorflow'
+    'torch>=1.1.0', 'tqdm', 'scikit-learn', 'tensorflow'
 ]
 
 setuptools.setup(
