@@ -18,7 +18,6 @@ class DIFM(BaseModel):
 
     :param linear_feature_columns: An iterable containing all the features used by linear part of the model.
     :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
-    :param att_embedding_size: integer, the embedding size in multi-head self-attention network.
     :param att_head_num: int. The head number in multi-head  self-attention network.
     :param att_res: bool. Whether or not use standard residual connections before output.
     :param dnn_hidden_units: list,list of positive integer or empty list, the layer number and units in each layer of DNN
@@ -38,7 +37,7 @@ class DIFM(BaseModel):
     """
 
     def __init__(self,
-                 linear_feature_columns, dnn_feature_columns, att_embedding_size=8, att_head_num=4,
+                 linear_feature_columns, dnn_feature_columns, att_head_num=4,
                  att_res=True, dnn_hidden_units=(256, 128),
                  l2_reg_linear=0.00001, l2_reg_embedding=0.00001, l2_reg_dnn=0, init_std=0.0001, seed=1024,
                  dnn_dropout=0,
