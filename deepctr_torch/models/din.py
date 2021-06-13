@@ -2,7 +2,6 @@
 """
 Author:
     Yuef Zhang
-    zanshuxun, zanshuxun@aliyun.com
 Reference:
     [1] Zhou G, Zhu X, Song C, et al. Deep interest network for click-through rate prediction[C]//Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining. ACM, 2018: 1059-1068. (https://arxiv.org/pdf/1706.06978.pdf)
 """
@@ -52,17 +51,15 @@ class DIN(BaseModel):
         self.history_feature_list = history_feature_list
 
         self.history_feature_columns = []
-        self.other_varlen_feature_columns = []
+        self.sparse_varlen_feature_columns = []
         self.history_fc_names = list(map(lambda x: "hist_" + x, history_feature_list))
 
         for fc in self.varlen_sparse_feature_columns:
-            # divide varlen_sparse_feature_columns into two types
             feature_name = fc.name
             if feature_name in self.history_fc_names:
                 self.history_feature_columns.append(fc)
             else:
-                # other varlen feature columns, not history feature columns.
-                self.other_varlen_feature_columns.append(fc)
+                self.sparse_varlen_feature_columns.append(fc)
 
         att_emb_dim = self._compute_interest_dim()
 
@@ -86,12 +83,24 @@ class DIN(BaseModel):
     def forward(self, X):
         _, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns, self.embedding_dict)
 
-        # 1. history sequence attention part
+        # sequence pooling part
         query_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.sparse_feature_columns,
                                           return_feat_list=self.history_feature_list, to_list=True)
         keys_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.history_feature_columns,
                                          return_feat_list=self.history_fc_names, to_list=True)
+        dnn_input_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.sparse_feature_columns,
+                                              to_list=True)
 
+        sequence_embed_dict = varlen_embedding_lookup(X, self.embedding_dict, self.feature_index,
+                                                      self.sparse_varlen_feature_columns)
+
+        sequence_embed_list = get_varlen_pooling_list(sequence_embed_dict, X, self.feature_index,
+                                                      self.sparse_varlen_feature_columns, self.device)
+
+        dnn_input_emb_list += sequence_embed_list
+        deep_input_emb = torch.cat(dnn_input_emb_list, dim=-1)
+
+        # concatenate
         query_emb = torch.cat(query_emb_list, dim=-1)                     # [B, 1, E]
         keys_emb = torch.cat(keys_emb_list, dim=-1)                       # [B, T, E]
 
@@ -99,24 +108,10 @@ class DIN(BaseModel):
                                     feat.length_name is not None]
         keys_length = torch.squeeze(maxlen_lookup(X, self.feature_index, keys_length_feature_name), 1)  # [B, 1]
 
-        hist_sequence_embed = self.attention(query_emb, keys_emb, keys_length)           # [B, 1, E]
+        hist = self.attention(query_emb, keys_emb, keys_length)           # [B, 1, E]
 
-        # 2. concatenate all features and feed them into dnn
-        # 2.1 sparse_feature_columns
-        dnn_input_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.sparse_feature_columns,
-                                              to_list=True)
-
-        # 2.2 other_varlen_feature_columns
-        other_sequence_embed_dict = varlen_embedding_lookup(X, self.embedding_dict, self.feature_index,
-                                                      self.other_varlen_feature_columns)
-        other_sequence_embed_list = get_varlen_pooling_list(other_sequence_embed_dict, X, self.feature_index,
-                                                      self.other_varlen_feature_columns, self.device)
-
-        dnn_input_emb_list += other_sequence_embed_list
-        deep_input_emb = torch.cat(dnn_input_emb_list, dim=-1)
-        
-        # 2.3 hist features
-        deep_input_emb = torch.cat((deep_input_emb, hist_sequence_embed), dim=-1)
+        # deep part
+        deep_input_emb = torch.cat((deep_input_emb, hist), dim=-1)
         deep_input_emb = deep_input_emb.view(deep_input_emb.size(0), -1)
 
         dnn_input = combined_dnn_input([deep_input_emb], dense_value_list)
