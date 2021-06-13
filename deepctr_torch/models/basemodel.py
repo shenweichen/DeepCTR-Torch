@@ -24,7 +24,7 @@ except ImportError:
     from tensorflow.python.keras._impl.keras.callbacks import CallbackList
 
 from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat, get_varlen_pooling_list, \
-    create_embedding_matrix
+    create_embedding_matrix, varlen_embedding_lookup
 from ..layers import PredictionLayer
 from ..layers.utils import slice_arrays
 from ..callbacks import History
@@ -68,7 +68,9 @@ class Linear(nn.Module):
         dense_value_list = [X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]] for feat in
                             self.dense_feature_columns]
 
-        varlen_embedding_list = get_varlen_pooling_list(self.embedding_dict, X, self.feature_index,
+        sequence_embed_dict = varlen_embedding_lookup(X, self.embedding_dict, self.feature_index,
+                                                      self.varlen_sparse_feature_columns)
+        varlen_embedding_list = get_varlen_pooling_list(sequence_embed_dict, X, self.feature_index,
                                                         self.varlen_sparse_feature_columns, self.device)
 
         sparse_embedding_list += varlen_embedding_list
@@ -126,9 +128,9 @@ class BaseModel(nn.Module):
         self.out = PredictionLayer(task, )
         self.to(device)
 
-        # parameters of callbacks
-        self._is_graph_network = True  # used for ModelCheckpoint
-        self.stop_training = False  # used for EarlyStopping
+        # parameters for callbacks
+        self._is_graph_network = True  # used for ModelCheckpoint in tf2
+        self._ckpt_saved_epoch = False  # used for EarlyStopping in tf1.14
         self.history = History()
 
     def fit(self, x=None, y=None, batch_size=None, epochs=1, verbose=1, initial_epoch=0, validation_split=0.,
@@ -216,9 +218,10 @@ class BaseModel(nn.Module):
         # configure callbacks
         callbacks = (callbacks or []) + [self.history]  # add history callback
         callbacks = CallbackList(callbacks)
+        callbacks.set_model(self)
         callbacks.on_train_begin()
         callbacks.set_model(self)
-        if not hasattr(callbacks, 'model'):
+        if not hasattr(callbacks, 'model'):  # for tf1.4
             callbacks.__setattr__('model', self)
         callbacks.model.stop_training = False
 
@@ -359,7 +362,9 @@ class BaseModel(nn.Module):
             X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()) for
             feat in sparse_feature_columns]
 
-        varlen_sparse_embedding_list = get_varlen_pooling_list(self.embedding_dict, X, self.feature_index,
+        sequence_embed_dict = varlen_embedding_lookup(X, self.embedding_dict, self.feature_index,
+                                                      varlen_sparse_feature_columns)
+        varlen_sparse_embedding_list = get_varlen_pooling_list(sequence_embed_dict, X, self.feature_index,
                                                                varlen_sparse_feature_columns, self.device)
 
         dense_value_list = [X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]] for feat in
@@ -489,6 +494,10 @@ class BaseModel(nn.Module):
                         y_true, np.where(y_pred > 0.5, 1, 0))
                 self.metrics_names.append(metric)
         return metrics_
+
+    def _in_multi_worker_mode(self):
+        # used for EarlyStopping in tf1.15
+        return None
 
     @property
     def embedding_size(self, ):
