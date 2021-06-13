@@ -41,6 +41,8 @@ Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-St
 |                IFM                 | [IJCAI 2019][An Input-aware Factorization Machine for Sparse Prediction](https://www.ijcai.org/Proceedings/2019/0203.pdf)   |
 |                DCN V2                    | [arxiv 2020][DCN V2: Improved Deep & Cross Network and Practical Lessons for Web-scale Learning to Rank Systems](https://arxiv.org/abs/2008.13535)   |
 |                DIFM                 | [IJCAI 2020][A Dual Input-aware Factorization Machine for CTR Prediction](https://www.ijcai.org/Proceedings/2020/0434.pdf)   |
+|                AFN                 | [AAAI 2020][Adaptive Factorization Network: Learning Adaptive-Order Feature Interactions](https://arxiv.org/pdf/1909.03276)   |
+
 
 
 ## DisscussionGroup & Related Projects
@@ -49,7 +51,7 @@ Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-St
     <table style="margin-left: 20px; margin-right: auto;">
         <tr>
             <td>
-                公众号：<b>浅梦的学习笔记</b><br><br>
+                公众号：<b>浅梦学习笔记</b><br><br>
                 <a href="https://github.com/shenweichen/deepctr-torch">
   <img align="center" src="./docs/pics/code.png" />
 </a>
@@ -74,7 +76,7 @@ Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-St
 
 
 
-## Contributors([welcome to join us!](./CONTRIBUTING.md))
+## Main Contributors([welcome to join us!](./CONTRIBUTING.md))
 
 <table border="0">
   <tbody>
@@ -126,16 +128,16 @@ Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-St
         NetEase <br>  <br>  </p>​
       </td>
       <td>
+        ​ <a href="https://github.com/WeiyuCheng"><img width="70" height="70" src="https://github.com/WeiyuCheng.png?s=40" alt="pic"></a><br>
+        ​ <a href="https://github.com/WeiyuCheng">Cheng Weiyu</a> ​
+        <p>Dev<br>
+        Shanghai Jiao Tong University</p>​
+      </td>
+      <td>
         ​ <a href="https://github.com/tangaqi"><img width="70" height="70" src="https://github.com/tangaqi.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/tangaqi">Tang</a>
         <p>Test<br>
         Tongji University <br> <br>  </p>​
-      </td>
-      <td>
-        ​ <a href="https://github.com/uestc7d"><img width="70" height="70" src="https://github.com/uestc7d.png?s=40" alt="pic"></a><br>
-        ​ <a href="https://github.com/uestc7d">Xu Qidi</a> ​
-        <p>Dev<br>
-        University of <br> Electronic  Science  and <br> Technology of China</p>​
       </td>
     </tr>
   </tbody>
