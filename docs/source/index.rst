@@ -34,7 +34,7 @@ You can read the latest code at https://github.com/shenweichen/DeepCTR-Torch and
 
 News
 -----
-06/13/2021 : Add `AFN <./Features.html#ifm-input-aware-factorization-machine>`_  `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.7>`_
+06/14/2021 : Add `AFN <./Features.html#afn-adaptive-factorization-network-learning-adaptive-order-feature-interactions>`_ and fix some bugs.  `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.7>`_
 
 04/04/2021 : Add `IFM <./Features.html#ifm-input-aware-factorization-machine>`_ and `DIFM <./Features.html#difm-dual-input-aware-factorization-machine>`_ . Support multi-gpus running(`example <./FAQ.html#how-to-run-the-demo-with-multiple-gpus>`_). `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.6>`_
 
