@@ -261,6 +261,14 @@ Dual Inputaware Factorization Machines (DIFM) can adaptively reweight the origin
 
 [Lu W, Yu Y, Chang Y, et al. A Dual Input-aware Factorization Machine for CTR Prediction[C]//IJCAI. 2020: 3139-3145.](https://www.ijcai.org/Proceedings/2020/0434.pdf)
 
+### AFN(Adaptive Factorization Network: Learning Adaptive-Order Feature Interactions)
+
+Adaptive Factorization Network (AFN) can learn arbitrary-order cross features adaptively from data. The core of AFN is a logarith- mic transformation layer to convert the power of each feature in a feature combination into the coefficient to be learned.
+[**AFN Model API**](./deepctr_torch.models.afn.html)  
+
+![AFN](../pics/AFN.jpg)
+
+[Cheng, W., Shen, Y. and Huang, L. 2020. Adaptive Factorization Network: Learning Adaptive-Order Feature Interactions. Proceedings of the AAAI Conference on Artificial Intelligence. 34, 04 (Apr. 2020), 3609-3616.](https://arxiv.org/pdf/1909.03276)
 
 
 ## Layers

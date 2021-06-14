@@ -18,6 +18,8 @@ class DIFM(BaseModel):
 
     :param linear_feature_columns: An iterable containing all the features used by linear part of the model.
     :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
+    :param att_head_num: int. The head number in multi-head  self-attention network.
+    :param att_res: bool. Whether or not use standard residual connections before output.
     :param dnn_hidden_units: list,list of positive integer or empty list, the layer number and units in each layer of DNN
     :param l2_reg_linear: float. L2 regularizer strength applied to linear part
     :param l2_reg_embedding: float. L2 regularizer strength applied to embedding vector
@@ -35,35 +37,33 @@ class DIFM(BaseModel):
     """
 
     def __init__(self,
-                 linear_feature_columns, dnn_feature_columns, att_embedding_size=8, att_head_num=8,
+                 linear_feature_columns, dnn_feature_columns, att_head_num=4,
                  att_res=True, dnn_hidden_units=(256, 128),
                  l2_reg_linear=0.00001, l2_reg_embedding=0.00001, l2_reg_dnn=0, init_std=0.0001, seed=1024,
                  dnn_dropout=0,
                  dnn_activation='relu', dnn_use_bn=False, task='binary', device='cpu', gpus=None):
         super(DIFM, self).__init__(linear_feature_columns, dnn_feature_columns, l2_reg_linear=l2_reg_linear,
-                                  l2_reg_embedding=l2_reg_embedding, init_std=init_std, seed=seed, task=task,
-                                  device=device, gpus=gpus)
+                                   l2_reg_embedding=l2_reg_embedding, init_std=init_std, seed=seed, task=task,
+                                   device=device, gpus=gpus)
 
         if not len(dnn_hidden_units) > 0:
             raise ValueError("dnn_hidden_units is null!")
 
-        self.use_dnn = len(dnn_feature_columns) > 0 and len(
-            dnn_hidden_units) > 0
         self.fm = FM()
 
         # InteractingLayer (used in AutoInt) = multi-head self-attention + Residual Network
-        self.vector_wise_net = InteractingLayer(self.embedding_size, att_embedding_size,
-                                                att_head_num, att_res, scaling=True, device=device)
+        self.vector_wise_net = InteractingLayer(self.embedding_size, att_head_num,
+                                                att_res, scaling=True, device=device)
 
         self.bit_wise_net = DNN(self.compute_input_dim(dnn_feature_columns, include_dense=False),
-                                         dnn_hidden_units, activation=dnn_activation, l2_reg=l2_reg_dnn,
-                                         dropout_rate=dnn_dropout,
-                                         use_bn=dnn_use_bn, init_std=init_std, device=device)
+                                dnn_hidden_units, activation=dnn_activation, l2_reg=l2_reg_dnn,
+                                dropout_rate=dnn_dropout,
+                                use_bn=dnn_use_bn, init_std=init_std, device=device)
         self.sparse_feat_num = len(list(filter(lambda x: isinstance(x, SparseFeat) or isinstance(x, VarLenSparseFeat),
                                                dnn_feature_columns)))
 
         self.transform_matrix_P_vec = nn.Linear(
-            self.sparse_feat_num*att_embedding_size*att_head_num, self.sparse_feat_num, bias=False).to(device)
+            self.sparse_feat_num * self.embedding_size, self.sparse_feat_num, bias=False).to(device)
         self.transform_matrix_P_bit = nn.Linear(
             dnn_hidden_units[-1], self.sparse_feat_num, bias=False).to(device)
 
@@ -80,7 +80,7 @@ class DIFM(BaseModel):
 
     def forward(self, X):
         sparse_embedding_list, _ = self.input_from_feature_columns(X, self.dnn_feature_columns,
-                                                                                  self.embedding_dict)
+                                                                   self.embedding_dict)
         if not len(sparse_embedding_list) > 0:
             raise ValueError("there are no sparse features")
 

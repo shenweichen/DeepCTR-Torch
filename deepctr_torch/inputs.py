@@ -58,6 +58,10 @@ class VarLenSparseFeat(namedtuple('VarLenSparseFeat',
         return self.sparsefeat.embedding_dim
 
     @property
+    def use_hash(self):
+        return self.sparsefeat.use_hash
+
+    @property
     def dtype(self):
         return self.sparsefeat.dtype
 
@@ -136,18 +140,15 @@ def combined_dnn_input(sparse_embedding_list, dense_value_list):
 
 def get_varlen_pooling_list(embedding_dict, features, feature_index, varlen_sparse_feature_columns, device):
     varlen_sparse_embedding_list = []
-
     for feat in varlen_sparse_feature_columns:
-        seq_emb = embedding_dict[feat.embedding_name](
-            features[:, feature_index[feat.name][0]:feature_index[feat.name][1]].long())
+        seq_emb = embedding_dict[feat.name]
         if feat.length_name is None:
             seq_mask = features[:, feature_index[feat.name][0]:feature_index[feat.name][1]].long() != 0
 
             emb = SequencePoolingLayer(mode=feat.combiner, supports_masking=True, device=device)(
                 [seq_emb, seq_mask])
         else:
-            seq_length = features[:,
-                         feature_index[feat.length_name][0]:feature_index[feat.length_name][1]].long()
+            seq_length = features[:, feature_index[feat.length_name][0]:feature_index[feat.length_name][1]].long()
             emb = SequencePoolingLayer(mode=feat.combiner, supports_masking=False, device=device)(
                 [seq_emb, seq_length])
         varlen_sparse_embedding_list.append(emb)
@@ -177,33 +178,6 @@ def create_embedding_matrix(feature_columns, init_std=0.0001, linear=False, spar
         nn.init.normal_(tensor.weight, mean=0, std=init_std)
 
     return embedding_dict.to(device)
-
-
-def input_from_feature_columns(self, X, feature_columns, embedding_dict, support_dense=True):
-    sparse_feature_columns = list(
-        filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
-    dense_feature_columns = list(
-        filter(lambda x: isinstance(x, DenseFeat), feature_columns)) if len(feature_columns) else []
-
-    varlen_sparse_feature_columns = list(
-        filter(lambda x: isinstance(x, VarLenSparseFeat), feature_columns)) if feature_columns else []
-
-    if not support_dense and len(dense_feature_columns) > 0:
-        raise ValueError(
-            "DenseFeat is not supported in dnn_feature_columns")
-
-    sparse_embedding_list = [embedding_dict[feat.embedding_name](
-        X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]].long()) for
-        feat in sparse_feature_columns]
-
-    varlen_sparse_embedding_list = get_varlen_pooling_list(self.embedding_dict, X, self.feature_index,
-                                                           varlen_sparse_feature_columns, self.device)
-
-    dense_value_list = [X[:, self.feature_index[feat.name][0]:self.feature_index[feat.name][1]] for feat in
-                        dense_feature_columns]
-
-    return sparse_embedding_list + varlen_sparse_embedding_list, dense_value_list
-
 
 
 def embedding_lookup(X, sparse_embedding_dict, sparse_input_dict, sparse_feature_columns, return_feat_list=(),

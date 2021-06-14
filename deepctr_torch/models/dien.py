@@ -319,7 +319,7 @@ class InterestEvolving(nn.Module):
     @staticmethod
     def _get_last_state(states, keys_length):
         # states [B, T, H]
-        batch_size, max_seq_length, hidden_size = states.size()
+        batch_size, max_seq_length, _ = states.size()
 
         mask = (torch.arange(max_seq_length, device=keys_length.device).repeat(
             batch_size, 1) == (keys_length.view(-1, 1) - 1))

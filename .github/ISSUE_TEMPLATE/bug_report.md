@@ -20,7 +20,7 @@ Steps to reproduce the behavior:
 **Operating environment(运行环境):**
  - python version [e.g. 3.5, 3.6]
  - torch version [e.g. 1.6.0, 1.7.0]
- - deepctr-torch version [e.g. 0.2.4,]
+ - deepctr-torch version [e.g. 0.2.7,]
 
 **Additional context**
 Add any other context about the problem here.
