@@ -47,7 +47,9 @@ def test_DIN():
     x, y, feature_columns, behavior_feature_list = get_xy_fd()
     model = DIN(feature_columns, behavior_feature_list, dnn_dropout=0.5, device=get_device())
 
-    check_model(model, model_name, x, y)  # only have 3 train data so we set validation ratio at 0
+    check_model(model, model_name, x, y, shuffle=False)
+    # There are only 4 instances in the dataset, so shuffle should be false, in case that: (y = (1,1) and val_y = (0,0)) after shuffling.
+
 
 
 if __name__ == "__main__":
