@@ -2,6 +2,7 @@
 """
 Author:
     Weiyu Cheng, weiyu_cheng@sjtu.edu.cn
+
 Reference:
     [1] Cheng, W., Shen, Y. and Huang, L. 2020. Adaptive Factorization Network: Learning Adaptive-Order Feature
          Interactions. Proceedings of the AAAI Conference on Artificial Intelligence. 34, 04 (Apr. 2020), 3609-3616.
@@ -14,7 +15,7 @@ from ..layers import LogTransformLayer, DNN
 
 
 class AFN(BaseModel):
-    """Instantiates the Adaptive Factorization Network architecture. 
+    """Instantiates the Adaptive Factorization Network architecture.
     
     In DeepCTR-Torch, we only provide the non-ensembled version of AFN for the consistency of model interfaces. For the ensembled version of AFN+, please refer to https://github.com/WeiyuCheng/DeepCTR-Torch (Pytorch Version) or https://github.com/WeiyuCheng/AFN-AAAI-20 (Tensorflow Version).
 
@@ -38,7 +39,7 @@ class AFN(BaseModel):
 
     def __init__(self,
                  linear_feature_columns, dnn_feature_columns,
-                 ltl_hidden_size=600, afn_dnn_hidden_units=(400, 400, 400),
+                 ltl_hidden_size=256, afn_dnn_hidden_units=(256, 128),
                  l2_reg_linear=0.00001, l2_reg_embedding=0.00001, l2_reg_dnn=0,
                  init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation='relu',
                  task='binary', device='cpu', gpus=None):

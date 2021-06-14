@@ -23,6 +23,7 @@ Submodules
    deepctr_torch.models.dien
    deepctr_torch.models.ifm
    deepctr_torch.models.difm
+   deepctr_torch.models.afn
 
 Module contents
 ---------------

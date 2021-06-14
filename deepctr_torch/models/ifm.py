@@ -66,7 +66,7 @@ class IFM(BaseModel):
         self.to(device)
 
     def forward(self, X):
-        sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
+        sparse_embedding_list, _ = self.input_from_feature_columns(X, self.dnn_feature_columns,
                                                                                   self.embedding_dict)
         if not len(sparse_embedding_list) > 0:
             raise ValueError("there are no sparse features")

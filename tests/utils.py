@@ -67,7 +67,7 @@ def get_test_data(sample_size=1000, embedding_size=4, sparse_feature_num=1, dens
 
 
 def layer_test(layer_cls, kwargs = {}, input_shape=None, 
-               input_dtype=torch.float32, input_data=None, expected_output=None, 
+               input_dtype=torch.float32, input_data=None, expected_output=None,
                expected_output_shape=None, expected_output_dtype=None, fixed_batch_size=False):
     '''check layer is valid or not
 
@@ -80,12 +80,12 @@ def layer_test(layer_cls, kwargs = {}, input_shape=None,
     :param fixed_batch_size:
 
     :return: output of the layer
-    '''    
+    '''
     if input_data is None:
         # generate input data
         if not input_shape:
             raise ValueError("input shape should not be none")
-        
+
         input_data_shape = list(input_shape)
         for i, e in enumerate(input_data_shape):
             if e is None:
@@ -112,12 +112,12 @@ def layer_test(layer_cls, kwargs = {}, input_shape=None,
     layer = layer_cls(**kwargs)
     
     if fixed_batch_size:
-        input = torch.tensor(input_data.unsqueeze(0), dtype=input_dtype)
+        inputs = torch.tensor(input_data.unsqueeze(0), dtype=input_dtype)
     else:
-        input = torch.tensor(input_data, dtype=input_dtype)
+        inputs = torch.tensor(input_data, dtype=input_dtype)
     
     # calculate layer's output
-    output = layer(input)
+    output = layer(inputs)
 
     if not output.dtype == expected_output_dtype:
         raise AssertionError("layer output dtype does not match with the expected one")
