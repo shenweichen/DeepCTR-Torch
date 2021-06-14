@@ -130,7 +130,7 @@ Tongwen](https://arxiv.org/pdf/1905.09433.pdf)
                 self.bilinear.append(
                     nn.Linear(embedding_size, embedding_size, bias=False))
         elif self.bilinear_type == "interaction":
-            for i, j in itertools.combinations(range(filed_size), 2):
+            for _, _ in itertools.combinations(range(filed_size), 2):
                 self.bilinear.append(
                     nn.Linear(embedding_size, embedding_size, bias=False))
         else:
@@ -487,9 +487,9 @@ class CrossNetMix(nn.Module):
         self.bias = nn.Parameter(torch.Tensor(self.layer_num, in_features, 1))
 
         init_para_list = [self.U_list, self.V_list, self.C_list]
-        for i in range(len(init_para_list)):
-            for j in range(self.layer_num):
-                nn.init.xavier_normal_(init_para_list[i][j])
+        for para in init_para_list:
+            for i in range(self.layer_num):
+                nn.init.xavier_normal_(para[i])
 
         for i in range(len(self.bias)):
             nn.init.zeros_(self.bias[i])

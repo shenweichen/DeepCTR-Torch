@@ -15,7 +15,7 @@ from ..layers import LogTransformLayer, DNN
 
 
 class AFN(BaseModel):
-    """Instantiates the Adaptive Factorization Network architecture. 
+    """Instantiates the Adaptive Factorization Network architecture.
     
     In DeepCTR-Torch, we only provide the non-ensembled version of AFN for the consistency of model interfaces. For the ensembled version of AFN+, please refer to https://github.com/WeiyuCheng/DeepCTR-Torch (Pytorch Version) or https://github.com/WeiyuCheng/AFN-AAAI-20 (Tensorflow Version).
 

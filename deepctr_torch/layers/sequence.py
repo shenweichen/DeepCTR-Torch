@@ -117,7 +117,7 @@ class AttentionSequencePoolingLayer(nn.Module):
         Output shape
           - 3D tensor with shape: ``(batch_size, 1, embedding_size)``.
         """
-        batch_size, max_length, dim = keys.size()
+        batch_size, max_length, _ = keys.size()
 
         # Mask
         if self.supports_masking:
@@ -176,16 +176,16 @@ class KMaxPooling(nn.Module):
         self.axis = axis
         self.to(device)
 
-    def forward(self, input):
-        if self.axis < 0 or self.axis >= len(input.shape):
+    def forward(self, inputs):
+        if self.axis < 0 or self.axis >= len(inputs.shape):
             raise ValueError("axis must be 0~%d,now is %d" %
-                             (len(input.shape) - 1, self.axis))
+                             (len(inputs.shape) - 1, self.axis))
 
-        if self.k < 1 or self.k > input.shape[self.axis]:
+        if self.k < 1 or self.k > inputs.shape[self.axis]:
             raise ValueError("k must be in 1 ~ %d,now k is %d" %
-                             (input.shape[self.axis], self.k))
+                             (inputs.shape[self.axis], self.k))
 
-        out = torch.topk(input, k=self.k, dim=self.axis, sorted=True)[0]
+        out = torch.topk(inputs, k=self.k, dim=self.axis, sorted=True)[0]
         return out
 
 
@@ -220,11 +220,11 @@ class AGRUCell(nn.Module):
             self.register_parameter('bias_ih', None)
             self.register_parameter('bias_hh', None)
 
-    def forward(self, input, hx, att_score):
-        gi = F.linear(input, self.weight_ih, self.bias_ih)
+    def forward(self, inputs, hx, att_score):
+        gi = F.linear(inputs, self.weight_ih, self.bias_ih)
         gh = F.linear(hx, self.weight_hh, self.bias_hh)
-        i_r, i_z, i_n = gi.chunk(3, 1)
-        h_r, h_z, h_n = gh.chunk(3, 1)
+        i_r, _, i_n = gi.chunk(3, 1)
+        h_r, _, h_n = gh.chunk(3, 1)
 
         reset_gate = torch.sigmoid(i_r + h_r)
         # update_gate = torch.sigmoid(i_z + h_z)
@@ -266,8 +266,8 @@ class AUGRUCell(nn.Module):
             self.register_parameter('bias_ih', None)
             self.register_parameter('bias_hh', None)
 
-    def forward(self, input, hx, att_score):
-        gi = F.linear(input, self.weight_ih, self.bias_ih)
+    def forward(self, inputs, hx, att_score):
+        gi = F.linear(inputs, self.weight_ih, self.bias_ih)
         gh = F.linear(hx, self.weight_hh, self.bias_hh)
         i_r, i_z, i_n = gi.chunk(3, 1)
         h_r, h_z, h_n = gh.chunk(3, 1)
@@ -293,25 +293,25 @@ class DynamicGRU(nn.Module):
         elif gru_type == 'AUGRU':
             self.rnn = AUGRUCell(input_size, hidden_size, bias)
 
-    def forward(self, input, att_scores=None, hx=None):
-        if not isinstance(input, PackedSequence) or not isinstance(att_scores, PackedSequence):
+    def forward(self, inputs, att_scores=None, hx=None):
+        if not isinstance(inputs, PackedSequence) or not isinstance(att_scores, PackedSequence):
             raise NotImplementedError("DynamicGRU only supports packed input and att_scores")
 
-        input, batch_sizes, sorted_indices, unsorted_indices = input
+        inputs, batch_sizes, sorted_indices, unsorted_indices = inputs
         att_scores, _, _, _ = att_scores
 
         max_batch_size = int(batch_sizes[0])
         if hx is None:
             hx = torch.zeros(max_batch_size, self.hidden_size,
-                             dtype=input.dtype, device=input.device)
+                             dtype=inputs.dtype, device=inputs.device)
 
-        outputs = torch.zeros(input.size(0), self.hidden_size,
-                              dtype=input.dtype, device=input.device)
+        outputs = torch.zeros(inputs.size(0), self.hidden_size,
+                              dtype=inputs.dtype, device=inputs.device)
 
         begin = 0
         for batch in batch_sizes:
             new_hx = self.rnn(
-                input[begin:begin + batch],
+                inputs[begin:begin + batch],
                 hx[0:batch],
                 att_scores[begin:begin + batch])
             outputs[begin:begin + batch] = new_hx
