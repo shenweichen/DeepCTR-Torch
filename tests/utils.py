@@ -138,7 +138,7 @@ def layer_test(layer_cls, kwargs = {}, input_shape=None,
     return output
 
 
-def check_model(model, model_name, x, y, check_model_io=True):
+def check_model(model, model_name, x, y, check_model_io=True, shuffle=True):
     '''
     compile model,train and evaluate it,then save/load weight and model file.
     :param model:
@@ -146,12 +146,13 @@ def check_model(model, model_name, x, y, check_model_io=True):
     :param x:
     :param y:
     :param check_model_io:
+    :param shuffle: pass to the basemodel.fit
     :return:
     '''
 
     model.compile('adam', 'binary_crossentropy',
                   metrics=['binary_crossentropy'])
-    model.fit(x, y, batch_size=100, epochs=1, validation_split=0.5)
+    model.fit(x, y, batch_size=100, epochs=1, validation_split=0.5, shuffle=shuffle)
 
     print(model_name + 'test, train valid pass!')
     torch.save(model.state_dict(), model_name + '_weights.h5')

@@ -93,7 +93,8 @@ def test_DIEN(gru_type, use_neg):
     model = DIEN(feature_columns, behavior_feature_list, gru_type=gru_type, use_negsampling=use_neg,
                  dnn_hidden_units=[4, 4, 4], dnn_dropout=0.5, device=get_device())
 
-    check_model(model, model_name, x, y)
+    check_model(model, model_name, x, y, shuffle=False)
+    # There are only 4 instances in the dataset, so shuffle should be false, in case that: (y = (1,1) and val_y = (0,0)) after shuffling.
 
 
 if __name__ == "__main__":

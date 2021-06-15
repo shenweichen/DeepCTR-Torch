@@ -26,7 +26,7 @@ except ImportError:
 from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat, get_varlen_pooling_list, \
     create_embedding_matrix, varlen_embedding_lookup
 from ..layers import PredictionLayer
-from ..layers.utils import slice_arrays
+# from ..layers.utils import slice_arrays
 from ..callbacks import History
 
 
@@ -133,7 +133,7 @@ class BaseModel(nn.Module):
         self._ckpt_saved_epoch = False  # used for EarlyStopping in tf1.14
         self.history = History()
 
-    def fit(self, x=None, y=None, batch_size=None, epochs=1, verbose=1, initial_epoch=0, validation_split=0.,
+    def fit(self, x=None, y=None, batch_size=256, epochs=1, verbose=1, initial_epoch=0, validation_split=0.,
             validation_data=None, shuffle=True, callbacks=None):
         """
 
@@ -153,6 +153,24 @@ class BaseModel(nn.Module):
         """
         if isinstance(x, dict):
             x = [x[feature] for feature in self.feature_index]
+
+        for i in range(len(x)):
+            if len(x[i].shape) == 1:
+                x[i] = np.expand_dims(x[i], axis=1)
+
+        if len(y.shape) == 1:
+            y = np.expand_dims(y, axis=1)
+            dim_y = 1
+        else:
+            dim_y = y.shape[1]
+
+        x_y = np.concatenate(x + [y], axis=-1)
+
+        if shuffle:
+            # shuffle operation should be prior to the seperation of training set and validation set.
+            np.random.shuffle(x_y)  # The np.random.shuffle() is an inplace operation!
+        x = x_y[:, :-dim_y]
+        y = x_y[:, -dim_y:]
 
         do_validation = False
         if validation_data:
@@ -175,28 +193,17 @@ class BaseModel(nn.Module):
 
         elif validation_split and 0. < validation_split < 1.:
             do_validation = True
-            if hasattr(x[0], 'shape'):
-                split_at = int(x[0].shape[0] * (1. - validation_split))
-            else:
-                split_at = int(len(x[0]) * (1. - validation_split))
-            x, val_x = (slice_arrays(x, 0, split_at),
-                        slice_arrays(x, split_at))
-            y, val_y = (slice_arrays(y, 0, split_at),
-                        slice_arrays(y, split_at))
 
+            # x is a 2d numpy array. slice_arrays in utils.py can be removed.
+            split_at = int(len(x) * (1. - validation_split))
+            x, val_x = x[:split_at], x[split_at:]
+            y, val_y = y[:split_at], y[split_at:]
         else:
             val_x = []
             val_y = []
-        for i in range(len(x)):
-            if len(x[i].shape) == 1:
-                x[i] = np.expand_dims(x[i], axis=1)
 
-        train_tensor_data = Data.TensorDataset(
-            torch.from_numpy(
-                np.concatenate(x, axis=-1)),
-            torch.from_numpy(y))
-        if batch_size is None:
-            batch_size = 256
+        train_tensor_data = Data.TensorDataset(torch.from_numpy(x),
+                                               torch.from_numpy(y))
 
         model = self.train()
         loss_func = self.loss_func
@@ -229,6 +236,7 @@ class BaseModel(nn.Module):
         print("Train on {0} samples, validate on {1} samples, {2} steps per epoch".format(
             len(train_tensor_data), len(val_y), steps_per_epoch))
         for epoch in range(initial_epoch, epochs):
+            print("Training the {}/{} epoch".format(epoch, epochs))
             callbacks.on_epoch_begin(epoch)
             epoch_logs = {}
             start_time = time.time()
@@ -236,7 +244,7 @@ class BaseModel(nn.Module):
             total_loss_epoch = 0
             train_result = {}
             try:
-                with tqdm(enumerate(train_loader), disable=verbose != 1) as t:
+                with tqdm(enumerate(train_loader), disable=verbose != 1, total=steps_per_epoch) as t:
                     for _, (x_train, y_train) in t:
                         x = x_train.to(self.device).float()
                         y = y_train.to(self.device).float()
@@ -315,7 +323,7 @@ class BaseModel(nn.Module):
             eval_result[name] = metric_fun(y, pred_ans)
         return eval_result
 
-    def predict(self, x, batch_size=256):
+    def predict(self, x, batch_size=256, verbose=False):
         """
 
         :param x: The input data, as a Numpy array (or list of Numpy arrays if the model has multiple inputs).
@@ -323,20 +331,32 @@ class BaseModel(nn.Module):
         :return: Numpy array(s) of predictions.
         """
         model = self.eval()
-        if isinstance(x, dict):
-            x = [x[feature] for feature in self.feature_index]
-        for i in range(len(x)):
-            if len(x[i].shape) == 1:
-                x[i] = np.expand_dims(x[i], axis=1)
 
-        tensor_data = Data.TensorDataset(
-            torch.from_numpy(np.concatenate(x, axis=-1)))
+        if isinstance(x, dict):
+            # x is the origial dict with values being 1-dim numpy array (Sparse feature)
+            # or multiple-dim numpy array (Varlen sequence, or multi-dim dense features)
+            x = [x[feature] for feature in self.feature_index]
+
+            for i in range(len(x)):
+                if len(x[i].shape) == 1:
+                    x[i] = np.expand_dims(x[i], axis=1)
+            tensor_data = Data.TensorDataset(
+                torch.from_numpy(np.concatenate(x, axis=-1)))
+        else:
+            # x is already in numpy array
+            tensor_data = Data.TensorDataset(torch.from_numpy(x))
+
         test_loader = DataLoader(
             dataset=tensor_data, shuffle=False, batch_size=batch_size)
 
+        sample_num = len(tensor_data)
+        steps_per_epoch = (sample_num - 1) // batch_size + 1
+
         pred_ans = []
         with torch.no_grad():
-            for _, x_test in enumerate(test_loader):
+            # for _, x_test in enumerate(test_loader):
+            for _, x_test in tqdm(enumerate(test_loader), disable=verbose != 1, total=steps_per_epoch,
+                                  desc="Predicting data..."):
                 x = x_test[0].to(self.device).float()
 
                 y_pred = model(x).cpu().data.numpy()  # .squeeze()
