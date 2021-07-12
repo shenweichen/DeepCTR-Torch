@@ -476,6 +476,9 @@ class BaseModel(nn.Module):
                         sample_weight,
                         labels)
 
+    def _accuracy_score(self, y_true, y_pred):
+        return accuracy_score(y_true, np.where(y_pred > 0.5, 1, 0))
+
     def _get_metrics(self, metrics, set_eps=False):
         metrics_ = {}
         if metrics:
@@ -490,8 +493,7 @@ class BaseModel(nn.Module):
                 if metric == "mse":
                     metrics_[metric] = mean_squared_error
                 if metric == "accuracy" or metric == "acc":
-                    metrics_[metric] = lambda y_true, y_pred: accuracy_score(
-                        y_true, np.where(y_pred > 0.5, 1, 0))
+                    metrics_[metric] = self._accuracy_score
                 self.metrics_names.append(metric)
         return metrics_
 
