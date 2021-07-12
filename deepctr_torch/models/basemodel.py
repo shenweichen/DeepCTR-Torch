@@ -475,7 +475,7 @@ class BaseModel(nn.Module):
                         normalize,
                         sample_weight,
                         labels)
-    
+
     def _accuracy_score(self, y_true, y_pred):
         return accuracy_score(y_true, np.where(y_pred > 0.5, 1, 0))
 
