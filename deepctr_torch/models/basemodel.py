@@ -15,6 +15,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data as Data
 from sklearn.metrics import *
+from sklearn.metrics import accuracy_score
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -476,7 +477,8 @@ class BaseModel(nn.Module):
                         sample_weight,
                         labels)
 
-    def _accuracy_score(self, y_true, y_pred):
+    @staticmethod
+    def _accuracy_score(y_true, y_pred):
         return accuracy_score(y_true, np.where(y_pred > 0.5, 1, 0))
 
     def _get_metrics(self, metrics, set_eps=False):
