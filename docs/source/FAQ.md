@@ -6,7 +6,7 @@ To save/load weights:
 
 ```python
 import torch
-model = DeepFM()
+model = DeepFM(...)
 torch.save(model.state_dict(), 'DeepFM_weights.h5')
 model.load_state_dict(torch.load('DeepFM_weights.h5'))
 ```
@@ -15,7 +15,7 @@ To save/load models:
 
 ```python
 import torch
-model = DeepFM()
+model = DeepFM(...)
 torch.save(model, 'DeepFM.h5')
 model = torch.load('DeepFM.h5')
 ```
