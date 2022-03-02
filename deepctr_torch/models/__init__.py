@@ -5,6 +5,7 @@ from .afm import AFM
 from .difm import DIFM
 from .ifm import IFM
 from .autoint import AutoInt
+from .autodis import AutoDis
 from .dcn import DCN
 from .dcnmix import DCNMix
 from .fibinet import FiBiNET

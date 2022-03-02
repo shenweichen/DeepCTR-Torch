@@ -27,9 +27,10 @@ if __name__ == "__main__":
 
     # 2.count #unique features for each sparse field,and record dense feature field name
 
-    fixlen_feature_columns = [SparseFeat(feat, data[feat].nunique())
-                              for feat in sparse_features] + [DenseFeat(feat, 1, )
-                                                              for feat in dense_features]
+    # fixlen_feature_columns = [SparseFeat(feat, data[feat].nunique())
+    #                           for feat in sparse_features] + [DenseFeat(feat, 1, )
+    #                                                           for feat in dense_features]
+    fixlen_feature_columns = [DenseFeat(feat, 1, ) for feat in dense_features]
 
     dnn_feature_columns = fixlen_feature_columns
     linear_feature_columns = fixlen_feature_columns
@@ -51,7 +52,7 @@ if __name__ == "__main__":
         print('cuda ready...')
         device = 'cuda:0'
 
-    model = DeepFM(linear_feature_columns=linear_feature_columns, dnn_feature_columns=dnn_feature_columns,
+    model = AutoDis(linear_feature_columns=linear_feature_columns, dnn_feature_columns=dnn_feature_columns,
                    task='binary',
                    l2_reg_embedding=1e-5, device=device)
 
