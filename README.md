@@ -47,34 +47,19 @@ Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-St
 
 ## DisscussionGroup & Related Projects
 
-<html>
-    <table style="margin-left: 20px; margin-right: auto;">
-        <tr>
-            <td>
-                公众号：<b>浅梦学习笔记</b><br><br>
-                <a href="https://github.com/shenweichen/deepctr-torch">
-  <img align="center" src="./docs/pics/code.png" />
-</a>
-            </td>
-            <td>
-                微信：<b>deepctrbot</b><br><br>
- <a href="https://github.com/shenweichen/deepctr-torch">
-  <img align="center" src="./docs/pics/deepctrbot.png" />
-</a>
-            </td>
-            <td>
-<ul>
-<li><a href="https://github.com/shenweichen/AlgoNotes">AlgoNotes</a></li>
-<li><a href="https://github.com/shenweichen/DeepCTR">DeepCTR</a></li>
-<li><a href="https://github.com/shenweichen/DeepMatch">DeepMatch</a></li>
-<li><a href="https://github.com/shenweichen/GraphEmbedding">GraphEmbedding</a></li>
-</ul>
-            </td>
-        </tr>
-    </table>
-</html>
+- [Github Discussions](https://github.com/shenweichen/DeepCTR/discussions)
+- Wechat Discussions
 
+|公众号：浅梦学习笔记|微信：deepctrbot|学习小组 [加入](https://t.zsxq.com/026UJEuzv) [主题集合](https://mp.weixin.qq.com/mp/appmsgalbum?__biz=MjM5MzY4NzE3MA==&action=getalbum&album_id=1361647041096843265&scene=126#wechat_redirect)|
+|:--:|:--:|:--:|
+| [![公众号](./docs/pics/code.png)](https://github.com/shenweichen/AlgoNotes)| [![微信](./docs/pics/deepctrbot.png)](https://github.com/shenweichen/AlgoNotes)|[![学习小组](./docs/pics/planet_github.png)](https://t.zsxq.com/026UJEuzv)|
 
+- Related Projects
+
+  - [AlgoNotes](https://github.com/shenweichen/AlgoNotes)
+  - [DeepCTR](https://github.com/shenweichen/DeepCTR)
+  - [DeepMatch](https://github.com/shenweichen/DeepMatch)
+  - [GraphEmbedding](https://github.com/shenweichen/GraphEmbedding)
 
 ## Main Contributors([welcome to join us!](./CONTRIBUTING.md))
 
@@ -84,59 +69,58 @@ Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-St
       <td>
         ​ <a href="https://github.com/shenweichen"><img width="70" height="70" src="https://github.com/shenweichen.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/shenweichen">Shen Weichen</a> ​
-        <p>Core Dev<br> Zhejiang Unversity <br> <br>  </p>​
+        <p> Alibaba Group </p>​
       </td>
       <td>
         ​ <a href="https://github.com/zanshuxun"><img width="70" height="70" src="https://github.com/zanshuxun.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/zanshuxun">Zan Shuxun</a>
-        <p>Core Dev<br> Beijing University <br> of  Posts and <br> Telecommunications</p>​
+        <p> Alibaba Group </p>​
       </td>
       <td>
          <a href="https://github.com/weberrr"><img width="70" height="70" src="https://github.com/weberrr.png?s=40" alt="pic"></a><br>
          <a href="https://github.com/weberrr">Wang Ze</a> ​
-        <p>Core Dev<br> Beihang University <br> <br>  </p>​
+        <p> Meituan </p>​
       </td>
       <td>
         ​ <a href="https://github.com/wutongzhang"><img width="70" height="70" src="https://github.com/wutongzhang.png?s=40" alt="pic"></a><br>
          <a href="https://github.com/wutongzhang">Zhang Wutong</a>
-         <p>Core Dev<br> Beijing University <br> of  Posts and <br> Telecommunications</p>​
+         <p> Tencent </p>​
       </td>
       <td>
         ​ <a href="https://github.com/ZhangYuef"><img width="70" height="70" src="https://github.com/ZhangYuef.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/ZhangYuef">Zhang Yuefeng</a>
-        <p>Core Dev<br>
-        Peking University <br>  <br>  </p>​
+        <p> Peking University  </p>​
       </td>
     </tr>
     <tr align="center">
       <td>
         ​ <a href="https://github.com/JyiHUO"><img width="70" height="70" src="https://github.com/JyiHUO.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/JyiHUO">Huo Junyi</a>
-        <p>Core Dev<br>
+        <p>
         University of Southampton <br> <br>  </p>​
       </td>
       <td>
         ​ <a href="https://github.com/Zengai"><img width="70" height="70" src="https://github.com/Zengai.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/Zengai">Zeng Kai</a> ​
-        <p>Dev<br>
+        <p>
         SenseTime <br> <br>  </p>​
       </td>
       <td>
         ​ <a href="https://github.com/chenkkkk"><img width="70" height="70" src="https://github.com/chenkkkk.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/chenkkkk">Chen K</a> ​
-        <p>Dev<br>
+        <p>
         NetEase <br>  <br>  </p>​
       </td>
       <td>
         ​ <a href="https://github.com/WeiyuCheng"><img width="70" height="70" src="https://github.com/WeiyuCheng.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/WeiyuCheng">Cheng Weiyu</a> ​
-        <p>Dev<br>
+        <p>
         Shanghai Jiao Tong University</p>​
       </td>
       <td>
         ​ <a href="https://github.com/tangaqi"><img width="70" height="70" src="https://github.com/tangaqi.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/tangaqi">Tang</a>
-        <p>Test<br>
+        <p>
         Tongji University <br> <br>  </p>​
       </td>
     </tr>

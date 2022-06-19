@@ -17,10 +17,6 @@ from ..utils import get_test_data, SAMPLE_SIZE, check_model, get_device
      (True, (32,), 3, 0),
      (False, (32,), 0, 3),
      (False, (32,), 3, 0),
-     (True, (), 0, 1),
-     (True, (), 1, 0),
-     (False, (), 0, 2),
-     (False, (), 2, 0),
      ]
 )
 def test_DeepFM(use_fm, hidden_size, sparse_feature_num, dense_feature_num):
