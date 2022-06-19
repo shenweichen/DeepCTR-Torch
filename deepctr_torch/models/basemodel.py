@@ -3,6 +3,7 @@
 
 Author:
     Weichen Shen,weichenswc@163.com
+    zanshuxun, zanshuxun@aliyun.com
 
 """
 from __future__ import print_function
@@ -75,7 +76,7 @@ class Linear(nn.Module):
 
         sparse_embedding_list += varlen_embedding_list
 
-        linear_logit = torch.zeros([X.shape[0], 1]).to(sparse_embedding_list[0].device)
+        linear_logit = torch.zeros([X.shape[0], 1]).to(self.device)
         if len(sparse_embedding_list) > 0:
             sparse_embedding_cat = torch.cat(sparse_embedding_list, dim=-1)
             if sparse_feat_refine_weight is not None:
@@ -476,6 +477,10 @@ class BaseModel(nn.Module):
                         sample_weight,
                         labels)
 
+    @staticmethod
+    def _accuracy_score(y_true, y_pred):
+        return accuracy_score(y_true, np.where(y_pred > 0.5, 1, 0))
+
     def _get_metrics(self, metrics, set_eps=False):
         metrics_ = {}
         if metrics:
@@ -490,8 +495,7 @@ class BaseModel(nn.Module):
                 if metric == "mse":
                     metrics_[metric] = mean_squared_error
                 if metric == "accuracy" or metric == "acc":
-                    metrics_[metric] = lambda y_true, y_pred: accuracy_score(
-                        y_true, np.where(y_pred > 0.5, 1, 0))
+                    metrics_[metric] = self._accuracy_score
                 self.metrics_names.append(metric)
         return metrics_
 
