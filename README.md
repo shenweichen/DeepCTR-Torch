@@ -45,7 +45,7 @@ Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-St
 
 
 
-## DisscussionGroup
+## DisscussionGroup & Related Projects
 
 - [Github Discussions](https://github.com/shenweichen/DeepCTR/discussions)
 - Wechat Discussions
@@ -54,7 +54,12 @@ Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-St
 |:--:|:--:|:--:|
 | [![公众号](./docs/pics/code.png)](https://github.com/shenweichen/AlgoNotes)| [![微信](./docs/pics/deepctrbot.png)](https://github.com/shenweichen/AlgoNotes)|[![学习小组](./docs/pics/planet_github.png)](https://t.zsxq.com/026UJEuzv)|
 
+- Related Projects
 
+  - [AlgoNotes](https://github.com/shenweichen/AlgoNotes)
+  - [DeepCTR](https://github.com/shenweichen/DeepCTR)
+  - [DeepMatch](https://github.com/shenweichen/DeepMatch)
+  - [GraphEmbedding](https://github.com/shenweichen/GraphEmbedding)
 
 ## Main Contributors([welcome to join us!](./CONTRIBUTING.md))
 
@@ -64,7 +69,7 @@ Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-St
       <td>
         ​ <a href="https://github.com/shenweichen"><img width="70" height="70" src="https://github.com/shenweichen.png?s=40" alt="pic"></a><br>
         ​ <a href="https://github.com/shenweichen">Shen Weichen</a> ​
-        <p> Alibaba Group  </p>​
+        <p> Alibaba Group </p>​
       </td>
       <td>
         ​ <a href="https://github.com/zanshuxun"><img width="70" height="70" src="https://github.com/zanshuxun.png?s=40" alt="pic"></a><br>
