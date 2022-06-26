@@ -20,6 +20,7 @@ class SharedBottom(BaseModel):
     :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
     :param bottom_dnn_hidden_units: list,list of positive integer or empty list, the layer number and units in each layer of shared bottom DNN.
     :param tower_dnn_hidden_units: list,list of positive integer or empty list, the layer number and units in each layer of task-specific DNN.
+    :param l2_reg_linear: float. L2 regularizer strength applied to linear part
     :param l2_reg_embedding: float. L2 regularizer strength applied to embedding vector
     :param l2_reg_dnn: float. L2 regularizer strength applied to DNN
     :param init_std: float,to use as the initialize std of embedding vector
@@ -35,14 +36,13 @@ class SharedBottom(BaseModel):
     """
 
     def __init__(self, dnn_feature_columns, bottom_dnn_hidden_units=(256, 128), tower_dnn_hidden_units=(64,),
-                 l2_reg_embedding=0.00001, l2_reg_dnn=0, init_std=0.0001, seed=1024, dnn_dropout=0,
-                 dnn_activation='relu', dnn_use_bn=False, task_types=('binary', 'binary'),
-                 task_names=('ctr', 'ctcvr'), device='cpu'):
+                 l2_reg_linear=0.00001, l2_reg_embedding=0.00001, l2_reg_dnn=0, init_std=0.0001, seed=1024,
+                 dnn_dropout=0, dnn_activation='relu', dnn_use_bn=False, task_types=('binary', 'binary'),
+                 task_names=('ctr', 'ctcvr'), device='cpu', gpus=None):
         super(SharedBottom, self).__init__(linear_feature_columns=[], dnn_feature_columns=dnn_feature_columns,
-                                           l2_reg_embedding=l2_reg_embedding, seed=seed, device=device)
+                                           l2_reg_linear=l2_reg_linear, l2_reg_embedding=l2_reg_embedding,
+                                           seed=seed, device=device, gpus=gpus)
         self.num_tasks = len(task_names)
-        if self.num_tasks <= 1:
-            raise ValueError("num_tasks must be greater than 1")
         if len(task_types) != self.num_tasks:
             raise ValueError("num_tasks must be equal to the length of task_types")
 
@@ -78,7 +78,7 @@ class SharedBottom(BaseModel):
         dnn_input = combined_dnn_input(sparse_embedding_list, dense_value_list)
         shared_bottom_output = self.bottom_dnn(dnn_input)
 
-        # tower dnn (task-specified)
+        # tower dnn (task-specific)
         task_outs = []
         for i in range(self.num_tasks):
             if len(self.tower_dnn_hidden_units) > 0:

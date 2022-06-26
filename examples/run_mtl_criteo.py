@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     # 2.count #unique features for each sparse field,and record dense feature field name
 
-    fixlen_feature_columns = [SparseFeat(feat, vocabulary_size=data[feat].max() + 10000, embedding_dim=4)
+    fixlen_feature_columns = [SparseFeat(feat, vocabulary_size=data[feat].max() + 1, embedding_dim=4)
                               for feat in sparse_features] + [DenseFeat(feat, 1, )
                                                               for feat in dense_features]
 
@@ -44,7 +44,6 @@ if __name__ == "__main__":
     test_model_input = {name: test[name] for name in feature_names}
 
     # 4.Define Model,train,predict and evaluate
-    torch.autograd.set_detect_anomaly(True)
     device = 'cpu'
     use_cuda = True
     if use_cuda and torch.cuda.is_available():
@@ -53,7 +52,7 @@ if __name__ == "__main__":
 
     model = MMOE(dnn_feature_columns, task_types=['binary', 'binary'],
                  l2_reg_embedding=1e-5, task_names=target, device=device)
-    model.compile("adam", loss=["binary_crossentropy", "binary_crossentropy"],
+    model.compile("adagrad", loss="binary_crossentropy",
                   metrics=['binary_crossentropy'], )
 
     history = model.fit(train_model_input, train[target].values, batch_size=32, epochs=10, verbose=2,

@@ -37,14 +37,13 @@ class MMOE(BaseModel):
     """
 
     def __init__(self, dnn_feature_columns, num_experts=3, expert_dnn_hidden_units=(64, 32),
-                 gate_dnn_hidden_units=(), tower_dnn_hidden_units=(64,), l2_reg_embedding=0.00001, l2_reg_dnn=0,
+                 gate_dnn_hidden_units=(), tower_dnn_hidden_units=(64,), l2_reg_linear=0.00001, l2_reg_embedding=0.00001, l2_reg_dnn=0,
                  init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation='relu', dnn_use_bn=False,
-                 task_types=('binary', 'binary'), task_names=('ctr', 'ctcvr'), device='cpu'):
+                 task_types=('binary', 'binary'), task_names=('ctr', 'ctcvr'), device='cpu', gpus=None):
         super(MMOE, self).__init__(linear_feature_columns=[], dnn_feature_columns=dnn_feature_columns,
-                                   l2_reg_embedding=l2_reg_embedding, seed=seed, device=device)
+                                   l2_reg_linear=l2_reg_linear, l2_reg_embedding=l2_reg_embedding, seed=seed,
+                                   device=device, gpus=gpus)
         self.num_tasks = len(task_names)
-        if self.num_tasks <= 1:
-            raise ValueError("num_tasks must be greater than 1")
         if num_experts <= 1:
             raise ValueError("num_experts must be greater than 1")
 
@@ -78,7 +77,7 @@ class MMOE(BaseModel):
             self.gate_dnn_final_layer = nn.ModuleList(
                 [nn.Linear(self.input_dim, self.num_experts, bias=False) for _ in range(self.num_tasks)])
 
-        # tower dnn (task-specified)
+        # tower dnn (task-specific)
         if len(tower_dnn_hidden_units) > 0:
             self.tower_dnn = nn.ModuleList(
                 [DNN(expert_dnn_hidden_units[-1], tower_dnn_hidden_units, activation=dnn_activation,
@@ -116,7 +115,7 @@ class MMOE(BaseModel):
             gate_mul_expert = torch.matmul(gate_dnn_out.softmax(1).unsqueeze(1), expert_outs)
             mmoe_outs.append(gate_mul_expert.squeeze())
 
-        # tower dnn (task-specified)
+        # tower dnn (task-specific)
         task_outs = []
         for i in range(self.num_tasks):
             if len(self.tower_dnn_hidden_units) > 0:
