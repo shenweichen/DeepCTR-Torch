@@ -80,8 +80,8 @@ class SharedBottom(BaseModel):
         self.add_regularization_weight(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.bottom_dnn.named_parameters()), l2=l2_reg_dnn)
         self.add_regularization_weight(
-            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.cvr_dnn.named_parameters()), l2=l2_reg_dnn)
-        self.add_regularization_weight(self.tower_dnn_final_layer.weight, l2=l2_reg_dnn)
+            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.tower_dnn_final_layer.named_parameters()),
+            l2=l2_reg_dnn)
         self.to(device)
 
     def forward(self, X):

@@ -38,7 +38,8 @@ class MMOE(BaseModel):
     """
 
     def __init__(self, dnn_feature_columns, num_experts=3, expert_dnn_hidden_units=(64, 32),
-                 gate_dnn_hidden_units=(), tower_dnn_hidden_units=(64,), l2_reg_linear=0.00001, l2_reg_embedding=0.00001, l2_reg_dnn=0,
+                 gate_dnn_hidden_units=(), tower_dnn_hidden_units=(64,), l2_reg_linear=0.00001,
+                 l2_reg_embedding=0.00001, l2_reg_dnn=0,
                  init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation='relu', dnn_use_bn=False,
                  task_types=('binary', 'binary'), task_names=('ctr', 'ctcvr'), device='cpu', gpus=None):
         super(MMOE, self).__init__(linear_feature_columns=[], dnn_feature_columns=dnn_feature_columns,
@@ -77,7 +78,8 @@ class MMOE(BaseModel):
             self.gate_dnn_final_layer = nn.ModuleList(
                 [nn.Linear(gate_dnn_hidden_units[-1], self.num_experts, bias=False) for _ in range(self.num_tasks)])
             self.add_regularization_weight(
-                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.gate_dnn.named_parameters()), l2=l2_reg_dnn)
+                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.gate_dnn.named_parameters()),
+                l2=l2_reg_dnn)
         else:
             self.gate_dnn_final_layer = nn.ModuleList(
                 [nn.Linear(self.input_dim, self.num_experts, bias=False) for _ in range(self.num_tasks)])
@@ -91,7 +93,8 @@ class MMOE(BaseModel):
             self.tower_dnn_final_layer = nn.ModuleList([nn.Linear(tower_dnn_hidden_units[-1], 1, bias=False)
                                                         for _ in range(self.num_tasks)])
             self.add_regularization_weight(
-                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.tower_dnn.named_parameters()), l2=l2_reg_dnn)
+                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.tower_dnn.named_parameters()),
+                l2=l2_reg_dnn)
         else:
             self.tower_dnn_final_layer = nn.ModuleList([nn.Linear(expert_dnn_hidden_units[-1], 1, bias=False)
                                                         for _ in range(self.num_tasks)])
@@ -100,8 +103,12 @@ class MMOE(BaseModel):
 
         self.add_regularization_weight(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.expert_dnn.named_parameters()), l2=l2_reg_dnn)
-        self.add_regularization_weight(self.gate_dnn_final_layer.weight, l2=l2_reg_dnn)
-        self.add_regularization_weight(self.tower_dnn_final_layer.weight, l2=l2_reg_dnn)
+        self.add_regularization_weight(
+            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.gate_dnn_final_layer.named_parameters()),
+            l2=l2_reg_dnn)
+        self.add_regularization_weight(
+            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.tower_dnn_final_layer.named_parameters()),
+            l2=l2_reg_dnn)
         self.to(device)
 
     def forward(self, X):
