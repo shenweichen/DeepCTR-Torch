@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
     data[sparse_features] = data[sparse_features].fillna('-1', )
     data[dense_features] = data[dense_features].fillna(0, )
-    target = ['label', 'label']
+    target = ['label']
 
     # 1.Label Encoding for sparse features,and do simple Transformation for dense features
     for feat in sparse_features:
@@ -51,9 +51,14 @@ if __name__ == "__main__":
         print('cuda ready...')
         device = 'cuda:0'
 
-    model = SharedBottom(dnn_feature_columns, task_types=['binary', 'binary'],
-                         task_names=target)
-    model.compile("adam", loss=["binary_crossentropy", "binary_crossentropy"],
+    model = SharedBottom1(dnn_feature_columns=dnn_feature_columns, task_types=['binary'],
+                 task_names=target, tower_dnn_hidden_units=[])
+
+    # model = DeepFM(linear_feature_columns=linear_feature_columns, dnn_feature_columns=dnn_feature_columns,
+    #                task='binary', use_fm=False,
+    #                l2_reg_embedding=1e-5, device=device)
+                 # task_names=target, init_std=1)
+    model.compile("adam", loss="binary_crossentropy",
                   metrics=['binary_crossentropy'], )
 
     history = model.fit(train_model_input, train[target].values, batch_size=32, epochs=10, verbose=2,

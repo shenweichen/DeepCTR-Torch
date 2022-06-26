@@ -245,6 +245,7 @@ class BaseModel(nn.Module):
                         y_pred = model(x).squeeze()
 
                         optim.zero_grad()
+                        # loss = loss_func(y_pred, y.squeeze(), reduction='sum')
                         if isinstance(loss_func, list):
                             loss = loss_func[0](y_pred.mean(1), y.squeeze()[:, 0], reduction='sum')
                             # loss = sum([loss_func[i](y_pred[:, i], y[:, i], reduction='sum') for i in range(self.num_tasks)])

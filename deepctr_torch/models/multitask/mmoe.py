@@ -69,13 +69,14 @@ class MMOE(BaseModel):
             [nn.Linear(self.input_dim, self.num_experts, bias=False) for _ in range(self.num_tasks)])
         if len(tower_dnn_hidden_units) > 0:
             self.tower_dnn = nn.ModuleList(
-                [DNN(expert_dnn_hidden_units[-1], tower_dnn_hidden_units + [1], activation=dnn_activation,
+                [DNN(expert_dnn_hidden_units[-1], tower_dnn_hidden_units, activation=dnn_activation,
                      l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
                      init_std=init_std, device=device) for _ in range(self.num_tasks)])
+            self.tower_dnn_linear = nn.ModuleList([nn.Linear(tower_dnn_hidden_units[-1], 1, bias=False)
+                                                   for _ in range(self.num_tasks)])
         else:
-            self.tower_dnn = nn.ModuleList([DNN(expert_dnn_hidden_units[-1], [1], activation=dnn_activation,
-                                                l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
-                                                init_std=init_std, device=device) for _ in range(self.num_tasks)])
+            self.tower_dnn_linear = nn.ModuleList([nn.Linear(expert_dnn_hidden_units[-1], 1, bias=False)
+                                                   for _ in range(self.num_tasks)])
 
         self.out = nn.ModuleList([PredictionLayer(task) for task in task_types])
         self.to(device)
@@ -102,8 +103,9 @@ class MMOE(BaseModel):
         # tower dnn (task-specified)
         task_outs = []
         for i in range(self.num_tasks):
-            tower_logit = self.tower_dnn[i](mmoe_outs[i])
-            output = self.out[i](tower_logit)
+            tower_dnn_out = self.tower_dnn[i](mmoe_outs[i])
+            tower_dnn_logit = self.tower_dnn_linear[i](tower_dnn_out)
+            output = self.out[i](tower_dnn_logit)
             task_outs.append(output)
         task_outs = torch.cat(task_outs, -1)
         return task_outs
