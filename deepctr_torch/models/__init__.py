@@ -16,5 +16,5 @@ from .ccpm import CCPM
 from .dien import DIEN
 from .din import DIN
 from .afn import AFN
-from .multitask import SharedBottom, MMOE
+from .multitask import SharedBottom, ESMM, MMOE
 # from .multitask import SharedBottom, ESMM, MMOE, PLE

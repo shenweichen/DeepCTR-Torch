@@ -31,6 +31,7 @@ class SharedBottom(BaseModel):
     :param task_types: list of str, indicating the loss of each tasks, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss. e.g. ['binary', 'regression']
     :param task_names: list of str, indicating the predict target of each tasks
     :param device: str, ``"cpu"`` or ``"cuda:0"``
+    :param gpus: list of int or torch.device for multiple gpus. If None, run on `device`. `gpus[0]` should be the same gpu with `device`.
 
     :return: A PyTorch model instance.
     """
@@ -58,20 +59,29 @@ class SharedBottom(BaseModel):
         self.tower_dnn_hidden_units = tower_dnn_hidden_units
 
         self.bottom_dnn = DNN(self.input_dim, bottom_dnn_hidden_units, activation=dnn_activation,
-                              l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
+                              dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
                               init_std=init_std, device=device)
         if len(self.tower_dnn_hidden_units) > 0:
             self.tower_dnn = nn.ModuleList(
                 [DNN(bottom_dnn_hidden_units[-1], tower_dnn_hidden_units, activation=dnn_activation,
-                     l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
+                     dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
                      init_std=init_std, device=device) for _ in range(self.num_tasks)])
-            self.tower_dnn_linear = nn.ModuleList([nn.Linear(tower_dnn_hidden_units[-1], 1, bias=False)
-                                                   for _ in range(self.num_tasks)])
+            self.tower_dnn_final_layer = nn.ModuleList([nn.Linear(tower_dnn_hidden_units[-1], 1, bias=False)
+                                                        for _ in range(self.num_tasks)])
+            self.add_regularization_weight(
+                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.tower_dnn.named_parameters()),
+                l2=l2_reg_dnn)
         else:
-            self.tower_dnn_linear = nn.ModuleList([nn.Linear(bottom_dnn_hidden_units[-1], 1, bias=False)
-                                                   for _ in range(self.num_tasks)])
+            self.tower_dnn_final_layer = nn.ModuleList([nn.Linear(bottom_dnn_hidden_units[-1], 1, bias=False)
+                                                        for _ in range(self.num_tasks)])
 
         self.out = nn.ModuleList([PredictionLayer(task) for task in task_types])
+
+        self.add_regularization_weight(
+            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.bottom_dnn.named_parameters()), l2=l2_reg_dnn)
+        self.add_regularization_weight(
+            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.cvr_dnn.named_parameters()), l2=l2_reg_dnn)
+        self.add_regularization_weight(self.tower_dnn_final_layer.weight, l2=l2_reg_dnn)
         self.to(device)
 
     def forward(self, X):
@@ -85,9 +95,9 @@ class SharedBottom(BaseModel):
         for i in range(self.num_tasks):
             if len(self.tower_dnn_hidden_units) > 0:
                 tower_dnn_out = self.tower_dnn[i](shared_bottom_output)
-                tower_dnn_logit = self.tower_dnn_linear[i](tower_dnn_out)
+                tower_dnn_logit = self.tower_dnn_final_layer[i](tower_dnn_out)
             else:
-                tower_dnn_logit = self.tower_dnn_linear[i](shared_bottom_output)
+                tower_dnn_logit = self.tower_dnn_final_layer[i](shared_bottom_output)
             output = self.out[i](tower_dnn_logit)
             task_outs.append(output)
         task_outs = torch.cat(task_outs, -1)

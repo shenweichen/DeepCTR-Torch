@@ -32,6 +32,7 @@ class MMOE(BaseModel):
     :param task_types: list of str, indicating the loss of each tasks, ``"binary"`` for  binary logloss, ``"regression"`` for regression loss. e.g. ['binary', 'regression']
     :param task_names: list of str, indicating the predict target of each tasks
     :param device: str, ``"cpu"`` or ``"cuda:0"``
+    :param gpus: list of int or torch.device for multiple gpus. If None, run on `device`. `gpus[0]` should be the same gpu with `device`.
 
     :return: A PyTorch model instance.
     """
@@ -75,6 +76,8 @@ class MMOE(BaseModel):
                                                init_std=init_std, device=device) for _ in range(self.num_experts)])
             self.gate_dnn_final_layer = nn.ModuleList(
                 [nn.Linear(gate_dnn_hidden_units[-1], self.num_experts, bias=False) for _ in range(self.num_tasks)])
+            self.add_regularization_weight(
+                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.gate_dnn.named_parameters()), l2=l2_reg_dnn)
         else:
             self.gate_dnn_final_layer = nn.ModuleList(
                 [nn.Linear(self.input_dim, self.num_experts, bias=False) for _ in range(self.num_tasks)])
@@ -87,11 +90,18 @@ class MMOE(BaseModel):
                      init_std=init_std, device=device) for _ in range(self.num_tasks)])
             self.tower_dnn_final_layer = nn.ModuleList([nn.Linear(tower_dnn_hidden_units[-1], 1, bias=False)
                                                         for _ in range(self.num_tasks)])
+            self.add_regularization_weight(
+                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.tower_dnn.named_parameters()), l2=l2_reg_dnn)
         else:
             self.tower_dnn_final_layer = nn.ModuleList([nn.Linear(expert_dnn_hidden_units[-1], 1, bias=False)
                                                         for _ in range(self.num_tasks)])
 
         self.out = nn.ModuleList([PredictionLayer(task) for task in task_types])
+
+        self.add_regularization_weight(
+            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.expert_dnn.named_parameters()), l2=l2_reg_dnn)
+        self.add_regularization_weight(self.gate_dnn_final_layer.weight, l2=l2_reg_dnn)
+        self.add_regularization_weight(self.tower_dnn_final_layer.weight, l2=l2_reg_dnn)
         self.to(device)
 
     def forward(self, X):

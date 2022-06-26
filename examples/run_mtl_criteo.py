@@ -50,7 +50,7 @@ if __name__ == "__main__":
         print('cuda ready...')
         device = 'cuda:0'
 
-    model = MMOE(dnn_feature_columns, task_types=['binary', 'binary'],
+    model = ESMM(dnn_feature_columns, task_types=['binary', 'binary'],
                  l2_reg_embedding=1e-5, task_names=target, device=device)
     model.compile("adagrad", loss="binary_crossentropy",
                   metrics=['binary_crossentropy'], )
