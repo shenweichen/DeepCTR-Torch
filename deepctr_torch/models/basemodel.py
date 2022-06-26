@@ -195,7 +195,7 @@ class BaseModel(nn.Module):
         train_tensor_data = Data.TensorDataset(
             torch.from_numpy(
                 np.concatenate(x, axis=-1)),
-            torch.from_numpy(y))
+            torch.from_numpy(np.array(y)))
         if batch_size is None:
             batch_size = 256
 
@@ -245,7 +245,11 @@ class BaseModel(nn.Module):
                         y_pred = model(x).squeeze()
 
                         optim.zero_grad()
-                        loss = loss_func(y_pred, y.squeeze(), reduction='sum')
+                        if isinstance(loss_func, list):
+                            loss = loss_func[0](y_pred.mean(1), y.squeeze()[:, 0], reduction='sum')
+                            # loss = sum([loss_func[i](y_pred[:, i], y[:, i], reduction='sum') for i in range(self.num_tasks)])
+                        else:
+                            loss = loss_func(y_pred, y.squeeze(), reduction='sum')
                         reg_loss = self.get_regularization_loss()
 
                         total_loss = loss + reg_loss + self.aux_loss
@@ -456,16 +460,22 @@ class BaseModel(nn.Module):
 
     def _get_loss_func(self, loss):
         if isinstance(loss, str):
-            if loss == "binary_crossentropy":
-                loss_func = F.binary_cross_entropy
-            elif loss == "mse":
-                loss_func = F.mse_loss
-            elif loss == "mae":
-                loss_func = F.l1_loss
-            else:
-                raise NotImplementedError
+            loss_func = self._get_loss_func_single(loss)
+        elif isinstance(loss, list):
+            loss_func = [self._get_loss_func_single(loss_single) for loss_single in loss]
         else:
             loss_func = loss
+        return loss_func
+
+    def _get_loss_func_single(self, loss):
+        if loss == "binary_crossentropy":
+            loss_func = F.binary_cross_entropy
+        elif loss == "mse":
+            loss_func = F.mse_loss
+        elif loss == "mae":
+            loss_func = F.l1_loss
+        else:
+            raise NotImplementedError
         return loss_func
 
     def _log_loss(self, y_true, y_pred, eps=1e-7, normalize=True, sample_weight=None, labels=None):

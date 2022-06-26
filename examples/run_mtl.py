@@ -21,6 +21,7 @@ if __name__ == "__main__":
     data['label_income'] = data['income_50k'].map({' - 50000.': 0, ' 50000+.': 1})
     data['label_marital'] = data['marital_stat'].apply(lambda x: 1 if x == ' Never married' else 0)
     data.drop(labels=['income_50k', 'marital_stat'], axis=1, inplace=True)
+    target = ["label_income", "label_marital"]
 
     columns = data.columns.values.tolist()
     sparse_features = ['class_worker', 'det_ind_code', 'det_occ_code', 'education', 'hs_college', 'major_ind_code',
@@ -30,7 +31,7 @@ if __name__ == "__main__":
                        'fam_under_18', 'country_father', 'country_mother', 'country_self', 'citizenship',
                        'vet_question']
     dense_features = [col for col in columns if
-                      col not in sparse_features and col not in ['label_income', 'label_marital']]
+                      col not in sparse_features and col not in target]
 
     data[sparse_features] = data[sparse_features].fillna('-1', )
     data[dense_features] = data[dense_features].fillna(0, )
@@ -56,7 +57,7 @@ if __name__ == "__main__":
     test_model_input = {name: test[name] for name in feature_names}
 
     # 4.Define Model,train,predict and evaluate
-
+    torch.autograd.set_detect_anomaly(True)
     device = 'cpu'
     use_cuda = True
     if use_cuda and torch.cuda.is_available():
@@ -64,11 +65,11 @@ if __name__ == "__main__":
         device = 'cuda:0'
 
     model = MMOE(dnn_feature_columns, tower_dnn_hidden_units=[], task_types=['binary', 'binary'],
-                 task_names=['label_income', 'label_marital'])
+                 task_names=target)
     model.compile("adam", loss=["binary_crossentropy", "binary_crossentropy"],
                   metrics=['binary_crossentropy'], )
 
-    history = model.fit(train_model_input, [train['label_income'].values, train['label_marital'].values],
+    history = model.fit(train_model_input, train[target].values,
                         batch_size=256, epochs=10, verbose=2, validation_split=0.2)
     pred_ans = model.predict(test_model_input, batch_size=256)
 
