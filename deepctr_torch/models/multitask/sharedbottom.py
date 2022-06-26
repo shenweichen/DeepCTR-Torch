@@ -43,6 +43,8 @@ class SharedBottom(BaseModel):
                                            l2_reg_linear=l2_reg_linear, l2_reg_embedding=l2_reg_embedding,
                                            seed=seed, device=device, gpus=gpus)
         self.num_tasks = len(task_names)
+        if self.num_tasks <= 1:
+            raise ValueError("num_tasks must be greater than 1")
         if len(task_types) != self.num_tasks:
             raise ValueError("num_tasks must be equal to the length of task_types")
 
