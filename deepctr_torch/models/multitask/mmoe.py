@@ -62,21 +62,33 @@ class MMOE(BaseModel):
         self.gate_dnn_hidden_units = gate_dnn_hidden_units
         self.tower_dnn_hidden_units = tower_dnn_hidden_units
 
+        # expert dnn
         self.expert_dnn = nn.ModuleList([DNN(self.input_dim, expert_dnn_hidden_units, activation=dnn_activation,
                                              l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
                                              init_std=init_std, device=device) for _ in range(self.num_experts)])
-        self.gate_dnn = nn.ModuleList(
-            [nn.Linear(self.input_dim, self.num_experts, bias=False) for _ in range(self.num_tasks)])
+
+        # gate dnn
+        if len(gate_dnn_hidden_units) > 0:
+            self.gate_dnn = nn.ModuleList([DNN(self.input_dim, gate_dnn_hidden_units, activation=dnn_activation,
+                                               l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
+                                               init_std=init_std, device=device) for _ in range(self.num_experts)])
+            self.gate_dnn_final_layer = nn.ModuleList(
+                [nn.Linear(gate_dnn_hidden_units[-1], self.num_experts, bias=False) for _ in range(self.num_tasks)])
+        else:
+            self.gate_dnn_final_layer = nn.ModuleList(
+                [nn.Linear(self.input_dim, self.num_experts, bias=False) for _ in range(self.num_tasks)])
+
+        # tower dnn (task-specified)
         if len(tower_dnn_hidden_units) > 0:
             self.tower_dnn = nn.ModuleList(
                 [DNN(expert_dnn_hidden_units[-1], tower_dnn_hidden_units, activation=dnn_activation,
                      l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
                      init_std=init_std, device=device) for _ in range(self.num_tasks)])
-            self.tower_dnn_linear = nn.ModuleList([nn.Linear(tower_dnn_hidden_units[-1], 1, bias=False)
-                                                   for _ in range(self.num_tasks)])
+            self.tower_dnn_final_layer = nn.ModuleList([nn.Linear(tower_dnn_hidden_units[-1], 1, bias=False)
+                                                        for _ in range(self.num_tasks)])
         else:
-            self.tower_dnn_linear = nn.ModuleList([nn.Linear(expert_dnn_hidden_units[-1], 1, bias=False)
-                                                   for _ in range(self.num_tasks)])
+            self.tower_dnn_final_layer = nn.ModuleList([nn.Linear(expert_dnn_hidden_units[-1], 1, bias=False)
+                                                        for _ in range(self.num_tasks)])
 
         self.out = nn.ModuleList([PredictionLayer(task) for task in task_types])
         self.to(device)
@@ -96,15 +108,22 @@ class MMOE(BaseModel):
         # gate dnn
         mmoe_outs = []
         for i in range(self.num_tasks):
-            gate_out = self.gate_dnn[i](dnn_input).softmax(1)
-            gate_mul_expert = torch.matmul(gate_out.unsqueeze(1), expert_outs)
+            if len(self.gate_dnn_hidden_units) > 0:
+                gate_dnn_out = self.gate_dnn[i](dnn_input)
+                gate_dnn_out = self.gate_dnn_final_layer[i](gate_dnn_out)
+            else:
+                gate_dnn_out = self.gate_dnn_final_layer[i](dnn_input)
+            gate_mul_expert = torch.matmul(gate_dnn_out.softmax(1).unsqueeze(1), expert_outs)
             mmoe_outs.append(gate_mul_expert.squeeze())
 
         # tower dnn (task-specified)
         task_outs = []
         for i in range(self.num_tasks):
-            tower_dnn_out = self.tower_dnn[i](mmoe_outs[i])
-            tower_dnn_logit = self.tower_dnn_linear[i](tower_dnn_out)
+            if len(self.tower_dnn_hidden_units) > 0:
+                tower_dnn_out = self.tower_dnn[i](mmoe_outs[i])
+                tower_dnn_logit = self.tower_dnn_final_layer[i](tower_dnn_out)
+            else:
+                tower_dnn_logit = self.tower_dnn_final_layer[i](mmoe_outs[i])
             output = self.out[i](tower_dnn_logit)
             task_outs.append(output)
         task_outs = torch.cat(task_outs, -1)

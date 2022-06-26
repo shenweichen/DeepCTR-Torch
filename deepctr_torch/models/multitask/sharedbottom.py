@@ -58,7 +58,7 @@ class SharedBottom(BaseModel):
         self.bottom_dnn = DNN(self.input_dim, bottom_dnn_hidden_units, activation=dnn_activation,
                               l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
                               init_std=init_std, device=device)
-        if len(tower_dnn_hidden_units) > 0:
+        if len(self.tower_dnn_hidden_units) > 0:
             self.tower_dnn = nn.ModuleList(
                 [DNN(bottom_dnn_hidden_units[-1], tower_dnn_hidden_units, activation=dnn_activation,
                      l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
@@ -81,8 +81,11 @@ class SharedBottom(BaseModel):
         # tower dnn (task-specified)
         task_outs = []
         for i in range(self.num_tasks):
-            tower_dnn_out = self.tower_dnn[i](shared_bottom_output)
-            tower_dnn_logit = self.tower_dnn_linear[i](tower_dnn_out)
+            if len(self.tower_dnn_hidden_units) > 0:
+                tower_dnn_out = self.tower_dnn[i](shared_bottom_output)
+                tower_dnn_logit = self.tower_dnn_linear[i](tower_dnn_out)
+            else:
+                tower_dnn_logit = self.tower_dnn_linear[i](shared_bottom_output)
             output = self.out[i](tower_dnn_logit)
             task_outs.append(output)
         task_outs = torch.cat(task_outs, -1)
