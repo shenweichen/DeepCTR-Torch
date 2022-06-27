@@ -77,11 +77,14 @@ class VarLenSparseFeat(namedtuple('VarLenSparseFeat',
         return self.name.__hash__()
 
 
-class DenseFeat(namedtuple('DenseFeat', ['name', 'dimension', 'dtype'])):
+# custom code
+class DenseFeat(namedtuple('DenseFeat', ['name', 'dimension', 'embedding_dim', 'dtype', 'embedding_name'])):
     __slots__ = ()
 
-    def __new__(cls, name, dimension=1, dtype="float32"):
-        return super(DenseFeat, cls).__new__(cls, name, dimension, dtype)
+    def __new__(cls, name, dimension=1, embedding_dim=4, dtype="float32", embedding_name=None):
+        if embedding_name is None:
+            embedding_name = name
+        return super(DenseFeat, cls).__new__(cls, name, dimension, embedding_dim, dtype, embedding_name)
 
     def __hash__(self):
         return self.name.__hash__()
@@ -178,6 +181,23 @@ def create_embedding_matrix(feature_columns, init_std=0.0001, linear=False, spar
         nn.init.normal_(tensor.weight, mean=0, std=init_std)
 
     return embedding_dict.to(device)
+
+
+# custom code
+def create_linear_matrix(feature_columns, init_std=0.0001, device='cpu'):
+    dense_feature_columns = list(
+        filter(lambda x: isinstance(x, DenseFeat), feature_columns)) if len(feature_columns) else []
+
+    linear_dict = nn.ModuleDict(
+        {feat.embedding_name: nn.Linear(1, feat.embedding_dim)
+         for feat in
+         dense_feature_columns}
+    )
+
+    # for tensor in linear_dict.values():
+    #     nn.init.normal_(tensor.weight, mean=0, std=init_std)
+
+    return linear_dict.to(device)
 
 
 def embedding_lookup(X, sparse_embedding_dict, sparse_input_dict, sparse_feature_columns, return_feat_list=(),

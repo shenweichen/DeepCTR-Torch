@@ -66,12 +66,13 @@ class DeepFM(BaseModel):
 
     def forward(self, X):
 
-        sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
-                                                                                  self.embedding_dict)
+        sparse_embedding_list, dense_value_list, dense_linear_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
+                                                                                  self.embedding_dict, self.linear_dict)
         logit = self.linear_model(X)
 
-        if self.use_fm and len(sparse_embedding_list) > 0:
-            fm_input = torch.cat(sparse_embedding_list, dim=1)
+        # custom code
+        if self.use_fm and len(sparse_embedding_list + dense_value_list) > 0:
+            fm_input = torch.cat(sparse_embedding_list + dense_linear_list, dim=1)
             logit += self.fm(fm_input)
 
         if self.use_dnn:
