@@ -131,7 +131,7 @@ class MMOE(BaseModel):
                 gate_dnn_out = self.gate_dnn_final_layer[i](gate_dnn_out)
             else:
                 gate_dnn_out = self.gate_dnn_final_layer[i](dnn_input)
-            gate_mul_expert = torch.matmul(gate_dnn_out.softmax(1).unsqueeze(1), expert_outs)
+            gate_mul_expert = torch.matmul(gate_dnn_out.softmax(1).unsqueeze(1), expert_outs)  # (bs, 1, dim)
             mmoe_outs.append(gate_mul_expert.squeeze())
 
         # tower dnn (task-specific)
