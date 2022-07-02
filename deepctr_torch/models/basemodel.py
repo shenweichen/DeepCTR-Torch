@@ -246,7 +246,8 @@ class BaseModel(nn.Module):
 
                         optim.zero_grad()
                         if isinstance(loss_func, list):
-                            loss = sum([loss_func[i](y_pred[:, i], y[:, i], reduction='sum') for i in range(self.num_tasks)])
+                            loss = sum(
+                                [loss_func[i](y_pred[:, i], y[:, i], reduction='sum') for i in range(self.num_tasks)])
                         else:
                             loss = loss_func(y_pred, y.squeeze(), reduction='sum')
                         reg_loss = self.get_regularization_loss()
