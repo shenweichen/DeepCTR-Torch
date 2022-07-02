@@ -37,8 +37,8 @@ class MMOE(BaseModel):
     :return: A PyTorch model instance.
     """
 
-    def __init__(self, dnn_feature_columns, num_experts=3, expert_dnn_hidden_units=(64, 32),
-                 gate_dnn_hidden_units=(), tower_dnn_hidden_units=(64,), l2_reg_linear=0.00001,
+    def __init__(self, dnn_feature_columns, num_experts=3, expert_dnn_hidden_units=(256, 128),
+                 gate_dnn_hidden_units=(64,), tower_dnn_hidden_units=(64,), l2_reg_linear=0.00001,
                  l2_reg_embedding=0.00001, l2_reg_dnn=0,
                  init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation='relu', dnn_use_bn=False,
                  task_types=('binary', 'binary'), task_names=('ctr', 'ctcvr'), device='cpu', gpus=None):

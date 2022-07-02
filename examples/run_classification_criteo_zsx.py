@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
     data[sparse_features] = data[sparse_features].fillna('-1', )
     data[dense_features] = data[dense_features].fillna(0, )
-    target = ['label', 'label']
+    target = ['label']
 
     # 1.Label Encoding for sparse features,and do simple Transformation for dense features
     for feat in sparse_features:
@@ -44,16 +44,19 @@ if __name__ == "__main__":
     test_model_input = {name: test[name] for name in feature_names}
 
     # 4.Define Model,train,predict and evaluate
+
     device = 'cpu'
     use_cuda = True
     if use_cuda and torch.cuda.is_available():
         print('cuda ready...')
         device = 'cuda:0'
 
-    model = ESMM(dnn_feature_columns, task_types=['binary', 'binary'],
-                 l2_reg_embedding=1e-5, task_names=target, device=device)
-    model.compile("adagrad", loss="binary_crossentropy",
-                  metrics=['binary_crossentropy'], )
+    model = DCNMix(linear_feature_columns=[], dnn_feature_columns=dnn_feature_columns,
+                   task='binary',
+                   l2_reg_embedding=1e-5, device=device)
+
+    model.compile("adagrad", "binary_crossentropy",
+                  metrics=["binary_crossentropy", "auc"], )
 
     history = model.fit(train_model_input, train[target].values, batch_size=32, epochs=10, verbose=2,
                         validation_split=0.2)
@@ -62,3 +65,4 @@ if __name__ == "__main__":
     print("test LogLoss", round(log_loss(test[target].values, pred_ans), 4))
     print("test AUC", round(roc_auc_score(test[target].values, pred_ans), 4))
     print(pred_ans)
+
