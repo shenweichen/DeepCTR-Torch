@@ -87,7 +87,8 @@ class PLE(BaseModel):
         specific_gate_output_dim = self.specific_expert_num + self.shared_expert_num
         if len(gate_dnn_hidden_units) > 0:
             self.specific_gate_dnn = nn.ModuleList(
-                [nn.ModuleList([DNN(self.input_dim if level_num == 0 else gate_dnn_hidden_units[-1], gate_dnn_hidden_units, activation=dnn_activation,
+                [nn.ModuleList([DNN(self.input_dim if level_num == 0 else expert_dnn_hidden_units[-1],
+                                    gate_dnn_hidden_units, activation=dnn_activation,
                                     l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
                                     init_std=init_std, device=device) for _ in range(self.num_tasks)])
                  for level_num in range(self.num_levels)])
@@ -99,8 +100,9 @@ class PLE(BaseModel):
                 l2=l2_reg_dnn)
         else:
             self.specific_gate_dnn_final_layer = nn.ModuleList(
-                [nn.ModuleList([nn.Linear(gate_dnn_hidden_units[-1], specific_gate_output_dim, bias=False)
-                                for _ in range(self.num_tasks)]) for _ in range(self.num_levels)])
+                [nn.ModuleList([nn.Linear(self.input_dim if level_num == 0 else expert_dnn_hidden_units[-1],
+                                          specific_gate_output_dim, bias=False) for _ in range(self.num_tasks)]) for
+                 level_num in range(self.num_levels)])
 
         # shared gate dnn
         shared_gate_output_dim = self.num_tasks * self.specific_expert_num + self.shared_expert_num
@@ -117,8 +119,8 @@ class PLE(BaseModel):
                 l2=l2_reg_dnn)
         else:
             self.shared_gate_dnn_final_layer = nn.ModuleList(
-                [nn.Linear(gate_dnn_hidden_units[-1], shared_gate_output_dim, bias=False)
-                 for _ in range(self.num_levels)])
+                [nn.Linear(self.input_dim if level_num == 0 else expert_dnn_hidden_units[-1], shared_gate_output_dim,
+                           bias=False) for level_num in range(self.num_levels)])
 
         # tower dnn (task-specific)
         if len(tower_dnn_hidden_units) > 0:
@@ -174,7 +176,8 @@ class PLE(BaseModel):
         for i in range(self.num_tasks):
             # concat task-specific expert and task-shared expert
             cur_experts_outputs = specific_expert_outputs[
-                                  i * self.specific_expert_num:(i + 1) * self.specific_expert_num] + shared_expert_outputs
+                                  i * self.specific_expert_num:(
+                                                                           i + 1) * self.specific_expert_num] + shared_expert_outputs
             cur_experts_outputs = torch.stack(cur_experts_outputs, 1)
 
             # gate dnn
