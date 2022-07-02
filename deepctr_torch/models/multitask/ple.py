@@ -127,7 +127,7 @@ class PLE(BaseModel):
                 [nn.Linear(self.input_dim if level_num == 0 else expert_dnn_hidden_units[-1], shared_gate_output_dim,
                            bias=False) for level_num in range(self.num_levels)])
 
-        # tower dnn (task-specific)
+        # 3. tower dnn (task-specific)
         if len(tower_dnn_hidden_units) > 0:
             self.tower_dnn = nn.ModuleList(
                 [DNN(expert_dnn_hidden_units[-1], tower_dnn_hidden_units, activation=dnn_activation,
