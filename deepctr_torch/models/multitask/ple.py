@@ -70,25 +70,27 @@ class PLE(BaseModel):
 
         # expert dnn
         self.specific_experts = nn.ModuleList(
-            [nn.ModuleList([nn.ModuleList([DNN(self.input_dim, expert_dnn_hidden_units, activation=dnn_activation,
+            [nn.ModuleList([nn.ModuleList([DNN(self.input_dim if level_num == 0 else expert_dnn_hidden_units[-1],
+                                               expert_dnn_hidden_units, activation=dnn_activation,
                                                l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
                                                init_std=init_std, device=device) for _ in
                                            range(self.specific_expert_num)])
-                            for _ in range(self.num_tasks)]) for _ in range(self.num_levels)])
+                            for _ in range(self.num_tasks)]) for level_num in range(self.num_levels)])
         self.shared_experts = nn.ModuleList(
-            [nn.ModuleList([DNN(self.input_dim, expert_dnn_hidden_units, activation=dnn_activation,
+            [nn.ModuleList([DNN(self.input_dim if level_num == 0 else expert_dnn_hidden_units[-1],
+                                expert_dnn_hidden_units, activation=dnn_activation,
                                 l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
                                 init_std=init_std, device=device) for _ in range(self.shared_expert_num)])
-             for _ in range(self.num_levels)])
+             for level_num in range(self.num_levels)])
 
         # specific gate dnn
         specific_gate_output_dim = self.specific_expert_num + self.shared_expert_num
         if len(gate_dnn_hidden_units) > 0:
             self.specific_gate_dnn = nn.ModuleList(
-                [nn.ModuleList([DNN(self.input_dim, gate_dnn_hidden_units, activation=dnn_activation,
+                [nn.ModuleList([DNN(self.input_dim if level_num == 0 else gate_dnn_hidden_units[-1], gate_dnn_hidden_units, activation=dnn_activation,
                                     l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
                                     init_std=init_std, device=device) for _ in range(self.num_tasks)])
-                 for _ in range(self.num_levels)])
+                 for level_num in range(self.num_levels)])
             self.specific_gate_dnn_final_layer = nn.ModuleList(
                 [nn.ModuleList([nn.Linear(gate_dnn_hidden_units[-1], specific_gate_output_dim, bias=False)
                                 for _ in range(self.num_tasks)]) for _ in range(self.num_levels)])
