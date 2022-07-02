@@ -294,7 +294,7 @@ i) modeling CVR directly over the entire space, ii) employing a feature represen
 
 ![ESMM](../pics/multitaskmodels/ESMM.png)
 
-[Ma X, Zhao L, Huang G, et al. Entire space multi-task model: An effective approach for estimating post-click conversion rate[C]//The 41st International ACM SIGIR Conference on Research & Development in Information Retrieval. 2018.](https://arxiv.org/abs/1804.07931)
+[Ma X, Zhao L, Huang G, et al. Entire space multi-task model: An effective approach for estimating post-click conversion rate[C]//The 41st International ACM SIGIR Conference on Research & Development in Information Retrieval. 2018.](https://dl.acm.org/doi/10.1145/3209978.3210104)
 
 ### MMOE(Multi-gate Mixture-of-Experts)
 
