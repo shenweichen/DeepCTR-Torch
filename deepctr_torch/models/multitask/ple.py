@@ -83,7 +83,7 @@ class PLE(BaseModel):
                                 init_std=init_std, device=device) for _ in range(self.shared_expert_num)])
              for level_num in range(self.num_levels)])
 
-        # specific gate dnn
+        # gate dnn
         specific_gate_output_dim = self.specific_expert_num + self.shared_expert_num
         if len(gate_dnn_hidden_units) > 0:
             self.specific_gate_dnn = nn.ModuleList(
@@ -104,7 +104,6 @@ class PLE(BaseModel):
                                           specific_gate_output_dim, bias=False) for _ in range(self.num_tasks)]) for
                  level_num in range(self.num_levels)])
 
-        # shared gate dnn
         shared_gate_output_dim = self.num_tasks * self.specific_expert_num + self.shared_expert_num
         if len(gate_dnn_hidden_units) > 0:
             self.shared_gate_dnn = nn.ModuleList([DNN(self.input_dim, gate_dnn_hidden_units, activation=dnn_activation,
