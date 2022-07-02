@@ -52,7 +52,7 @@ if __name__ == "__main__":
         device = 'cuda:0'
 
     model = PLE(dnn_feature_columns, task_types=['binary', 'binary'],
-                 l2_reg_embedding=1e-5, task_names=target, device=device)
+                l2_reg_embedding=1e-5, task_names=target, device=device)
     model.compile("adagrad", loss="binary_crossentropy",
                   metrics=['binary_crossentropy'], )
 
