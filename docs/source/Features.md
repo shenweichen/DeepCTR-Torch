@@ -277,7 +277,7 @@ Adaptive Factorization Network (AFN) can learn arbitrary-order cross features ad
 
 Hard parameter sharing is the most commonly used approach to MTL in neural networks. It is generally applied by sharing the hidden layers between all tasks, while keeping several task-specific output layers.
 
-[**SharedBottom Model API**](./deepctr.models.multitask.sharedbottom.html)
+[**SharedBottom Model API**](./deepctr_torch.models.multitask.sharedbottom.html)
 
 ![SharedBottom](../pics/multitaskmodels/SharedBottom.png)
 
@@ -290,7 +290,7 @@ ESMM models CVR in a brand-new perspective by making good use of sequential patt
 click → conversion. The proposed Entire Space Multi-task Model (ESMM) can eliminate the two problems simultaneously by
 i) modeling CVR directly over the entire space, ii) employing a feature representation transfer learning strategy.
 
-[**ESMM Model API**](./deepctr.models.multitask.esmm.html)
+[**ESMM Model API**](./deepctr_torch.models.multitask.esmm.html)
 
 ![ESMM](../pics/multitaskmodels/ESMM.png)
 
@@ -302,7 +302,7 @@ Multi-gate Mixture-of-Experts (MMoE) explicitly learns to model task relationshi
 Experts (MoE) structure to multi-task learning by sharing the expert submodels across all tasks, while also having a
 gating network trained to optimize each task.
 
-[**MMOE Model API**](./deepctr.models.multitask.mmoe.html)
+[**MMOE Model API**](./deepctr_torch.models.multitask.mmoe.html)
 
 ![MMOE](../pics/multitaskmodels/MMOE.png)
 
@@ -314,7 +314,7 @@ PLE separates shared components and task-specific components explicitly and adop
 extract and separate deeper semantic knowledge gradually, improving efficiency of joint representation learning and
 information routing across tasks in a general setup.
 
-[**PLE Model API**](./deepctr.models.multitask.ple.html)
+[**PLE Model API**](./deepctr_torch.models.multitask.ple.html)
 
 ![PLE](../pics/multitaskmodels/PLE.png)
 
