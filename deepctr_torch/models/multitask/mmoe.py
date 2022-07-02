@@ -75,7 +75,7 @@ class MMOE(BaseModel):
         if len(gate_dnn_hidden_units) > 0:
             self.gate_dnn = nn.ModuleList([DNN(self.input_dim, gate_dnn_hidden_units, activation=dnn_activation,
                                                l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
-                                               init_std=init_std, device=device) for _ in range(self.num_experts)])
+                                               init_std=init_std, device=device) for _ in range(self.num_tasks)])
             self.gate_dnn_final_layer = nn.ModuleList(
                 [nn.Linear(gate_dnn_hidden_units[-1], self.num_experts, bias=False) for _ in range(self.num_tasks)])
             self.add_regularization_weight(

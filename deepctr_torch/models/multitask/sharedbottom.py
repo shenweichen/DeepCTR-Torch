@@ -15,7 +15,7 @@ from ...layers import DNN, PredictionLayer
 
 
 class SharedBottom(BaseModel):
-    """Instantiates the Multi-gate Mixture-of-Experts architecture.
+    """Instantiates the SharedBottom multi-task learning Network architecture.
 
     :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
     :param bottom_dnn_hidden_units: list, list of positive integer or empty list, the layer number and units in each layer of shared bottom DNN.
