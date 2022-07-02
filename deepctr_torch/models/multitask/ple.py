@@ -4,7 +4,7 @@ Author:
     zanshuxun, zanshuxun@aliyun.com
 
 Reference:
-    [1] Jiaqi Ma, Zhe Zhao, Xinyang Yi, et al. Modeling Task Relationships in Multi-task Learning with Multi-gate Mixture-of-Experts[C]](https://dl.acm.org/doi/10.1145/3219819.3220007)
+    [1] Tang H, Liu J, Zhao M, et al. Progressive layered extraction (ple): A novel multi-task learning (mtl) model for personalized recommendations[C]//Fourteenth ACM Conference on Recommender Systems. 2020.(https://dl.acm.org/doi/10.1145/3383313.3412236)
 """
 import torch
 import torch.nn as nn
@@ -14,11 +14,13 @@ from ...inputs import combined_dnn_input
 from ...layers import DNN, PredictionLayer
 
 
-class MMOE(BaseModel):
-    """Instantiates the Multi-gate Mixture-of-Experts architecture.
+class PLE(BaseModel):
+    """Instantiates the multi level of Customized Gate Control of Progressive Layered Extraction architecture.
 
     :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
-    :param num_experts: integer, number of experts.
+    :param shared_expert_num: integer, number of task-shared experts.
+    :param specific_expert_num: integer, number of task-specific experts.
+    :param num_levels: integer, number of CGC levels.
     :param expert_dnn_hidden_units: list, list of positive integer or empty list, the layer number and units in each layer of expert DNN.
     :param gate_dnn_hidden_units: list, list of positive integer or empty list, the layer number and units in each layer of gate DNN.
     :param tower_dnn_hidden_units: list, list of positive integer or empty list, the layer number and units in each layer of task-specific DNN.
@@ -30,7 +32,7 @@ class MMOE(BaseModel):
     :param dnn_dropout: float in [0,1), the probability we will drop out a given DNN coordinate.
     :param dnn_activation: Activation function to use in DNN.
     :param dnn_use_bn: bool, Whether use BatchNormalization before activation or not in DNN.
-    :param task_types: list of str, indicating the loss of each tasks, ``"binary"`` for  binary logloss, ``"regression"`` for regression loss. e.g. ['binary', 'regression'].
+    :param task_types: list of str, indicating the loss of each tasks, ``"binary"`` for  binary logloss, ``"regression"`` for regression loss. e.g. ['binary', 'regression']
     :param task_names: list of str, indicating the predict target of each tasks.
     :param device: str, ``"cpu"`` or ``"cuda:0"``.
     :param gpus: list of int or torch.device for multiple gpus. If None, run on `device`. `gpus[0]` should be the same gpu with `device`.
@@ -38,14 +40,14 @@ class MMOE(BaseModel):
     :return: A PyTorch model instance.
     """
 
-    def __init__(self, dnn_feature_columns, num_experts=3, expert_dnn_hidden_units=(256, 128),
-                 gate_dnn_hidden_units=(64,), tower_dnn_hidden_units=(64,), l2_reg_linear=0.00001,
-                 l2_reg_embedding=0.00001, l2_reg_dnn=0,
-                 init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation='relu', dnn_use_bn=False,
-                 task_types=('binary', 'binary'), task_names=('ctr', 'ctcvr'), device='cpu', gpus=None):
-        super(MMOE, self).__init__(linear_feature_columns=[], dnn_feature_columns=dnn_feature_columns,
-                                   l2_reg_linear=l2_reg_linear, l2_reg_embedding=l2_reg_embedding, init_std=init_std,
-                                   seed=seed, device=device, gpus=gpus)
+    def __init__(self, dnn_feature_columns, shared_expert_num=1, specific_expert_num=1, num_levels=2,
+                 expert_dnn_hidden_units=(256, 128), gate_dnn_hidden_units=(64,), tower_dnn_hidden_units=(64,),
+                 l2_reg_linear=0.00001, l2_reg_embedding=0.00001, l2_reg_dnn=0, init_std=0.0001, seed=1024,
+                 dnn_dropout=0, dnn_activation='relu', dnn_use_bn=False, task_types=('binary', 'binary'),
+                 task_names=('ctr', 'ctcvr'), device='cpu', gpus=None):
+        super(PLE, self).__init__(linear_feature_columns=[], dnn_feature_columns=dnn_feature_columns,
+                                  l2_reg_linear=l2_reg_linear, l2_reg_embedding=l2_reg_embedding, init_std=init_std,
+                                  seed=seed, device=device, gpus=gpus)
         self.num_tasks = len(task_names)
         if self.num_tasks <= 1:
             raise ValueError("num_tasks must be greater than 1")
