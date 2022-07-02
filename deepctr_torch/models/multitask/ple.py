@@ -107,9 +107,10 @@ class PLE(BaseModel):
 
         shared_gate_output_dim = self.num_tasks * self.specific_expert_num + self.shared_expert_num
         if len(gate_dnn_hidden_units) > 0:
-            self.shared_gate_dnn = nn.ModuleList([DNN(self.input_dim, gate_dnn_hidden_units, activation=dnn_activation,
+            self.shared_gate_dnn = nn.ModuleList([DNN(self.input_dim if level_num == 0 else expert_dnn_hidden_units[-1],
+                                                      gate_dnn_hidden_units, activation=dnn_activation,
                                                       l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
-                                                      init_std=init_std, device=device) for _ in
+                                                      init_std=init_std, device=device) for level_num in
                                                   range(self.num_levels)])
             self.shared_gate_dnn_final_layer = nn.ModuleList(
                 [nn.Linear(gate_dnn_hidden_units[-1], shared_gate_output_dim, bias=False)
@@ -176,8 +177,7 @@ class PLE(BaseModel):
         for i in range(self.num_tasks):
             # concat task-specific expert and task-shared expert
             cur_experts_outputs = specific_expert_outputs[
-                                  i * self.specific_expert_num:(
-                                                                           i + 1) * self.specific_expert_num] + shared_expert_outputs
+                                  i * self.specific_expert_num:(i + 1) * self.specific_expert_num] + shared_expert_outputs
             cur_experts_outputs = torch.stack(cur_experts_outputs, 1)
 
             # gate dnn
