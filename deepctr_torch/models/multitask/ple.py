@@ -74,7 +74,7 @@ class PLE(BaseModel):
                                                l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
                                                init_std=init_std, device=device) for _ in
                                            range(self.specific_expert_num)])
-                            for _ in range(self.task_names)]) for _ in range(self.num_levels)])
+                            for _ in range(self.num_tasks)]) for _ in range(self.num_levels)])
         self.shared_experts = nn.ModuleList(
             [nn.ModuleList([DNN(self.input_dim, expert_dnn_hidden_units, activation=dnn_activation,
                                 l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
@@ -86,14 +86,14 @@ class PLE(BaseModel):
         if len(gate_dnn_hidden_units) > 0:
             self.specific_gate_dnn = nn.ModuleList(
                 [nn.ModuleList([DNN(self.input_dim, gate_dnn_hidden_units, activation=dnn_activation,
-                               l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
-                               init_std=init_std, device=device) for _ in range(self.num_tasks)])
+                                    l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
+                                    init_std=init_std, device=device) for _ in range(self.num_tasks)])
                  for _ in range(self.num_levels)])
             self.specific_gate_dnn_final_layer = nn.ModuleList(
                 [nn.ModuleList([nn.Linear(gate_dnn_hidden_units[-1], specific_gate_output_dim, bias=False)
                                 for _ in range(self.num_tasks)]) for _ in range(self.num_levels)])
             self.add_regularization_weight(
-                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.gate_dnn.named_parameters()),
+                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.specific_gate_dnn.named_parameters()),
                 l2=l2_reg_dnn)
         else:
             self.specific_gate_dnn_final_layer = nn.ModuleList(
@@ -103,21 +103,20 @@ class PLE(BaseModel):
         # shared gate dnn
         shared_gate_output_dim = self.num_tasks * self.specific_expert_num + self.shared_expert_num
         if len(gate_dnn_hidden_units) > 0:
-            self.shared_gate_dnn = nn.ModuleList(
-                [nn.ModuleList([DNN(self.input_dim, gate_dnn_hidden_units, activation=dnn_activation,
-                               l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
-                               init_std=init_std, device=device) for _ in range(self.num_tasks)])
-                 for _ in range(self.num_levels)])
+            self.shared_gate_dnn = nn.ModuleList([DNN(self.input_dim, gate_dnn_hidden_units, activation=dnn_activation,
+                                                      l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
+                                                      init_std=init_std, device=device) for _ in
+                                                  range(self.num_levels)])
             self.shared_gate_dnn_final_layer = nn.ModuleList(
-                [nn.ModuleList([nn.Linear(gate_dnn_hidden_units[-1], shared_gate_output_dim, bias=False)
-                                for _ in range(self.num_tasks)]) for _ in range(self.num_levels)])
+                [nn.Linear(gate_dnn_hidden_units[-1], shared_gate_output_dim, bias=False)
+                 for _ in range(self.num_levels)])
             self.add_regularization_weight(
-                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.gate_dnn.named_parameters()),
+                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.shared_gate_dnn.named_parameters()),
                 l2=l2_reg_dnn)
         else:
             self.shared_gate_dnn_final_layer = nn.ModuleList(
-                [nn.ModuleList([nn.Linear(gate_dnn_hidden_units[-1], shared_gate_output_dim, bias=False)
-                                for _ in range(self.num_tasks)]) for _ in range(self.num_levels)])
+                [nn.Linear(gate_dnn_hidden_units[-1], shared_gate_output_dim, bias=False)
+                 for _ in range(self.num_levels)])
 
         # tower dnn (task-specific)
         if len(tower_dnn_hidden_units) > 0:
@@ -137,10 +136,15 @@ class PLE(BaseModel):
         self.out = nn.ModuleList([PredictionLayer(task) for task in task_types])
 
         self.add_regularization_weight(
-            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.expert_dnn.named_parameters()), l2=l2_reg_dnn)
-        self.add_regularization_weight(
-            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.specific_gate_dnn_final_layer.named_parameters()),
+            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.specific_experts.named_parameters()),
             l2=l2_reg_dnn)
+        self.add_regularization_weight(
+            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.shared_experts.named_parameters()),
+            l2=l2_reg_dnn)
+        self.add_regularization_weight(filter(lambda x: 'weight' in x[0] and 'bn' not in x[0],
+                                              self.specific_gate_dnn_final_layer.named_parameters()), l2=l2_reg_dnn)
+        self.add_regularization_weight(filter(lambda x: 'weight' in x[0] and 'bn' not in x[0],
+                                              self.shared_gate_dnn_final_layer.named_parameters()), l2=l2_reg_dnn)
         self.add_regularization_weight(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.tower_dnn_final_layer.named_parameters()),
             l2=l2_reg_dnn)
@@ -168,9 +172,8 @@ class PLE(BaseModel):
         for i in range(self.num_tasks):
             # concat task-specific expert and task-shared expert
             cur_experts_outputs = specific_expert_outputs[
-                                  i * self.specific_expert_num:(
-                                                                       i + 1) * self.specific_expert_num] + shared_expert_outputs
-            cur_experts_outputs = torch.cat(cur_experts_outputs, -1)
+                                  i * self.specific_expert_num:(i + 1) * self.specific_expert_num] + shared_expert_outputs
+            cur_experts_outputs = torch.stack(cur_experts_outputs, 1)
 
             # gate dnn
             if len(self.gate_dnn_hidden_units) > 0:
@@ -185,7 +188,7 @@ class PLE(BaseModel):
         if not is_last:
             # all the expert include task-specific expert and task-shared expert
             cur_experts_outputs = specific_expert_outputs + shared_expert_outputs
-            cur_experts_outputs = torch.cat(cur_experts_outputs, -1)
+            cur_experts_outputs = torch.stack(cur_experts_outputs, 1)
 
             # build gate layers
             if len(self.gate_dnn_hidden_units) > 0:
