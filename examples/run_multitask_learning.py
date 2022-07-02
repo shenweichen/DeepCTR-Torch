@@ -51,13 +51,14 @@ if __name__ == "__main__":
         print('cuda ready...')
         device = 'cuda:0'
 
-    model = PLE(dnn_feature_columns, task_types=['binary', 'binary'],
-                l2_reg_embedding=1e-5, task_names=target, device=device)
+    model = MMOE(dnn_feature_columns, task_types=['binary', 'binary'],
+                 l2_reg_embedding=1e-5, task_names=target, device=device)
     model.compile("adagrad", loss="binary_crossentropy",
                   metrics=['binary_crossentropy'], )
 
     history = model.fit(train_model_input, train[target].values, batch_size=32, epochs=10, verbose=2)
     pred_ans = model.predict(test_model_input, 256)
     print("")
-    print("test LogLoss", round(log_loss(test[target].values, pred_ans), 4))
-    print("test AUC", round(roc_auc_score(test[target].values, pred_ans), 4))
+    for i, target_name in enumerate(target):
+        print("%s test LogLoss" % target_name, round(log_loss(test[target[i]].values, pred_ans[:, i]), 4))
+        print("%s test AUC" % target_name, round(roc_auc_score(test[target[i]].values, pred_ans[:, i]), 4))

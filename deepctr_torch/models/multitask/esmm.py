@@ -45,6 +45,8 @@ class ESMM(BaseModel):
         self.num_tasks = len(task_names)
         if self.num_tasks != 2:
             raise ValueError("the length of task_names must be equal to 2")
+        if len(dnn_feature_columns) == 0:
+            raise ValueError("dnn_feature_columns is null!")
         if len(task_types) != self.num_tasks:
             raise ValueError("num_tasks must be equal to the length of task_types")
 

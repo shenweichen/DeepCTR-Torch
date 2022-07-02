@@ -51,7 +51,8 @@ class MMOE(BaseModel):
             raise ValueError("num_tasks must be greater than 1")
         if num_experts <= 1:
             raise ValueError("num_experts must be greater than 1")
-
+        if len(dnn_feature_columns) == 0:
+            raise ValueError("dnn_feature_columns is null!")
         if len(task_types) != self.num_tasks:
             raise ValueError("num_tasks must be equal to the length of task_types")
 
