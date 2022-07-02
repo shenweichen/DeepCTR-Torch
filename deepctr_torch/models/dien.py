@@ -217,7 +217,7 @@ class InterestExtractor(nn.Module):
 
         masked_keys = torch.masked_select(keys, mask.view(-1, 1, 1)).view(-1, max_length, dim)
 
-        packed_keys = pack_padded_sequence(masked_keys, lengths=masked_keys_length, batch_first=True,
+        packed_keys = pack_padded_sequence(masked_keys, lengths=masked_keys_length.cpu(), batch_first=True,
                                            enforce_sorted=False)
         packed_interests, _ = self.gru(packed_keys)
         interests, _ = pad_packed_sequence(packed_interests, batch_first=True, padding_value=0.0,
@@ -353,7 +353,7 @@ class InterestEvolving(nn.Module):
         query = torch.masked_select(query, mask.view(-1, 1)).view(-1, dim).unsqueeze(1)
 
         if self.gru_type == 'GRU':
-            packed_keys = pack_padded_sequence(keys, lengths=keys_length, batch_first=True, enforce_sorted=False)
+            packed_keys = pack_padded_sequence(keys, lengths=keys_length.cpu(), batch_first=True, enforce_sorted=False)
             packed_interests, _ = self.interest_evolution(packed_keys)
             interests, _ = pad_packed_sequence(packed_interests, batch_first=True, padding_value=0.0,
                                                total_length=max_length)
@@ -362,15 +362,15 @@ class InterestEvolving(nn.Module):
         elif self.gru_type == 'AIGRU':
             att_scores = self.attention(query, keys, keys_length.unsqueeze(1))  # [b, 1, T]
             interests = keys * att_scores.transpose(1, 2)  # [b, T, H]
-            packed_interests = pack_padded_sequence(interests, lengths=keys_length, batch_first=True,
+            packed_interests = pack_padded_sequence(interests, lengths=keys_length.cpu(), batch_first=True,
                                                     enforce_sorted=False)
             _, outputs = self.interest_evolution(packed_interests)
             outputs = outputs.squeeze(0) # [b, H]
         elif self.gru_type == 'AGRU' or self.gru_type == 'AUGRU':
             att_scores = self.attention(query, keys, keys_length.unsqueeze(1)).squeeze(1)  # [b, T]
-            packed_interests = pack_padded_sequence(keys, lengths=keys_length, batch_first=True,
+            packed_interests = pack_padded_sequence(keys, lengths=keys_length.cpu(), batch_first=True,
                                                     enforce_sorted=False)
-            packed_scores = pack_padded_sequence(att_scores, lengths=keys_length, batch_first=True,
+            packed_scores = pack_padded_sequence(att_scores, lengths=keys_length.cpu(), batch_first=True,
                                                  enforce_sorted=False)
             outputs = self.interest_evolution(packed_interests, packed_scores)
             outputs, _ = pad_packed_sequence(outputs, batch_first=True, padding_value=0.0, total_length=max_length)
