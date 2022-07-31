@@ -75,14 +75,14 @@ class MMOE(BaseModel):
         # gate dnn
         self.gate_dnn = nn.ModuleList([DNN(self.input_dim, gate_dnn_hidden_units+(self.num_experts,),
                                            activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout,
-                                           use_bn=dnn_use_bn, output_activation='linear', output_bias=False, init_std=init_std, device=device)
-                                       for _ in range(self.num_tasks)])
+                                           use_bn=dnn_use_bn, output_activation='linear', output_bias=False,
+                                           init_std=init_std, device=device) for _ in range(self.num_tasks)])
 
         # tower dnn (task-specific)
         self.tower_dnn = nn.ModuleList(
             [DNN(expert_dnn_hidden_units[-1], tower_dnn_hidden_units+(1,), activation=dnn_activation,
-                 l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn, output_activation='linear', output_bias=False,
-                 init_std=init_std, device=device) for _ in range(self.num_tasks)])
+                 l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn, output_activation='linear',
+                 output_bias=False, init_std=init_std, device=device) for _ in range(self.num_tasks)])
 
         self.out = nn.ModuleList([PredictionLayer(task) for task in task_types])
 
