@@ -66,7 +66,7 @@ class SharedBottom(BaseModel):
 
         self.tower_dnn = nn.ModuleList(
             # the hidden layers (tower_dnn_hidden_units) and the output layer (1,)
-            [DNN(bottom_dnn_hidden_units[-1], tower_dnn_hidden_units+(1,), activation=dnn_activation,
+            [DNN(bottom_dnn_hidden_units[-1], tower_dnn_hidden_units + (1,), activation=dnn_activation,
                  dropout_rate=dnn_dropout, use_bn=dnn_use_bn, output_activation='linear', output_bias=False,
                  init_std=init_std, device=device) for _ in range(self.num_tasks)])
         self.out = nn.ModuleList([PredictionLayer(task) for task in task_types])

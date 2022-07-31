@@ -7,7 +7,6 @@ Reference:
     [1] Ma X, Zhao L, Huang G, et al. Entire space multi-task model: An effective approach for estimating post-click conversion rate[C]//The 41st International ACM SIGIR Conference on Research & Development in Information Retrieval. 2018.(https://dl.acm.org/doi/10.1145/3209978.3210104)
 """
 import torch
-import torch.nn as nn
 
 from ..basemodel import BaseModel
 from ...inputs import combined_dnn_input
@@ -56,10 +55,10 @@ class ESMM(BaseModel):
 
         input_dim = self.compute_input_dim(dnn_feature_columns)
 
-        self.ctr_dnn = DNN(input_dim, tower_dnn_hidden_units+(1,), activation=dnn_activation,
+        self.ctr_dnn = DNN(input_dim, tower_dnn_hidden_units + (1,), activation=dnn_activation,
                            dropout_rate=dnn_dropout, use_bn=dnn_use_bn, output_activation='linear', output_bias=False,
                            init_std=init_std, device=device)
-        self.cvr_dnn = DNN(input_dim, tower_dnn_hidden_units+(1,), activation=dnn_activation,
+        self.cvr_dnn = DNN(input_dim, tower_dnn_hidden_units + (1,), activation=dnn_activation,
                            dropout_rate=dnn_dropout, use_bn=dnn_use_bn, output_activation='linear', output_bias=False,
                            init_std=init_std, device=device)
 
