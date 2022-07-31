@@ -63,27 +63,19 @@ class SharedBottom(BaseModel):
         self.bottom_dnn = DNN(self.input_dim, bottom_dnn_hidden_units, activation=dnn_activation,
                               dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
                               init_std=init_std, device=device)
-        if len(self.tower_dnn_hidden_units) > 0:
-            self.tower_dnn = nn.ModuleList(
-                [DNN(bottom_dnn_hidden_units[-1], tower_dnn_hidden_units, activation=dnn_activation,
-                     dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
-                     init_std=init_std, device=device) for _ in range(self.num_tasks)])
-            self.tower_dnn_final_layer = nn.ModuleList([nn.Linear(tower_dnn_hidden_units[-1], 1, bias=False)
-                                                        for _ in range(self.num_tasks)])
-            self.add_regularization_weight(
-                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.tower_dnn.named_parameters()),
-                l2=l2_reg_dnn)
-        else:
-            self.tower_dnn_final_layer = nn.ModuleList([nn.Linear(bottom_dnn_hidden_units[-1], 1, bias=False)
-                                                        for _ in range(self.num_tasks)])
 
+        self.tower_dnn = nn.ModuleList(
+            # the hidden layers (tower_dnn_hidden_units) and the output layer (1,)
+            [DNN(bottom_dnn_hidden_units[-1], tower_dnn_hidden_units+(1,), activation=dnn_activation,
+                 dropout_rate=dnn_dropout, use_bn=dnn_use_bn, output_activation='linear', output_bias=False,
+                 init_std=init_std, device=device) for _ in range(self.num_tasks)])
         self.out = nn.ModuleList([PredictionLayer(task) for task in task_types])
 
         self.add_regularization_weight(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.bottom_dnn.named_parameters()), l2=l2_reg_dnn)
         self.add_regularization_weight(
-            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.tower_dnn_final_layer.named_parameters()),
-            l2=l2_reg_dnn)
+            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.tower_dnn.named_parameters()), l2=l2_reg_dnn)
+
         self.to(device)
 
     def forward(self, X):
@@ -95,11 +87,7 @@ class SharedBottom(BaseModel):
         # tower dnn (task-specific)
         task_outs = []
         for i in range(self.num_tasks):
-            if len(self.tower_dnn_hidden_units) > 0:
-                tower_dnn_out = self.tower_dnn[i](shared_bottom_output)
-                tower_dnn_logit = self.tower_dnn_final_layer[i](tower_dnn_out)
-            else:
-                tower_dnn_logit = self.tower_dnn_final_layer[i](shared_bottom_output)
+            tower_dnn_logit = self.tower_dnn[i](shared_bottom_output)
             output = self.out[i](tower_dnn_logit)
             task_outs.append(output)
         task_outs = torch.cat(task_outs, -1)
