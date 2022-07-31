@@ -56,22 +56,17 @@ class ESMM(BaseModel):
 
         input_dim = self.compute_input_dim(dnn_feature_columns)
 
-        self.ctr_dnn = DNN(input_dim, tower_dnn_hidden_units, activation=dnn_activation,
-                           dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
+        self.ctr_dnn = DNN(input_dim, tower_dnn_hidden_units+(1,), activation=dnn_activation,
+                           dropout_rate=dnn_dropout, use_bn=dnn_use_bn, output_activation='linear', output_bias=False,
                            init_std=init_std, device=device)
-        self.cvr_dnn = DNN(input_dim, tower_dnn_hidden_units, activation=dnn_activation,
-                           dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
+        self.cvr_dnn = DNN(input_dim, tower_dnn_hidden_units+(1,), activation=dnn_activation,
+                           dropout_rate=dnn_dropout, use_bn=dnn_use_bn, output_activation='linear', output_bias=False,
                            init_std=init_std, device=device)
-
-        self.ctr_dnn_final_layer = nn.Linear(tower_dnn_hidden_units[-1], 1, bias=False)
-        self.cvr_dnn_final_layer = nn.Linear(tower_dnn_hidden_units[-1], 1, bias=False)
 
         self.add_regularization_weight(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.ctr_dnn.named_parameters()), l2=l2_reg_dnn)
         self.add_regularization_weight(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.cvr_dnn.named_parameters()), l2=l2_reg_dnn)
-        self.add_regularization_weight(self.ctr_dnn_final_layer.weight, l2=l2_reg_dnn)
-        self.add_regularization_weight(self.cvr_dnn_final_layer.weight, l2=l2_reg_dnn)
         self.to(device)
 
     def forward(self, X):
@@ -79,11 +74,8 @@ class ESMM(BaseModel):
                                                                                   self.embedding_dict)
         dnn_input = combined_dnn_input(sparse_embedding_list, dense_value_list)
 
-        ctr_output = self.ctr_dnn(dnn_input)
-        cvr_output = self.cvr_dnn(dnn_input)
-
-        ctr_logit = self.ctr_dnn_final_layer(ctr_output)
-        cvr_logit = self.cvr_dnn_final_layer(cvr_output)
+        ctr_logit = self.ctr_dnn(dnn_input)
+        cvr_logit = self.cvr_dnn(dnn_input)
 
         ctr_pred = self.out(ctr_logit)
         cvr_pred = self.out(cvr_logit)
