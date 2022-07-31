@@ -86,12 +86,10 @@ class MMOE(BaseModel):
 
         self.out = nn.ModuleList([PredictionLayer(task) for task in task_types])
 
-        self.add_regularization_weight(
-            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.expert_dnn.named_parameters()), l2=l2_reg_dnn)
-        self.add_regularization_weight(
-            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.gate_dnn.named_parameters()), l2=l2_reg_dnn)
-        self.add_regularization_weight(
-            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.tower_dnn.named_parameters()), l2=l2_reg_dnn)
+        regularization_modules = [self.expert_dnn, self.gate_dnn, self.tower_dnn]
+        for module in regularization_modules:
+            self.add_regularization_weight(
+                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], module.named_parameters()), l2=l2_reg_dnn)
         self.to(device)
 
     def forward(self, X):
