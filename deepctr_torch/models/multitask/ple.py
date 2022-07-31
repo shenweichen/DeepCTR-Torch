@@ -95,7 +95,7 @@ class PLE(BaseModel):
         specific_gate_output_dim = self.specific_expert_num + self.shared_expert_num
         self.specific_gate_dnn = multi_module_list(self.num_levels, self.num_tasks, 1,
                                                    self.input_dim, expert_dnn_hidden_units[-1],
-                                                   gate_dnn_hidden_units+(specific_gate_output_dim,),
+                                                   gate_dnn_hidden_units + (specific_gate_output_dim,),
                                                    output_activation='linear', output_bias=False)
         # gates for shared experts
         shared_gate_output_dim = self.num_tasks * self.specific_expert_num + self.shared_expert_num
@@ -155,8 +155,7 @@ class PLE(BaseModel):
         for i in range(self.num_tasks):
             # concat task-specific expert and task-shared expert
             cur_experts_outputs = specific_expert_outputs[
-                                  i * self.specific_expert_num:(
-                                                                           i + 1) * self.specific_expert_num] + shared_expert_outputs
+                                  i * self.specific_expert_num:(i + 1) * self.specific_expert_num] + shared_expert_outputs
             cur_experts_outputs = torch.stack(cur_experts_outputs, 1)
 
             # gate dnn
