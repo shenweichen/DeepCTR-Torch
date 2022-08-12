@@ -68,14 +68,12 @@ class SharedBottom(BaseModel):
                 [DNN(bottom_dnn_hidden_units[-1], tower_dnn_hidden_units, activation=dnn_activation,
                      dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
                      init_std=init_std, device=device) for _ in range(self.num_tasks)])
-            self.tower_dnn_final_layer = nn.ModuleList([nn.Linear(tower_dnn_hidden_units[-1], 1, bias=False)
-                                                        for _ in range(self.num_tasks)])
             self.add_regularization_weight(
                 filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.tower_dnn.named_parameters()),
                 l2=l2_reg_dnn)
-        else:
-            self.tower_dnn_final_layer = nn.ModuleList([nn.Linear(bottom_dnn_hidden_units[-1], 1, bias=False)
-                                                        for _ in range(self.num_tasks)])
+        self.tower_dnn_final_layer = nn.ModuleList([nn.Linear(
+            tower_dnn_hidden_units[-1] if len(self.tower_dnn_hidden_units) > 0 else bottom_dnn_hidden_units[-1], 1,
+            bias=False) for _ in range(self.num_tasks)])
 
         self.out = nn.ModuleList([PredictionLayer(task) for task in task_types])
 
