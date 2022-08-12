@@ -142,19 +142,11 @@ class PLE(BaseModel):
 
         self.out = nn.ModuleList([PredictionLayer(task) for task in task_types])
 
-        self.add_regularization_weight(
-            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.specific_experts.named_parameters()),
-            l2=l2_reg_dnn)
-        self.add_regularization_weight(
-            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.shared_experts.named_parameters()),
-            l2=l2_reg_dnn)
-        self.add_regularization_weight(filter(lambda x: 'weight' in x[0] and 'bn' not in x[0],
-                                              self.specific_gate_dnn_final_layer.named_parameters()), l2=l2_reg_dnn)
-        self.add_regularization_weight(filter(lambda x: 'weight' in x[0] and 'bn' not in x[0],
-                                              self.shared_gate_dnn_final_layer.named_parameters()), l2=l2_reg_dnn)
-        self.add_regularization_weight(
-            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.tower_dnn_final_layer.named_parameters()),
-            l2=l2_reg_dnn)
+        regularization_modules = [self.specific_experts, self.shared_experts, self.specific_gate_dnn,
+                                  self.shared_gate_dnn, self.tower_dnn]
+        for module in regularization_modules:
+            self.add_regularization_weight(
+                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], module.named_parameters()), l2=l2_reg_dnn)
         self.to(device)
 
     # a single cgc Layer
