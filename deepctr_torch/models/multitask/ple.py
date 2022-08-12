@@ -98,8 +98,10 @@ class PLE(BaseModel):
                 filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.specific_gate_dnn.named_parameters()),
                 l2=l2_reg_dnn)
         self.specific_gate_dnn_final_layer = nn.ModuleList(
-            [nn.ModuleList([nn.Linear(gate_dnn_hidden_units[-1] if len(gate_dnn_hidden_units) > 0 else self.input_dim if level_num == 0 else expert_dnn_hidden_units[-1], specific_gate_output_dim, bias=False)
-                            for _ in range(self.num_tasks)]) for level_num in range(self.num_levels)])
+            [nn.ModuleList([nn.Linear(
+                gate_dnn_hidden_units[-1] if len(gate_dnn_hidden_units) > 0 else self.input_dim if level_num == 0 else
+                expert_dnn_hidden_units[-1], specific_gate_output_dim, bias=False)
+                for _ in range(self.num_tasks)]) for level_num in range(self.num_levels)])
 
         # gates for shared experts
         shared_gate_output_dim = self.num_tasks * self.specific_expert_num + self.shared_expert_num
@@ -113,8 +115,10 @@ class PLE(BaseModel):
                 filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.shared_gate_dnn.named_parameters()),
                 l2=l2_reg_dnn)
         self.shared_gate_dnn_final_layer = nn.ModuleList(
-            [nn.Linear(gate_dnn_hidden_units[-1] if len(gate_dnn_hidden_units) > 0 else self.input_dim if level_num == 0 else expert_dnn_hidden_units[-1], shared_gate_output_dim, bias=False)
-             for level_num in range(self.num_levels)])
+            [nn.Linear(
+                gate_dnn_hidden_units[-1] if len(gate_dnn_hidden_units) > 0 else self.input_dim if level_num == 0 else
+                expert_dnn_hidden_units[-1], shared_gate_output_dim, bias=False)
+                for level_num in range(self.num_levels)])
 
         # 3. tower dnn (task-specific)
         if len(tower_dnn_hidden_units) > 0:
@@ -125,8 +129,10 @@ class PLE(BaseModel):
             self.add_regularization_weight(
                 filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.tower_dnn.named_parameters()),
                 l2=l2_reg_dnn)
-        self.tower_dnn_final_layer = nn.ModuleList([nn.Linear(tower_dnn_hidden_units[-1] if len(tower_dnn_hidden_units) > 0 else expert_dnn_hidden_units[-1], 1, bias=False)
-                                                    for _ in range(self.num_tasks)])
+        self.tower_dnn_final_layer = nn.ModuleList([nn.Linear(
+            tower_dnn_hidden_units[-1] if len(tower_dnn_hidden_units) > 0 else expert_dnn_hidden_units[-1], 1,
+            bias=False)
+            for _ in range(self.num_tasks)])
 
         self.out = nn.ModuleList([PredictionLayer(task) for task in task_types])
 
@@ -161,8 +167,7 @@ class PLE(BaseModel):
         for i in range(self.num_tasks):
             # concat task-specific expert and task-shared expert
             cur_experts_outputs = specific_expert_outputs[
-                                  i * self.specific_expert_num:(
-                                                                           i + 1) * self.specific_expert_num] + shared_expert_outputs
+                                  i * self.specific_expert_num:(i + 1) * self.specific_expert_num] + shared_expert_outputs
             cur_experts_outputs = torch.stack(cur_experts_outputs, 1)
 
             # gate dnn
