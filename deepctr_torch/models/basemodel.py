@@ -195,7 +195,7 @@ class BaseModel(nn.Module):
         train_tensor_data = Data.TensorDataset(
             torch.from_numpy(
                 np.concatenate(x, axis=-1)),
-            torch.from_numpy(np.array(y)))
+            torch.from_numpy(y))
         if batch_size is None:
             batch_size = 256
 
