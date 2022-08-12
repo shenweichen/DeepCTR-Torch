@@ -246,6 +246,8 @@ class BaseModel(nn.Module):
 
                         optim.zero_grad()
                         if isinstance(loss_func, list):
+                            assert len(loss_func) == self.num_tasks,\
+                                "the length of `loss_func` should be equal with `self.num_tasks`"
                             loss = sum(
                                 [loss_func[i](y_pred[:, i], y[:, i], reduction='sum') for i in range(self.num_tasks)])
                         else:

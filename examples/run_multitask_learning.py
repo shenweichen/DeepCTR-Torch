@@ -8,7 +8,7 @@ from deepctr_torch.inputs import SparseFeat, DenseFeat, get_feature_names
 from deepctr_torch.models import *
 
 if __name__ == "__main__":
-    # data description can be found in http://ai-lab-challenge.bytedance.com/tce/vc/
+    # data description can be found in https://www.biendata.xyz/competition/icmechallenge2019/
     data = pd.read_csv('./byterec_sample.txt', sep='\t',
                        names=["uid", "user_city", "item_id", "author_id", "item_city", "channel", "finish", "like",
                               "music_id", "device", "time", "duration_time"])
@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
     model = MMOE(dnn_feature_columns, task_types=['binary', 'binary'],
                  l2_reg_embedding=1e-5, task_names=target, device=device)
-    model.compile("adagrad", loss="binary_crossentropy",
+    model.compile("adagrad", loss=["binary_crossentropy", "binary_crossentropy"],
                   metrics=['binary_crossentropy'], )
 
     history = model.fit(train_model_input, train[target].values, batch_size=32, epochs=10, verbose=2)
