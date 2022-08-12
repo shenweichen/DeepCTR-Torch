@@ -8,7 +8,7 @@ from ...utils_mtl import get_mtl_test_data, SAMPLE_SIZE, check_mtl_model, get_de
 @pytest.mark.parametrize(
     'num_experts, tower_dnn_hidden_units, task_types, sparse_feature_num, dense_feature_num',
     [
-        (3, (256, 128), ['binary', 'binary'], 3, 3)
+        (3, (32, 16), ['binary', 'binary'], 3, 3)
     ]
 )
 def test_ESMM(num_experts, tower_dnn_hidden_units, task_types,

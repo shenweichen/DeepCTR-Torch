@@ -7,9 +7,9 @@ from tests.utils import get_test_data, SAMPLE_SIZE, check_model, get_device
 
 @pytest.mark.parametrize(
     'afn_dnn_hidden_units, sparse_feature_num, dense_feature_num',
-    [((256, 128), 3, 0),
-     ((256, 128), 3, 3),
-     ((256, 128), 0, 3)]
+    [((32, 16), 3, 0),
+     ((32, 16), 3, 3),
+     ((32, 16), 0, 3)]
 )
 def test_AFN(afn_dnn_hidden_units, sparse_feature_num, dense_feature_num):
     model_name = 'AFN'
