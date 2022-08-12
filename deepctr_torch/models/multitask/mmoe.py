@@ -100,7 +100,7 @@ class MMOE(BaseModel):
 
         self.out = nn.ModuleList([PredictionLayer(task) for task in task_types])
 
-        regularization_modules = [self.expert_dnn, self.gate_dnn, self.tower_dnn]
+        regularization_modules = [self.expert_dnn, self.gate_dnn_final_layer, self.tower_dnn_final_layer]
         for module in regularization_modules:
             self.add_regularization_weight(
                 filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], module.named_parameters()), l2=l2_reg_dnn)
