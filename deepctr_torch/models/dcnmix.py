@@ -71,9 +71,10 @@ class DCNMix(BaseModel):
         self.add_regularization_weight(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2=l2_reg_dnn)
         self.add_regularization_weight(self.dnn_linear.weight, l2=l2_reg_linear)
-        self.add_regularization_weight(self.crossnet.U_list, l2=l2_reg_cross)
-        self.add_regularization_weight(self.crossnet.V_list, l2=l2_reg_cross)
-        self.add_regularization_weight(self.crossnet.C_list, l2=l2_reg_cross)
+        regularization_modules = [self.crossnet.U_list, self.crossnet.V_list, self.crossnet.C_list]
+        for module in regularization_modules:
+            self.add_regularization_weight(module, l2=l2_reg_cross)
+
         self.to(device)
 
     def forward(self, X):
