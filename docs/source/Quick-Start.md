@@ -1,7 +1,7 @@
 # Quick-Start
 
 ## Installation Guide
-`deepctr-torch` depends on torch>=1.1.0, you can specify to install it through `pip`.
+`deepctr-torch` depends on torch>=1.2.0, you can specify to install it through `pip`.
 
 ```bash
 $ pip install -U deepctr-torch
