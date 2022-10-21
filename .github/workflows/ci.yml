@@ -37,6 +37,20 @@ jobs:
             torch-version: 1.2.0
           - python-version: 3.10.7
             torch-version: 1.3.0
+          - python-version: 3.10.7
+            torch-version: 1.4.0
+          - python-version: 3.10.7
+            torch-version: 1.5.0
+          - python-version: 3.10.7
+            torch-version: 1.6.0
+          - python-version: 3.10.7
+            torch-version: 1.7.0
+          - python-version: 3.10.7
+            torch-version: 1.8.0
+          - python-version: 3.10.7
+            torch-version: 1.9.0
+          - python-version: 3.10.7
+            torch-version: 1.10.2
     steps:
     
     - uses: actions/checkout@v3
