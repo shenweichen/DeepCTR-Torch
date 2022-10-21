@@ -23,3 +23,7 @@ DeepCTR-Torch Models API
    FiBiNET<deepctr_torch.models.fibinet>
    IFM<deepctr_torch.models.ifm>
    DIFM<deepctr_torch.models.difm>
+   SharedBottom<deepctr_torch.models.multitask.sharedbottom>
+   ESMM<deepctr_torch.models.multitask.esmm>
+   MMOE<deepctr_torch.models.multitask.mmoe>
+   PLE<deepctr_torch.models.multitask.ple>
