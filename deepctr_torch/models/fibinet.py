@@ -45,9 +45,9 @@ class FiBiNET(BaseModel):
                                       device=device, gpus=gpus)
         self.linear_feature_columns = linear_feature_columns
         self.dnn_feature_columns = dnn_feature_columns
-        self.filed_size = len(self.embedding_dict)
-        self.SE = SENETLayer(self.filed_size, reduction_ratio, seed, device)
-        self.Bilinear = BilinearInteraction(self.filed_size, self.embedding_size, bilinear_type, seed, device)
+        self.field_size = len(self.embedding_dict)
+        self.SE = SENETLayer(self.field_size, reduction_ratio, seed, device)
+        self.Bilinear = BilinearInteraction(self.field_size, self.embedding_size, bilinear_type, seed, device)
         self.dnn = DNN(self.compute_input_dim(dnn_feature_columns), dnn_hidden_units,
                        activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=False,
                        init_std=init_std, device=device)

@@ -1,4 +1,5 @@
 # History
+- 10/22/2022 : [v0.2.9](https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.9) released.Add multi-task models: SharedBottom, ESMM, MMOE, PLE.
 - 06/19/2022 : [v0.2.8](https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.8) released.Fix some bugs.
 - 06/14/2021 : [v0.2.7](https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.7) released.Add [AFN](./Features.html#afn-adaptive-factorization-network-learning-adaptive-order-feature-interactions) and fix some bugs.
 - 04/04/2021 : [v0.2.6](https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.6) released.Add [IFM](./Features.html#ifm-input-aware-factorization-machine) and [DIFM](./Features.html#difm-dual-input-aware-factorization-machine);Support multi-gpus running([example](./FAQ.html#how-to-run-the-demo-with-multiple-gpus)).
