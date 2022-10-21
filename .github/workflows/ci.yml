@@ -23,6 +23,8 @@ jobs:
         exclude:
           - python-version: 3.6
             torch-version: 1.11.0
+          - python-version: 3.6
+            torch-version: 1.12.1
           - python-version: 3.8
             torch-version: 1.2.0
           - python-version: 3.8
