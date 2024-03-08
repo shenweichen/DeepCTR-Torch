@@ -530,7 +530,7 @@ class CrossNetMix(nn.Module):
             moe_out = torch.matmul(output_of_experts, gating_score_of_experts.softmax(1))
             x_l = moe_out + x_l  # (bs, in_features, 1)
 
-        x_l = x_l.squeeze()  # (bs, in_features)
+        x_l = torch.squeeze(x_l, dim=2)  # (bs, in_features)
         return x_l
 
 
