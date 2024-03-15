@@ -89,12 +89,28 @@ class ModelArguments:
         }
     )
 
+    ctr_hidden_dim: int = field(
+        default=128,
+        metadata={
+            "help": "The hidden size of the CTR model last represente layer output"
+        }
+    )
+
 
 @dataclass
 class DataArguments:
     train_dir: str = field(
         default=None, metadata={"help": "Path to train directory"}
     )
+
+    train_file: str = field(
+        default=None, metadata={"help": "the whole data for train & eval & test"}
+    )
+
+    feature_config_file: str = field(
+        default=None, metadata={"help": "feature config file path for ctr model"}
+    )
+
     dataset_name: str = field(
         default=None, metadata={"help": "huggingface dataset name"}
     )

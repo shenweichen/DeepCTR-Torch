@@ -122,6 +122,50 @@ class DIN(BaseModel):
 
         return y_pred
 
+    def forward_for_alignment(self, X):
+        _, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns, self.embedding_dict)
+
+        # sequence pooling part
+        query_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.sparse_feature_columns,
+                                          return_feat_list=self.history_feature_list, to_list=True)
+        keys_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.history_feature_columns,
+                                         return_feat_list=self.history_fc_names, to_list=True)
+        dnn_input_emb_list = embedding_lookup(X, self.embedding_dict, self.feature_index, self.sparse_feature_columns,
+                                              to_list=True)
+
+        sequence_embed_dict = varlen_embedding_lookup(X, self.embedding_dict, self.feature_index,
+                                                      self.sparse_varlen_feature_columns)
+
+        sequence_embed_list = get_varlen_pooling_list(sequence_embed_dict, X, self.feature_index,
+                                                      self.sparse_varlen_feature_columns, self.device)
+
+        dnn_input_emb_list += sequence_embed_list
+        deep_input_emb = torch.cat(dnn_input_emb_list, dim=-1)
+
+        # concatenate
+        query_emb = torch.cat(query_emb_list, dim=-1)                     # [B, 1, E]
+        keys_emb = torch.cat(keys_emb_list, dim=-1)                       # [B, T, E]
+
+        keys_length_feature_name = [feat.length_name for feat in self.varlen_sparse_feature_columns if
+                                    feat.length_name is not None]
+        keys_length = torch.squeeze(maxlen_lookup(X, self.feature_index, keys_length_feature_name), 1)  # [B, 1]
+
+        hist = self.attention(query_emb, keys_emb, keys_length)           # [B, 1, E]
+
+        # deep part
+        deep_input_emb = torch.cat((deep_input_emb, hist), dim=-1)
+        deep_input_emb = deep_input_emb.view(deep_input_emb.size(0), -1)
+
+        dnn_input = combined_dnn_input([deep_input_emb], dense_value_list)
+        dnn_output = self.dnn(dnn_input)
+        dnn_logit = self.dnn_linear(dnn_output)
+
+        y_pred = self.out(dnn_logit)
+
+        return {"hidden_state":dnn_output,
+                "logit":dnn_logit,
+                "pred":y_pred}
+
     def _compute_interest_dim(self):
         interest_dim = 0
         for feat in self.sparse_feature_columns:

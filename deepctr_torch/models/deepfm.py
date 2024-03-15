@@ -84,3 +84,26 @@ class DeepFM(BaseModel):
         y_pred = self.out(logit)
 
         return y_pred
+    
+    def forward_for_alignment(self, X):
+
+        sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
+                                                                                  self.embedding_dict)
+        logit = self.linear_model(X)
+
+        if self.use_fm and len(sparse_embedding_list) > 0:
+            fm_input = torch.cat(sparse_embedding_list, dim=1)
+            logit += self.fm(fm_input)
+
+        if self.use_dnn:
+            dnn_input = combined_dnn_input(
+                sparse_embedding_list, dense_value_list)
+            dnn_output = self.dnn(dnn_input)
+            dnn_logit = self.dnn_linear(dnn_output)
+            logit += dnn_logit
+
+        y_pred = self.out(logit)
+
+        return {"hidden_state":dnn_output, # 最后一层输出的表示向量
+                "logit":dnn_logit, # logits
+                "pred":y_pred}  # 打分

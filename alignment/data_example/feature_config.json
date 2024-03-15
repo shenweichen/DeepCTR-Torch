@@ -1,0 +1,5 @@
+{
+"sparse_feature_list" : ["movie_id", "user_id", "gender", "age", "occupation", "zip"], 
+"label" : "rating",
+"text_feature_list" : ["gender", "age", "occupation"]
+}
