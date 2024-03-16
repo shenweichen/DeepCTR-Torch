@@ -2,14 +2,16 @@ import os
 import random
 import json
 from dataclasses import dataclass
-from typing import Union, List
+from typing import Optional, Union, List, Dict, Tuple, Any
 import itertools
 import numpy as np
 
 import datasets
+import torch
 import torch.utils.data as Data
 from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizer, BatchEncoding, DataCollatorWithPadding
+from transformers.tokenization_utils_base import PaddingStrategy, PreTrainedTokenizerBase
 import pandas as pd
 import torch
 from sklearn.metrics import mean_squared_error
@@ -95,13 +97,11 @@ class AlignmentDataset(Dataset):
                 "ctr_model_input" : ctr_model_input}
 
 
+# data collector for contrastive alignment
 @dataclass
-class AlignmentCollator(DataCollatorWithPadding):
-    """
-    对齐任务的数据收集器
-    """
+class ContrastiveAlignmentCollator(DataCollatorWithPadding):
 
-    prompt_max_len: int = 64
+    max_len: int = 64
 
     def __call__(self, features):
 
@@ -110,10 +110,71 @@ class AlignmentCollator(DataCollatorWithPadding):
         text_input_batch = self.tokenizer.pad(
             text_input,
             padding='max_length',
-            max_length=self.prompt_max_len,
+            max_length=self.max_len,
             return_tensors="pt",
         )
         # batch inputs for ID Model
         ctr_input_batch = [feat_map["ctr_model_input"] for feat_map in features]
         ctr_input_batch = Data.TensorDataset(ctr_input_batch)
         return ctr_input_batch, text_input_batch
+
+
+# data collector for mask language modeling alignment
+@dataclass
+class MlmAlignmentCollator(DataCollatorWithPadding):
+
+    tokenizer: PreTrainedTokenizerBase
+    padding: Union[bool, str, PaddingStrategy] = True
+    max_length: Optional[int] = 64
+    pad_to_multiple_of: Optional[int] = None
+    return_tensors: str = "pt"
+    mlm_probability: float = 0.15
+
+    def __call__(self, features):
+
+        # batch inputs for PLM\LLM
+        text_input = [feat_map["text_model_input"] for feat_map in features]
+        batch = self.tokenizer.pad(
+            text_input,
+            padding='max_length',
+            max_length=self.max_length,
+            return_tensors="pt",
+        )
+        # generate input & label for mlm train
+        batch["mlm_input_ids"], batch["mlm_labels"] = self.mask_tokens(batch["input_ids"])
+        # batch inputs for CTR Model
+        ctr_input_batch = [feat_map["ctr_model_input"] for feat_map in features]
+        batch["ctr_input_ids"] = Data.TensorDataset(ctr_input_batch)
+        return batch
+    
+    def mask_tokens(
+        self, inputs: torch.Tensor, special_tokens_mask: Optional[torch.Tensor] = None
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+
+        inputs = inputs.clone()
+        labels = inputs.clone()
+        # We sample a few tokens in each sequence for MLM training (with probability `self.mlm_probability`)
+        probability_matrix = torch.full(labels.shape, self.mlm_probability)
+        if special_tokens_mask is None:
+            special_tokens_mask = [
+                self.tokenizer.get_special_tokens_mask(val, already_has_special_tokens=True) for val in labels.tolist()
+            ]
+            special_tokens_mask = torch.tensor(special_tokens_mask, dtype=torch.bool)
+        else:
+            special_tokens_mask = special_tokens_mask.bool()
+
+        probability_matrix.masked_fill_(special_tokens_mask, value=0.0)
+        masked_indices = torch.bernoulli(probability_matrix).bool()
+        labels[~masked_indices] = -100  # We only compute loss on masked tokens
+
+        # 80% of the time, we replace masked input tokens with tokenizer.mask_token ([MASK])
+        indices_replaced = torch.bernoulli(torch.full(labels.shape, 0.8)).bool() & masked_indices
+        inputs[indices_replaced] = self.tokenizer.convert_tokens_to_ids(self.tokenizer.mask_token)
+
+        # 10% of the time, we replace masked input tokens with random word
+        indices_random = torch.bernoulli(torch.full(labels.shape, 0.5)).bool() & masked_indices & ~indices_replaced
+        random_words = torch.randint(len(self.tokenizer), labels.shape, dtype=torch.long)
+        inputs[indices_random] = random_words[indices_random]
+
+        # The rest of the time (10% of the time) we keep the masked input tokens unchanged
+        return inputs, labels

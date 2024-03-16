@@ -13,8 +13,8 @@ from transformers import (
 
 from .arguments import ModelArguments, DataArguments, \
     DenseTrainingArguments as TrainingArguments
-from .data import AlignmentDataset, AlignmentCollator
-from .model import AlignmentModel
+from .data import AlignmentDataset, ContrastiveAlignmentCollator
+from .model import ContrastiveAlignmentModel
 from .trainer import AlignmentTrainer as Trainer
 
 from deepctr_torch.models.deepfm import DeepFM
@@ -97,7 +97,7 @@ def main():
     # build text model    
     text_model = AutoModel.from_pretrained(model_args.model_name_or_path, add_pooling_layer=False)
 
-    alignment_model = AlignmentModel(ctr_model = ctr_model,
+    alignment_model = ContrastiveAlignmentModel(ctr_model = ctr_model,
                                     text_model = text_model,
                                     model_args = model_args,
                                     data_args = data_args,
@@ -108,7 +108,7 @@ def main():
         model=alignment_model,
         args=training_args,
         train_dataset=train_dataset,
-        data_collator=AlignmentCollator(
+        data_collator=ContrastiveAlignmentCollator(
             tokenizer
         ),
     )
