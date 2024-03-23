@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import Optional
 from transformers import TrainingArguments
 
 
@@ -38,34 +38,8 @@ class ModelArguments:
     projection_in_dim: int = field(default=768)
     projection_out_dim: int = field(default=1)
 
-    # p*-tuning
-    model_type: str = field(
-        default="bert",
-        metadata={
-            "help": "The type of model, where we currently support bert, roberta, deberta"
-        }
-    )
-    prefix: bool = field(
-        default=False,
-        metadata={
-            "help": "Will use P-tuning v2 during training"
-        }
-    )
-    prompt: bool = field(
-        default=False,
-        metadata={
-            "help": "Will use prompt tuning during training"
-        }
-    )
-    prompt_from_vocab: bool = field(
-        default=True,
-        metadata={
-            "help": "Will prompt embeddings initalized from plm's word embeddings"
-        }
-    )
-    prompt_encoder_type: str = field(default=None)
-    pre_seq_len: int = field(
-        default=100,
+    prefix_len: int = field(
+        default=32,
         metadata={
             "help": "The length of prompt"
         }
@@ -145,29 +119,7 @@ class DataArguments:
         },
     )
 
-    def __post_init__(self):
-        if self.dataset_name is not None:
-            info = self.dataset_name.split('/')
-            self.dataset_split = info[-1] if len(info) == 3 else 'train'
-            self.dataset_name = "/".join(info[:-1]) if len(info) == 3 else '/'.join(info)
-            self.dataset_language = 'default'
-            if ':' in self.dataset_name:
-                self.dataset_name, self.dataset_language = self.dataset_name.split(':')
-        if self.train_dir is not None:
-            files = os.listdir(self.train_dir)
-            self.train_path = [
-                os.path.join(self.train_dir, f)
-                for f in files
-                if f.endswith('tsv') or f.endswith('json')
-            ]
-
 
 @dataclass
-class DenseTrainingArguments(TrainingArguments):
-    warmup_ratio: float = field(default=0.1)
-    negatives_x_device: bool = field(default=False, metadata={"help": "share negatives across devices"})
-    do_encode: bool = field(default=False, metadata={"help": "run the encoding loop"})
-
-    grad_cache: bool = field(default=False, metadata={"help": "Use gradient cache update"})
-    gc_q_chunk_size: int = field(default=4)
-    gc_p_chunk_size: int = field(default=32)
+class AlignmentTrainingArguments(TrainingArguments):
+    alignment_mode: str = field(default="contrastive", metadata={"help": "contrastive or mlm"})

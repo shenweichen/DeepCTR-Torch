@@ -1,26 +1,20 @@
-import os
-import random
 import json
 from dataclasses import dataclass
-from typing import Optional, Union, List, Dict, Tuple, Any
-import itertools
+from typing import Optional, List, Tuple
 import numpy as np
 
-import datasets
 import torch
 import torch.utils.data as Data
 from torch.utils.data import Dataset
-from transformers import PreTrainedTokenizer, BatchEncoding, DataCollatorWithPadding
-from transformers.tokenization_utils_base import PaddingStrategy, PreTrainedTokenizerBase
+from transformers import PreTrainedTokenizer, DataCollatorWithPadding
+from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 import pandas as pd
 import torch
-from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
 
 from .arguments import DataArguments
-from ..deepctr_torch.inputs import build_input_features, get_feature_names
+from ..deepctr_torch.inputs import get_feature_names
 from ..deepctr_torch.inputs import (DenseFeat, SparseFeat, VarLenSparseFeat)
 
 import logging
@@ -101,11 +95,12 @@ class AlignmentDataset(Dataset):
 @dataclass
 class ContrastiveAlignmentCollator(DataCollatorWithPadding):
 
+    tokenizer: PreTrainedTokenizerBase
     max_len: int = 64
 
     def __call__(self, features):
 
-        # batch inputs for PLM\LLM
+        # batch inputs for nlp model
         text_input = [feat_map["text_model_input"] for feat_map in features]
         text_input_batch = self.tokenizer.pad(
             text_input,
@@ -124,20 +119,17 @@ class ContrastiveAlignmentCollator(DataCollatorWithPadding):
 class MlmAlignmentCollator(DataCollatorWithPadding):
 
     tokenizer: PreTrainedTokenizerBase
-    padding: Union[bool, str, PaddingStrategy] = True
-    max_length: Optional[int] = 64
-    pad_to_multiple_of: Optional[int] = None
-    return_tensors: str = "pt"
+    max_len: Optional[int] = 64
     mlm_probability: float = 0.15
 
     def __call__(self, features):
 
-        # batch inputs for PLM\LLM
+        # batch inputs for nlp model
         text_input = [feat_map["text_model_input"] for feat_map in features]
         batch = self.tokenizer.pad(
             text_input,
             padding='max_length',
-            max_length=self.max_length,
+            max_length=self.max_len,
             return_tensors="pt",
         )
         # generate input & label for mlm train

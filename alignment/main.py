@@ -1,10 +1,8 @@
 import logging
 import os
 import sys
-import json
 sys.path.insert(0, '..')
 
-import datasets
 from transformers import AutoConfig, AutoTokenizer, AutoModel
 from transformers import (
     HfArgumentParser,
@@ -12,9 +10,9 @@ from transformers import (
 )
 
 from .arguments import ModelArguments, DataArguments, \
-    DenseTrainingArguments as TrainingArguments
-from .data import AlignmentDataset, ContrastiveAlignmentCollator
-from .model import ContrastiveAlignmentModel
+    AlignmentTrainingArguments as TrainingArguments
+from .data import AlignmentDataset, ContrastiveAlignmentCollator, MlmAlignmentCollator
+from .model import ContrastiveAlignmentModel, MlmAlignmentModel
 from .trainer import AlignmentTrainer as Trainer
 
 from deepctr_torch.models.deepfm import DeepFM
@@ -62,21 +60,6 @@ def main():
 
     set_seed(training_args.seed)
 
-    # config = AutoConfig.from_pretrained(
-    #     model_args.config_name if model_args.config_name else model_args.model_name_or_path,
-    #     cache_dir=model_args.cache_dir,
-    #     num_labels=model_args.projection_out_dim
-    # )
-    # # p*-tuning
-    # config.fine_tuning = model_args.fine_tuning
-    # config.prefix = model_args.prefix
-    # config.prompt = model_args.prompt
-    # config.prompt_from_vocab = model_args.prompt_from_vocab
-    # config.prompt_encoder_type = model_args.prompt_encoder_type
-    # config.pre_seq_len = model_args.pre_seq_len
-    # config.prefix_projection = model_args.prefix_projection
-    # config.prefix_hidden_size = model_args.prefix_hidden_size
-    # config.hidden_dropout_prob = model_args.hidden_dropout_prob
 
     tokenizer = AutoTokenizer.from_pretrained(
         model_args.tokenizer_name if model_args.tokenizer_name else model_args.model_name_or_path,
@@ -97,20 +80,30 @@ def main():
     # build text model    
     text_model = AutoModel.from_pretrained(model_args.model_name_or_path, add_pooling_layer=False)
 
-    alignment_model = ContrastiveAlignmentModel(ctr_model = ctr_model,
-                                    text_model = text_model,
-                                    model_args = model_args,
-                                    data_args = data_args,
-                                    train_args = training_args)
+    # build alignment train model
+    if training_args.alignment_mode == "contrastive":
+        alignment_model = ContrastiveAlignmentModel(ctr_model = ctr_model,
+                                        text_model = text_model,
+                                        model_args = model_args,
+                                        data_args = data_args,
+                                        train_args = training_args)
+        data_collator=ContrastiveAlignmentCollator(tokenizer=tokenizer)
 
+    elif training_args.alignment_mode == "mlm":
+        alignment_model = MlmAlignmentModel(ctr_model = ctr_model,
+                                        text_model = text_model,
+                                        model_args = model_args,
+                                        data_args = data_args,
+                                        train_args = training_args)
+        data_collator=MlmAlignmentCollator(tokenizer=tokenizer)
+    else:
+        raise ValueError("Alignment mode must be in [contrastive, mlm]")
 
     trainer = Trainer(
         model=alignment_model,
         args=training_args,
         train_dataset=train_dataset,
-        data_collator=ContrastiveAlignmentCollator(
-            tokenizer
-        ),
+        data_collator=data_collator,
     )
 
     trainer.train()

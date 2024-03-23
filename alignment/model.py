@@ -154,21 +154,12 @@ class MlmAlignmentModel(nn.Module):
         self.train_args = train_args
         self.data_args = data_args
 
-        # 判断是否需要维度对齐
         self.text_model_config = AutoConfig.from_pretrained(
             self.model_args.model_name_or_path,
             cache_dir=self.model_args.cache_dir,
             revision=self.model_args.model_revision,
             use_auth_token=True if self.model_args.use_auth_token else None,
         )
-        # if self.model_args.ctr_hidden_dim == text_model_config.hidden_size:
-        #     logger.info("CTR hidden size equal to Text model hidden size")
-        #     self.add_pooler = False
-        # else:
-        #     logger.warning("CTR hidden size not equal to Text model hidden size, add pooler layer")
-        #     self.add_pooler = True
-        #     self.pooler = LinearPooler(input_dim=text_model_config.hidden_size,
-        #                                output_dim=self.model_args.ctr_hidden_dim)
 
         self.prompt_layers = nn.Sequential(
             nn.Linear(self.model_args.ctr_hidden_dim, self.text_model_config.hidden_size),
