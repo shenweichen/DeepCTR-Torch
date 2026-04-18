@@ -225,6 +225,7 @@ class BaseModel(nn.Module):
         # Train
         print("Train on {0} samples, validate on {1} samples, {2} steps per epoch".format(
             len(train_tensor_data), len(val_y), steps_per_epoch))
+        num_tasks = getattr(self, "num_tasks", 1)
         for epoch in range(initial_epoch, epochs):
             callbacks.on_epoch_begin(epoch)
             epoch_logs = {}
@@ -239,15 +240,15 @@ class BaseModel(nn.Module):
                         y = y_train.to(self.device).float()
 
                         y_pred = model(x)
-                        if self.num_tasks == 1 and y_pred.ndim > 1 and y_pred.shape[-1] == 1:
+                        if num_tasks == 1 and y_pred.ndim > 1 and y_pred.shape[-1] == 1:
                             y_pred = y_pred.squeeze(-1)
 
                         optim.zero_grad()
                         if isinstance(loss_func, list):
-                            assert len(loss_func) == self.num_tasks,\
-                                "the length of `loss_func` should be equal with `self.num_tasks`"
+                            assert len(loss_func) == num_tasks,\
+                                "the length of `loss_func` should be equal with `num_tasks`"
                             loss = sum(
-                                [loss_func[i](y_pred[:, i], y[:, i], reduction='sum') for i in range(self.num_tasks)])
+                                [loss_func[i](y_pred[:, i], y[:, i], reduction='sum') for i in range(num_tasks)])
                         else:
                             y_for_loss = y
                             if y_for_loss.ndim > 1 and y_for_loss.shape[-1] == 1:
