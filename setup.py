@@ -22,7 +22,7 @@ setuptools.setup(
     download_url='https://github.com/shenweichen/deepctr-torch/tags',
     packages=setuptools.find_packages(
         exclude=["tests", "tests.models", "tests.layers"]),
-    python_requires=">=3.7,<3.13",
+    python_requires=">=3.7",
     install_requires=REQUIRED_PACKAGES,
     extras_require={
 
@@ -43,6 +43,7 @@ setuptools.setup(
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
         'Topic :: Scientific/Engineering',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
         'Topic :: Software Development',
