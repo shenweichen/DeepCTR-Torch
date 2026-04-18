@@ -177,7 +177,7 @@ class PLE(BaseModel):
             else:
                 gate_dnn_out = self.specific_gate_dnn_final_layer[level_num][i](inputs[i])
             gate_mul_expert = torch.matmul(gate_dnn_out.softmax(1).unsqueeze(1), cur_experts_outputs)  # (bs, 1, dim)
-            cgc_outs.append(gate_mul_expert.squeeze())
+            cgc_outs.append(gate_mul_expert.squeeze(1))
 
         # gates for shared experts
         cur_experts_outputs = specific_expert_outputs + shared_expert_outputs
@@ -189,7 +189,7 @@ class PLE(BaseModel):
         else:
             gate_dnn_out = self.shared_gate_dnn_final_layer[level_num](inputs[-1])
         gate_mul_expert = torch.matmul(gate_dnn_out.softmax(1).unsqueeze(1), cur_experts_outputs)  # (bs, 1, dim)
-        cgc_outs.append(gate_mul_expert.squeeze())
+        cgc_outs.append(gate_mul_expert.squeeze(1))
 
         return cgc_outs
 

@@ -71,7 +71,8 @@ class Linear(nn.Module):
 
         sparse_embedding_list += varlen_embedding_list
 
-        linear_logit = torch.zeros([X.shape[0], 1]).to(self.device)
+        # Keep accumulator on the same device as current input tensor.
+        linear_logit = X.new_zeros((X.shape[0], 1))
         if len(sparse_embedding_list) > 0:
             sparse_embedding_cat = torch.cat(sparse_embedding_list, dim=-1)
             if sparse_feat_refine_weight is not None:
@@ -237,7 +238,9 @@ class BaseModel(nn.Module):
                         x = x_train.to(self.device).float()
                         y = y_train.to(self.device).float()
 
-                        y_pred = model(x).squeeze()
+                        y_pred = model(x)
+                        if self.num_tasks == 1 and y_pred.ndim > 1 and y_pred.shape[-1] == 1:
+                            y_pred = y_pred.squeeze(-1)
 
                         optim.zero_grad()
                         if isinstance(loss_func, list):
@@ -246,7 +249,10 @@ class BaseModel(nn.Module):
                             loss = sum(
                                 [loss_func[i](y_pred[:, i], y[:, i], reduction='sum') for i in range(self.num_tasks)])
                         else:
-                            loss = loss_func(y_pred, y.squeeze(), reduction='sum')
+                            y_for_loss = y
+                            if y_for_loss.ndim > 1 and y_for_loss.shape[-1] == 1:
+                                y_for_loss = y_for_loss.squeeze(-1)
+                            loss = loss_func(y_pred, y_for_loss, reduction='sum')
                         reg_loss = self.get_regularization_loss()
 
                         total_loss = loss + reg_loss + self.aux_loss
