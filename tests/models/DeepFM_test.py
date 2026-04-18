@@ -34,5 +34,18 @@ def test_DeepFM(use_fm, hidden_size, sparse_feature_num, dense_feature_num):
                    dnn_hidden_units=hidden_size, dnn_dropout=0.5, device=get_device())
     check_model(model, model_name + '_no_linear', x, y)
 
+
+def test_DeepFM_fit_with_column_vector_target():
+    sample_size = SAMPLE_SIZE
+    x, y, feature_columns = get_test_data(
+        sample_size, sparse_feature_num=2, dense_feature_num=2)
+
+    model = DeepFM(feature_columns, feature_columns, dnn_hidden_units=(8,), dnn_dropout=0.5, device=get_device())
+    model.compile('adam', 'binary_crossentropy', metrics=['binary_crossentropy'])
+
+    history = model.fit(x, y.reshape(-1, 1), batch_size=32, epochs=1, verbose=0, validation_split=0.2)
+    assert "loss" in history.history
+
+
 if __name__ == "__main__":
     pass

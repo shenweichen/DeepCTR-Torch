@@ -7,6 +7,7 @@ import torch
 
 class Callback(object):
     def __init__(self):
+        """Initialize callback state."""
         self.model = None
         self.params = {}
 
@@ -31,6 +32,7 @@ class Callback(object):
 
 class CallbackList(object):
     def __init__(self, callbacks=None):
+        """Create a callback container."""
         self.callbacks = list(callbacks or [])
         self.model = None
         self.params = {}
@@ -90,6 +92,7 @@ class EarlyStopping(Callback):
         baseline=None,
         restore_best_weights=False,
     ):
+        """Create an early-stopping callback."""
         super(EarlyStopping, self).__init__()
         self.monitor = monitor
         self.min_delta = abs(min_delta)
@@ -163,6 +166,7 @@ class ModelCheckpoint(Callback):
         mode="auto",
         period=1,
     ):
+        """Create a model-checkpoint callback."""
         super(ModelCheckpoint, self).__init__()
         self.filepath = filepath
         self.monitor = monitor

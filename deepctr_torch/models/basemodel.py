@@ -15,7 +15,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data as Data
-from sklearn.metrics import *
+from sklearn.metrics import accuracy_score, log_loss, mean_squared_error, roc_auc_score
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
