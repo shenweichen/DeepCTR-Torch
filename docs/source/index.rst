@@ -34,7 +34,7 @@ You can read the latest code at https://github.com/shenweichen/DeepCTR-Torch and
 
 News
 -----
-04/18/2026 : Improve compatibility for Python `3.7` ~ `3.13` and PyTorch `2.4+`. CI now includes examples smoke tests. `Branch Updates <https://github.com/shenweichen/DeepCTR-Torch/tree/torch2.x>`_
+04/18/2026 : Release `v0.3.0` with improved compatibility for Python `3.7` ~ `3.13` and PyTorch `2.4+`. CI now includes examples smoke tests. `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.3.0>`_
 
 10/22/2022 : Add multi-task models: SharedBottom, ESMM, MMOE, PLE. `Changelog <https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.9>`_
 

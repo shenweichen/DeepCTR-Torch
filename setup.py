@@ -12,7 +12,7 @@ REQUIRED_PACKAGES = [
 
 setuptools.setup(
     name="deepctr-torch",
-    version="0.2.9",
+    version="0.3.0",
     author="Weichen Shen",
     author_email="weichenswc@163.com",
     description="Easy-to-use,Modular and Extendible package of deep learning based CTR(Click Through Rate) prediction models with PyTorch",
