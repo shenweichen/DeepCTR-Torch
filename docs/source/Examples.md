@@ -171,7 +171,25 @@ import numpy as np
 import pandas as pd
 import torch
 from sklearn.preprocessing import LabelEncoder
-from tensorflow.python.keras.preprocessing.sequence import pad_sequences
+
+try:
+    from tensorflow.keras.preprocessing.sequence import pad_sequences
+except Exception:
+    def pad_sequences(sequences, maxlen=None, dtype='int32', padding='pre', truncating='pre', value=0):
+        if maxlen is None:
+            maxlen = max(len(seq) for seq in sequences)
+        x = np.full((len(sequences), maxlen), value, dtype=dtype)
+        for idx, seq in enumerate(sequences):
+            if truncating == 'pre':
+                trunc = seq[-maxlen:]
+            else:
+                trunc = seq[:maxlen]
+            trunc = np.asarray(trunc, dtype=dtype)
+            if padding == 'post':
+                x[idx, :len(trunc)] = trunc
+            else:
+                x[idx, -len(trunc):] = trunc
+        return x
 
 from deepctr_torch.inputs import SparseFeat, VarLenSparseFeat, get_feature_names
 from deepctr_torch.models import DeepFM

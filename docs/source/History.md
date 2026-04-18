@@ -1,4 +1,5 @@
 # History
+- 04/18/2026 : Improve compatibility for newer environments. Support Python `3.7` ~ `3.13` and modern PyTorch versions (`2.4+`). Remove hard dependency on TensorFlow private callback APIs and add examples smoke tests to CI.
 - 10/22/2022 : [v0.2.9](https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.9) released.Add multi-task models: SharedBottom, ESMM, MMOE, PLE.
 - 06/19/2022 : [v0.2.8](https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.8) released.Fix some bugs.
 - 06/14/2021 : [v0.2.7](https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v0.2.7) released.Add [AFN](./Features.html#afn-adaptive-factorization-network-learning-adaptive-order-feature-interactions) and fix some bugs.
