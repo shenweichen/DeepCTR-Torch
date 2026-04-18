@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 REQUIRED_PACKAGES = [
     'torch>=1.13.0; python_version < "3.8"',
-    'torch>=2.4.0,<2.6.0; python_version >= "3.8"',
+    'torch>=2.4.0; python_version >= "3.8"',
     'tqdm',
     'scikit-learn'
 ]
