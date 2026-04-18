@@ -7,6 +7,7 @@ from deepctr_torch.callbacks import Callback, CallbackList, EarlyStopping, Histo
 
 class ProbeCallback(Callback):
     def __init__(self):
+        """Initialize probe callback state."""
         super(ProbeCallback, self).__init__()
         self.events = []
 
@@ -25,6 +26,7 @@ class ProbeCallback(Callback):
 
 class TinyModel(torch.nn.Module):
     def __init__(self):
+        """Initialize a tiny torch module for callback tests."""
         super(TinyModel, self).__init__()
         self.linear = torch.nn.Linear(1, 1)
         self.stop_training = False
