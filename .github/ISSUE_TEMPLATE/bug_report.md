@@ -18,7 +18,7 @@ Steps to reproduce the behavior:
 4. See error
 
 **Operating environment(运行环境):**
- - python version [e.g. 3.6, 3.7]
+ - python version [e.g. 3.10]
  - pytorch/torch version [e.g. 2.5.1]
  - deepctr-torch version [e.g. 0.3.0,]
 

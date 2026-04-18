@@ -15,6 +15,6 @@ A clear and concise description of what the question is.
 Add any other context about the problem here.
 
 **Operating environment(运行环境):**
- - python version [e.g. 3.6]
+ - python version [e.g. 3.10]
  - pytorch/torch version [e.g. 2.5.1]
  - deepctr-torch version [e.g. 0.3.0,]
