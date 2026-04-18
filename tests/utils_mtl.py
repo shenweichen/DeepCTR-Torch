@@ -10,6 +10,14 @@ from deepctr_torch.inputs import SparseFeat, DenseFeat, VarLenSparseFeat
 SAMPLE_SIZE = 64
 
 
+def _torch_load_compat(filepath):
+    kwargs = {"map_location": "cpu"}
+    try:
+        return torch.load(filepath, weights_only=False, **kwargs)
+    except TypeError:
+        return torch.load(filepath, **kwargs)
+
+
 def gen_sequence(dim, max_len, sample_size):
     return np.array([np.random.randint(0, dim, max_len) for _ in range(sample_size)]), np.random.randint(1, max_len + 1,
                                                                                                          sample_size)
@@ -101,12 +109,12 @@ def check_mtl_model(model, model_name, x, y_list, task_types, check_model_io=Tru
 
     print(model_name + 'test, train valid pass!')
     torch.save(model.state_dict(), model_name + '_weights.h5')
-    model.load_state_dict(torch.load(model_name + '_weights.h5'))
+    model.load_state_dict(_torch_load_compat(model_name + '_weights.h5'))
     os.remove(model_name + '_weights.h5')
     print(model_name + 'test save load weight pass!')
     if check_model_io:
         torch.save(model, model_name + '.h5')
-        model = torch.load(model_name + '.h5')
+        model = _torch_load_compat(model_name + '.h5')
         os.remove(model_name + '.h5')
         print(model_name + 'test save load model pass!')
     print(model_name + 'test pass!')

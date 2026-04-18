@@ -19,16 +19,11 @@ from sklearn.metrics import *
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-try:
-    from tensorflow.python.keras.callbacks import CallbackList
-except ImportError:
-    from tensorflow.python.keras._impl.keras.callbacks import CallbackList
-
 from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat, get_varlen_pooling_list, \
     create_embedding_matrix, varlen_embedding_lookup
 from ..layers import PredictionLayer
 from ..layers.utils import slice_arrays
-from ..callbacks import History
+from ..callbacks import CallbackList, History
 
 
 class Linear(nn.Module):
@@ -148,7 +143,7 @@ class BaseModel(nn.Module):
         :param validation_split: Float between 0 and 1. Fraction of the training data to be used as validation data. The model will set apart this fraction of the training data, will not train on it, and will evaluate the loss and any model metrics on this data at the end of each epoch. The validation data is selected from the last samples in the `x` and `y` data provided, before shuffling.
         :param validation_data: tuple `(x_val, y_val)` or tuple `(x_val, y_val, val_sample_weights)` on which to evaluate the loss and any model metrics at the end of each epoch. The model will not be trained on this data. `validation_data` will override `validation_split`.
         :param shuffle: Boolean. Whether to shuffle the order of the batches at the beginning of each epoch.
-        :param callbacks: List of `deepctr_torch.callbacks.Callback` instances. List of callbacks to apply during training and validation (if ). See [callbacks](https://tensorflow.google.cn/api_docs/python/tf/keras/callbacks). Now available: `EarlyStopping` , `ModelCheckpoint`
+        :param callbacks: List of `deepctr_torch.callbacks.Callback` instances. List of callbacks to apply during training and validation. Now available: `EarlyStopping` , `ModelCheckpoint`
 
         :return: A `History` object. Its `History.history` attribute is a record of training loss values and metrics values at successive epochs, as well as validation loss values and validation metrics values (if applicable).
         """
@@ -265,8 +260,11 @@ class BaseModel(nn.Module):
                             for name, metric_fun in self.metrics.items():
                                 if name not in train_result:
                                     train_result[name] = []
-                                train_result[name].append(metric_fun(
-                                    y.cpu().data.numpy(), y_pred.cpu().data.numpy().astype("float64")))
+                                y_true_metric, y_pred_metric = self._prepare_metric_inputs(
+                                    y.cpu().data.numpy(),
+                                    y_pred.cpu().data.numpy().astype("float64")
+                                )
+                                train_result[name].append(metric_fun(y_true_metric, y_pred_metric))
 
 
             except KeyboardInterrupt:
@@ -319,7 +317,8 @@ class BaseModel(nn.Module):
         pred_ans = self.predict(x, batch_size)
         eval_result = {}
         for name, metric_fun in self.metrics.items():
-            eval_result[name] = metric_fun(y, pred_ans)
+            y_true_metric, y_pred_metric = self._prepare_metric_inputs(y, pred_ans)
+            eval_result[name] = metric_fun(y_true_metric, y_pred_metric)
         return eval_result
 
     def predict(self, x, batch_size=256):
@@ -481,13 +480,22 @@ class BaseModel(nn.Module):
         return loss_func
 
     def _log_loss(self, y_true, y_pred, eps=1e-7, normalize=True, sample_weight=None, labels=None):
-        # change eps to improve calculation accuracy
-        return log_loss(y_true,
-                        y_pred,
-                        eps,
-                        normalize,
-                        sample_weight,
-                        labels)
+        # sklearn>=1.5 removed `eps` from log_loss signature. We clip manually
+        # and fallback to the old signature for backward compatibility.
+        y_pred = np.clip(y_pred, eps, 1 - eps)
+        try:
+            return log_loss(y_true,
+                            y_pred,
+                            normalize=normalize,
+                            sample_weight=sample_weight,
+                            labels=labels)
+        except TypeError:
+            return log_loss(y_true,
+                            y_pred,
+                            eps=eps,
+                            normalize=normalize,
+                            sample_weight=sample_weight,
+                            labels=labels)
 
     @staticmethod
     def _accuracy_score(y_true, y_pred):
@@ -498,10 +506,7 @@ class BaseModel(nn.Module):
         if metrics:
             for metric in metrics:
                 if metric == "binary_crossentropy" or metric == "logloss":
-                    if set_eps:
-                        metrics_[metric] = self._log_loss
-                    else:
-                        metrics_[metric] = log_loss
+                    metrics_[metric] = self._log_loss
                 if metric == "auc":
                     metrics_[metric] = roc_auc_score
                 if metric == "mse":
@@ -510,6 +515,16 @@ class BaseModel(nn.Module):
                     metrics_[metric] = self._accuracy_score
                 self.metrics_names.append(metric)
         return metrics_
+
+    @staticmethod
+    def _prepare_metric_inputs(y_true, y_pred):
+        y_true = np.asarray(y_true)
+        y_pred = np.asarray(y_pred)
+        if y_true.ndim > 1:
+            y_true = y_true.reshape(-1)
+        if y_pred.ndim > 1:
+            y_pred = y_pred.reshape(-1)
+        return y_true, y_pred
 
     def _in_multi_worker_mode(self):
         # used for EarlyStopping in tf1.15
