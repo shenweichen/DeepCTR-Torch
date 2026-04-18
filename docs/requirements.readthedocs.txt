@@ -1,2 +1,4 @@
 Cython>=0.28.5
 scikit-learn==1.0
+sphinx_rtd_theme>=3.0.0
+myst-parser>=3.0.0
