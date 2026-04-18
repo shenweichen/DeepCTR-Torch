@@ -2,6 +2,7 @@ import sys
 
 sys.path.insert(0, '..')
 
+import os
 import numpy as np
 import torch
 from deepctr_torch.inputs import (DenseFeat, SparseFeat, VarLenSparseFeat,
@@ -47,4 +48,5 @@ if __name__ == "__main__":
     model = DIN(feature_columns, behavior_feature_list, device=device, att_weight_normalization=True)
     model.compile('adagrad', 'binary_crossentropy',
                   metrics=['binary_crossentropy'])
-    history = model.fit(x, y, batch_size=3, epochs=10, verbose=2, validation_split=0.0)
+    epochs = int(os.getenv("DEEPCTR_EXAMPLE_EPOCHS", "10"))
+    history = model.fit(x, y, batch_size=3, epochs=epochs, verbose=2, validation_split=0.0)

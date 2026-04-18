@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import os
+
 import pandas as pd
 import torch
 from sklearn.metrics import log_loss, roc_auc_score
@@ -58,7 +60,8 @@ if __name__ == "__main__":
     model.compile("adagrad", "binary_crossentropy",
                   metrics=["binary_crossentropy", "auc"], )
 
-    history = model.fit(train_model_input, train[target].values, batch_size=32, epochs=10, verbose=2,
+    epochs = int(os.getenv("DEEPCTR_EXAMPLE_EPOCHS", "10"))
+    history = model.fit(train_model_input, train[target].values, batch_size=32, epochs=epochs, verbose=2,
                         validation_split=0.2)
     pred_ans = model.predict(test_model_input, 256)
     print("")

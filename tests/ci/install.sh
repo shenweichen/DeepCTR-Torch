@@ -10,6 +10,6 @@ else
   python -m pip install -q "torch==${TORCH_VERSION}"
 fi
 
-python -m pip install -q requests pytest pytest-cov python-coveralls
+python -m pip install -q requests pytest pytest-cov python-coveralls pandas
 python -m pip install -e .
 python -m pip check

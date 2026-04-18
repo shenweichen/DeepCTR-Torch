@@ -1,8 +1,28 @@
+import os
+
 import numpy as np
 import pandas as pd
 import torch
 from sklearn.preprocessing import LabelEncoder
-from tensorflow.python.keras.preprocessing.sequence import pad_sequences
+
+try:
+    from tensorflow.keras.preprocessing.sequence import pad_sequences
+except Exception:
+    def pad_sequences(sequences, maxlen=None, dtype='int32', padding='pre', truncating='pre', value=0):
+        if maxlen is None:
+            maxlen = max(len(seq) for seq in sequences)
+        x = np.full((len(sequences), maxlen), value, dtype=dtype)
+        for idx, seq in enumerate(sequences):
+            if truncating == 'pre':
+                trunc = seq[-maxlen:]
+            else:
+                trunc = seq[:maxlen]
+            trunc = np.asarray(trunc, dtype=dtype)
+            if padding == 'post':
+                x[idx, :len(trunc)] = trunc
+            else:
+                x[idx, -len(trunc):] = trunc
+        return x
 
 from deepctr_torch.inputs import SparseFeat, VarLenSparseFeat, get_feature_names
 from deepctr_torch.models import DeepFM
@@ -64,4 +84,6 @@ if __name__ == "__main__":
     model = DeepFM(linear_feature_columns, dnn_feature_columns, task='regression', device=device)
 
     model.compile("adam", "mse", metrics=['mse'], )
-    history = model.fit(model_input, data[target].values, batch_size=256, epochs=10, verbose=2, validation_split=0.2)
+    epochs = int(os.getenv("DEEPCTR_EXAMPLE_EPOCHS", "10"))
+    history = model.fit(model_input, data[target].values, batch_size=256, epochs=epochs, verbose=2,
+                        validation_split=0.2)

@@ -5,12 +5,14 @@ on:
     paths:
       - "deepctr_torch/**"
       - "tests/**"
+      - "examples/**"
       - "setup.py"
       - ".github/workflows/**"
   pull_request:
     paths:
       - "deepctr_torch/**"
       - "tests/**"
+      - "examples/**"
       - "setup.py"
       - ".github/workflows/**"
   workflow_dispatch:
@@ -37,6 +39,7 @@ jobs:
             torch-version: "2.4.1"
           - python-version: "3.10"
             torch-version: "2.5.1"
+            run-examples: "1"
           - python-version: "3.11"
             torch-version: "2.4.1"
           - python-version: "3.11"
@@ -49,6 +52,7 @@ jobs:
     env:
       TORCH_VERSION: ${{ matrix.torch-version }}
       TORCH_INDEX_URL: https://download.pytorch.org/whl/cpu
+      RUN_EXAMPLES: ${{ matrix.run-examples || '0' }}
 
     steps:
       - uses: actions/checkout@v5
@@ -64,6 +68,11 @@ jobs:
       - name: Test with pytest
         timeout-minutes: 180
         run: bash tests/ci/test.sh
+
+      - name: Run examples smoke tests
+        if: ${{ env.RUN_EXAMPLES == '1' }}
+        timeout-minutes: 60
+        run: bash tests/ci/examples.sh
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v6

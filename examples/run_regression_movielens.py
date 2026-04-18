@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 import torch
 from sklearn.metrics import mean_squared_error
@@ -40,7 +42,8 @@ if __name__ == "__main__":
     model = DeepFM(linear_feature_columns, dnn_feature_columns, task='regression', device=device)
     model.compile("adam", "mse", metrics=['mse'], )
 
-    history = model.fit(train_model_input, train[target].values, batch_size=256, epochs=10, verbose=2,
+    epochs = int(os.getenv("DEEPCTR_EXAMPLE_EPOCHS", "10"))
+    history = model.fit(train_model_input, train[target].values, batch_size=256, epochs=epochs, verbose=2,
                         validation_split=0.2)
     pred_ans = model.predict(test_model_input, batch_size=256)
     print("test MSE", round(mean_squared_error(
