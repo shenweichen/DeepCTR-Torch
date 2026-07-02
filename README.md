@@ -19,39 +19,6 @@ DeepCTR is a **Easy-to-use**,**Modular** and **Extendible** package of deep-lear
 
 Let's [**Get Started!**](https://deepctr-torch.readthedocs.io/en/latest/Quick-Start.html)([Chinese Introduction](https://zhuanlan.zhihu.com/p/53231955))
 
-## Consistent DeepFM defaults
-
-DeepFM uses portable initialization and Keras-aligned training semantics by
-default. The normal public API is sufficient:
-
-```python
-model = DeepFM(
-    linear_feature_columns,
-    dnn_feature_columns,
-    seed=2026,
-)
-model.compile(
-    "adam",
-    "binary_crossentropy",
-    metrics=["auc"],
-)
-model.fit(x, y, batch_size=1024, epochs=1)
-```
-
-Portable initialization is currently implemented for DeepFM. Training uses
-mean loss reduction while retaining PyTorch's native optimizers. Initialization
-and model architecture must still be configured consistently when comparing
-independently constructed TensorFlow and PyTorch models.
-
-For portable inference, load semantic parameters exported by DeepCTR without
-depending on backend variable names:
-
-```python
-from deepctr_torch.initializers import load_deepfm_parameters
-
-load_deepfm_parameters(model, portable_parameters)
-```
-
 ## Models List
 
 |                 Model                  | Paper                                                                                                                                                           |
