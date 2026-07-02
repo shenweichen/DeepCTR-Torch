@@ -10,6 +10,7 @@ import torch.nn as nn
 
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
+from ..initializers import initialize_deepfm_parameters
 from ..layers import FM, DNN
 
 
@@ -31,6 +32,9 @@ class DeepFM(BaseModel):
     :param task: str, ``"binary"`` for  binary logloss or  ``"regression"`` for regression loss
     :param device: str, ``"cpu"`` or ``"cuda:0"``
     :param gpus: list of int or torch.device for multiple gpus. If None, run on `device`. `gpus[0]` should be the same gpu with `device`.
+    :param initialization_profile: ``"cross_framework"`` (default) uses
+        semantic-name-based portable initialization. ``"native"`` restores the
+        historical framework-specific initialization.
     :return: A PyTorch model instance.
 
     """
@@ -40,7 +44,8 @@ class DeepFM(BaseModel):
                  dnn_hidden_units=(256, 128),
                  l2_reg_linear=0.00001, l2_reg_embedding=0.00001, l2_reg_dnn=0, init_std=0.0001, seed=1024,
                  dnn_dropout=0,
-                 dnn_activation='relu', dnn_use_bn=False, task='binary', device='cpu', gpus=None):
+                 dnn_activation='relu', dnn_use_bn=False, task='binary', device='cpu', gpus=None,
+                 initialization_profile='cross_framework'):
 
         super(DeepFM, self).__init__(linear_feature_columns, dnn_feature_columns, l2_reg_linear=l2_reg_linear,
                                      l2_reg_embedding=l2_reg_embedding, init_std=init_std, seed=seed, task=task,
@@ -63,6 +68,11 @@ class DeepFM(BaseModel):
                 filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2=l2_reg_dnn)
             self.add_regularization_weight(self.dnn_linear.weight, l2=l2_reg_dnn)
         self.to(device)
+        if initialization_profile not in ('native', 'cross_framework'):
+            raise ValueError('initialization_profile must be native or cross_framework')
+        self.initialization_profile = initialization_profile
+        if initialization_profile == 'cross_framework':
+            initialize_deepfm_parameters(self, seed=seed, init_std=init_std)
 
     def forward(self, X):
 

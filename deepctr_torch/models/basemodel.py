@@ -16,7 +16,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data as Data
 from sklearn.metrics import accuracy_score, log_loss, mean_squared_error, roc_auc_score
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Sampler
 from tqdm import tqdm
 
 from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat, get_varlen_pooling_list, \
@@ -24,6 +24,21 @@ from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFe
 from ..layers import PredictionLayer
 from ..layers.utils import slice_arrays
 from ..callbacks import CallbackList, History
+from ..optimizers import TensorFlowAdam
+
+
+class NumpyRandomSampler(Sampler):
+    """Yield the same NumPy-defined epoch permutations for a fixed seed."""
+
+    def __init__(self, data_source, seed):
+        self.data_source = data_source
+        self.random = np.random.default_rng(seed)
+
+    def __iter__(self):
+        return iter(self.random.permutation(len(self.data_source)).tolist())
+
+    def __len__(self):
+        return len(self.data_source)
 
 
 class Linear(nn.Module):
@@ -94,6 +109,7 @@ class BaseModel(nn.Module):
 
         super(BaseModel, self).__init__()
         torch.manual_seed(seed)
+        self.seed = seed
         self.dnn_feature_columns = dnn_feature_columns
 
         self.reg_loss = torch.zeros((1,), device=device)
@@ -129,9 +145,12 @@ class BaseModel(nn.Module):
         self._is_graph_network = True  # used for ModelCheckpoint in tf2
         self._ckpt_saved_epoch = False  # used for EarlyStopping in tf1.14
         self.history = History()
+        self.training_profile = "native"
+        self.initialization_profile = "native"
+        self.loss_reduction = "sum"
 
     def fit(self, x=None, y=None, batch_size=None, epochs=1, verbose=1, initial_epoch=0, validation_split=0.,
-            validation_data=None, shuffle=True, callbacks=None):
+            validation_data=None, shuffle=True, callbacks=None, shuffle_seed=None):
         """
 
         :param x: Numpy array of training data (if the model has a single input), or list of Numpy arrays (if the model has multiple inputs).If input layers in the model are named, you can also pass a
@@ -145,6 +164,8 @@ class BaseModel(nn.Module):
         :param validation_data: tuple `(x_val, y_val)` or tuple `(x_val, y_val, val_sample_weights)` on which to evaluate the loss and any model metrics at the end of each epoch. The model will not be trained on this data. `validation_data` will override `validation_split`.
         :param shuffle: Boolean. Whether to shuffle the order of the batches at the beginning of each epoch.
         :param callbacks: List of `deepctr_torch.callbacks.Callback` instances. List of callbacks to apply during training and validation. Now available: `EarlyStopping` , `ModelCheckpoint`
+        :param shuffle_seed: Optional integer seed for NumPy-defined epoch permutations. In the
+            ``cross_framework`` profile it defaults to the model seed.
 
         :return: A `History` object. Its `History.history` attribute is a record of training loss values and metrics values at successive epochs, as well as validation loss values and validation metrics values (if applicable).
         """
@@ -206,8 +227,15 @@ class BaseModel(nn.Module):
         else:
             print(self.device)
 
+        sampler = None
+        if shuffle and (shuffle_seed is not None or self.training_profile == "cross_framework"):
+            sampler = NumpyRandomSampler(
+                train_tensor_data,
+                self.seed if shuffle_seed is None else shuffle_seed,
+            )
         train_loader = DataLoader(
-            dataset=train_tensor_data, shuffle=shuffle, batch_size=batch_size)
+            dataset=train_tensor_data, shuffle=shuffle and sampler is None,
+            sampler=sampler, batch_size=batch_size)
 
         sample_num = len(train_tensor_data)
         steps_per_epoch = (sample_num - 1) // batch_size + 1
@@ -248,18 +276,19 @@ class BaseModel(nn.Module):
                             assert len(loss_func) == num_tasks,\
                                 "the length of `loss_func` should be equal with `num_tasks`"
                             loss = sum(
-                                [loss_func[i](y_pred[:, i], y[:, i], reduction='sum') for i in range(num_tasks)])
+                                [loss_func[i](y_pred[:, i], y[:, i], reduction=self.loss_reduction) for i in range(num_tasks)])
                         else:
                             y_for_loss = y
                             if y_for_loss.ndim > 1 and y_for_loss.shape[-1] == 1:
                                 y_for_loss = y_for_loss.squeeze(-1)
-                            loss = loss_func(y_pred, y_for_loss, reduction='sum')
+                            loss = loss_func(y_pred, y_for_loss, reduction=self.loss_reduction)
                         reg_loss = self.get_regularization_loss()
 
                         total_loss = loss + reg_loss + self.aux_loss
 
-                        loss_epoch += loss.item()
-                        total_loss_epoch += total_loss.item()
+                        batch_weight = len(y) if self.loss_reduction == "mean" else 1
+                        loss_epoch += loss.item() * batch_weight
+                        total_loss_epoch += total_loss.item() * batch_weight
                         total_loss.backward()
                         optim.step()
 
@@ -439,12 +468,29 @@ class BaseModel(nn.Module):
     def compile(self, optimizer,
                 loss=None,
                 metrics=None,
+                training_profile=None,
                 ):
         """
         :param optimizer: String (name of optimizer) or optimizer instance. See [optimizers](https://pytorch.org/docs/stable/optim.html).
         :param loss: String (name of objective function) or objective function. See [losses](https://pytorch.org/docs/stable/nn.functional.html#loss-functions).
         :param metrics: List of metrics to be evaluated by the model during training and testing. Typically you will use `metrics=['accuracy']`.
+        :param training_profile: Optional training semantics override. By default the
+            model's initialization profile is used, so DeepFM is aligned without an
+            extra compile argument. ``"native"`` restores historical behavior and
+            ``"cross_framework"`` uses mean loss reduction, TensorFlow-compatible
+            Adam semantics, deterministic operations, and NumPy-defined shuffle order.
         """
+        if training_profile is None:
+            training_profile = self.initialization_profile
+        if training_profile not in ("native", "cross_framework"):
+            raise ValueError("training_profile must be native or cross_framework")
+        self.training_profile = training_profile
+        self.loss_reduction = "mean" if training_profile == "cross_framework" else "sum"
+        if training_profile == "cross_framework":
+            torch.use_deterministic_algorithms(True)
+            if hasattr(torch.backends, "cudnn"):
+                torch.backends.cudnn.benchmark = False
+                torch.backends.cudnn.deterministic = True
         self.metrics_names = ["loss"]
         self.optim = self._get_optim(optimizer)
         self.loss_func = self._get_loss_func(loss)
@@ -455,7 +501,10 @@ class BaseModel(nn.Module):
             if optimizer == "sgd":
                 optim = torch.optim.SGD(self.parameters(), lr=0.01)
             elif optimizer == "adam":
-                optim = torch.optim.Adam(self.parameters())  # 0.001
+                if self.training_profile == "cross_framework":
+                    optim = TensorFlowAdam(self.named_parameters())
+                else:
+                    optim = torch.optim.Adam(self.parameters())  # 0.001
             elif optimizer == "adagrad":
                 optim = torch.optim.Adagrad(self.parameters())  # 0.01
             elif optimizer == "rmsprop":
