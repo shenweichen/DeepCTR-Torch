@@ -24,7 +24,6 @@ from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFe
 from ..layers import PredictionLayer
 from ..layers.utils import slice_arrays
 from ..callbacks import CallbackList, History
-from ..optimizers import TensorFlowAdam
 
 
 class Linear(nn.Module):
@@ -458,7 +457,7 @@ class BaseModel(nn.Module):
             if optimizer == "sgd":
                 optim = torch.optim.SGD(self.parameters(), lr=0.01)
             elif optimizer == "adam":
-                optim = TensorFlowAdam(self.named_parameters())
+                optim = torch.optim.Adam(self.parameters())  # 0.001
             elif optimizer == "adagrad":
                 optim = torch.optim.Adagrad(self.parameters())  # 0.01
             elif optimizer == "rmsprop":

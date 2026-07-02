@@ -38,10 +38,9 @@ model.compile(
 model.fit(x, y, batch_size=1024, epochs=1)
 ```
 
-Portable initialization is currently implemented for DeepFM. The training
-default uses mean loss reduction, Keras-2-compatible Adam epsilon and
-bias-correction ordering, and sparse embedding-row updates. Initialization and
-model architecture must still be configured consistently when comparing
+Portable initialization is currently implemented for DeepFM. Training uses
+mean loss reduction while retaining PyTorch's native optimizers. Initialization
+and model architecture must still be configured consistently when comparing
 independently constructed TensorFlow and PyTorch models.
 
 For portable inference, load semantic parameters exported by DeepCTR without
