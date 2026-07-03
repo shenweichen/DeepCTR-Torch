@@ -83,9 +83,11 @@ Tongwen](https://arxiv.org/pdf/1905.09433.pdf)
         self.filed_size = filed_size
         self.reduction_size = max(1, filed_size // reduction_ratio)
         self.excitation = nn.Sequential(
-            nn.Linear(self.filed_size, self.reduction_size, bias=False),
+            create_linear(self.filed_size, self.reduction_size, bias=False,
+                          initializer='glorot_normal', device=device),
             nn.ReLU(),
-            nn.Linear(self.reduction_size, self.filed_size, bias=False),
+            create_linear(self.reduction_size, self.filed_size, bias=False,
+                          initializer='glorot_normal', device=device),
             nn.ReLU()
         )
         self.to(device)
@@ -123,16 +125,19 @@ Tongwen](https://arxiv.org/pdf/1905.09433.pdf)
         self.seed = seed
         self.bilinear = nn.ModuleList()
         if self.bilinear_type == "all":
-            self.bilinear = nn.Linear(
-                embedding_size, embedding_size, bias=False)
+            self.bilinear = create_linear(
+                embedding_size, embedding_size, bias=False,
+                initializer='glorot_normal', device=device)
         elif self.bilinear_type == "each":
-            for _ in range(filed_size):
+            for _ in range(filed_size - 1):
                 self.bilinear.append(
-                    nn.Linear(embedding_size, embedding_size, bias=False))
+                    create_linear(embedding_size, embedding_size, bias=False,
+                                  initializer='glorot_normal', device=device))
         elif self.bilinear_type == "interaction":
             for _, _ in itertools.combinations(range(filed_size), 2):
                 self.bilinear.append(
-                    nn.Linear(embedding_size, embedding_size, bias=False))
+                    create_linear(embedding_size, embedding_size, bias=False,
+                                  initializer='glorot_normal', device=device))
         else:
             raise NotImplementedError
         self.to(device)
@@ -361,7 +366,8 @@ class InteractingLayer(nn.Module):
         if self.use_res:
             self.W_Res = nn.Parameter(torch.Tensor(embedding_size, embedding_size))
         for tensor in self.parameters():
-            nn.init.normal_(tensor, mean=0.0, std=0.05)
+            nn.init.trunc_normal_(tensor, mean=0.0, std=0.05,
+                                  a=-0.1, b=0.1)
 
         self.to(device)
 

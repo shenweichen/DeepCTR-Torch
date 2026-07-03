@@ -1,7 +1,14 @@
 import torch
 import torch.nn.functional as F
+from unittest.mock import patch
 
-from deepctr_torch.layers.interaction import CIN, CrossNetMix
+from deepctr_torch.layers.interaction import (
+    BilinearInteraction,
+    CIN,
+    CrossNetMix,
+    InteractingLayer,
+    SENETLayer,
+)
 
 
 def test_cin_uses_tf_channel_order():
@@ -48,3 +55,32 @@ def test_crossnetmix_gates_use_glorot_uniform():
         bound = (6.0 / (fan_in + fan_out)) ** 0.5
         assert torch.max(torch.abs(gate.weight)) <= bound
         assert gate.bias is None
+
+
+def test_senet_uses_glorot_normal_without_bias():
+    with patch('torch.nn.init.xavier_normal_', wraps=torch.nn.init.xavier_normal_) as initializer:
+        layer = SENETLayer(filed_size=6, reduction_ratio=3)
+    assert initializer.call_count == 2
+    assert layer.excitation[0].bias is None
+    assert layer.excitation[2].bias is None
+
+
+def test_bilinear_each_has_one_weight_per_left_field():
+    layer = BilinearInteraction(filed_size=4, embedding_size=3,
+                                bilinear_type='each')
+    assert len(layer.bilinear) == 3
+    assert sum(parameter.numel() for parameter in layer.parameters()) == 27
+
+
+def test_bilinear_uses_glorot_normal_without_bias():
+    with patch('torch.nn.init.xavier_normal_', wraps=torch.nn.init.xavier_normal_) as initializer:
+        layer = BilinearInteraction(filed_size=3, embedding_size=4,
+                                    bilinear_type='interaction')
+    assert initializer.call_count == 3
+    assert all(item.bias is None for item in layer.bilinear)
+
+
+def test_interacting_layer_uses_tf_truncated_normal_range():
+    layer = InteractingLayer(embedding_size=8, head_num=2, use_res=True)
+    for parameter in layer.parameters():
+        assert torch.max(torch.abs(parameter)) <= 0.1
