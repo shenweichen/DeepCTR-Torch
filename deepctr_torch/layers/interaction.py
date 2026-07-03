@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from ..layers.activation import activation_layer
-from ..layers.core import Conv2dSame
+from ..layers.core import Conv2dSame, create_linear
 from ..layers.sequence import KMaxPooling
 
 
@@ -188,8 +188,10 @@ class CIN(nn.Module):
 
         self.conv1ds = nn.ModuleList()
         for i, size in enumerate(self.layer_size):
-            self.conv1ds.append(
-                nn.Conv1d(self.field_nums[-1] * self.field_nums[0], size, 1))
+            conv = nn.Conv1d(self.field_nums[-1] * self.field_nums[0], size, 1)
+            nn.init.xavier_uniform_(conv.weight)
+            nn.init.zeros_(conv.bias)
+            self.conv1ds.append(conv)
 
             if self.split_half:
                 if i != len(self.layer_size) - 1 and size % 2 > 0:
@@ -216,7 +218,7 @@ class CIN(nn.Module):
         for i, size in enumerate(self.layer_size):
             # x^(k-1) * x^0
             x = torch.einsum(
-                'bhd,bmd->bhmd', hidden_nn_layers[-1], hidden_nn_layers[0])
+                'bmd,bhd->bmhd', hidden_nn_layers[0], hidden_nn_layers[-1])
             # x.shape = (batch_size , hi * m, dim)
             x = x.reshape(
                 batch_size, hidden_nn_layers[-1].shape[1] * hidden_nn_layers[0].shape[1], dim)
@@ -482,7 +484,10 @@ class CrossNetMix(nn.Module):
         self.V_list = nn.Parameter(torch.Tensor(self.layer_num, num_experts, in_features, low_rank))
         # C: (low_rank, low_rank)
         self.C_list = nn.Parameter(torch.Tensor(self.layer_num, num_experts, low_rank, low_rank))
-        self.gating = nn.ModuleList([nn.Linear(in_features, 1, bias=False) for i in range(self.num_experts)])
+        self.gating = nn.ModuleList([
+            create_linear(in_features, 1, bias=False, device=device)
+            for _ in range(self.num_experts)
+        ])
 
         self.bias = nn.Parameter(torch.Tensor(self.layer_num, in_features, 1))
 
@@ -530,7 +535,7 @@ class CrossNetMix(nn.Module):
             moe_out = torch.matmul(output_of_experts, gating_score_of_experts.softmax(1))
             x_l = moe_out + x_l  # (bs, in_features, 1)
 
-        x_l = x_l.squeeze()  # (bs, in_features)
+        x_l = x_l.squeeze(2)  # (bs, in_features)
         return x_l
 
 
