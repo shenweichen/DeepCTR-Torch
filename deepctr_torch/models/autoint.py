@@ -19,6 +19,7 @@ class AutoInt(BaseModel):
     :param linear_feature_columns: An iterable containing all the features used by linear part of the model.
     :param dnn_feature_columns: An iterable containing all the features used by deep part of the model.
     :param att_layer_num: int.The InteractingLayer number to be used.
+    :param att_embedding_size: int.The embedding size of each attention head.
     :param att_head_num: int.The head number in multi-head  self-attention network.
     :param att_res: bool.Whether or not use standard residual connections before output.
     :param dnn_hidden_units: list,list of positive integer or empty list, the layer number and units in each layer of DNN
@@ -38,9 +39,9 @@ class AutoInt(BaseModel):
     """
 
     def __init__(self, linear_feature_columns, dnn_feature_columns, att_layer_num=3,
-                 att_head_num=2, att_res=True, dnn_hidden_units=(256, 128), dnn_activation='relu',
+                 att_head_num=2, att_res=True, dnn_hidden_units=(256, 128, 64), dnn_activation='relu',
                  l2_reg_linear=1e-5, l2_reg_dnn=0, l2_reg_embedding=1e-5, dnn_use_bn=False, dnn_dropout=0, init_std=0.0001, seed=1024,
-                 task='binary', device='cpu', gpus=None):
+                 task='binary', device='cpu', gpus=None, att_embedding_size=8):
 
         super(AutoInt, self).__init__(linear_feature_columns, dnn_feature_columns, l2_reg_linear=l2_reg_linear,
                                       l2_reg_embedding=l2_reg_embedding, init_std=init_std, seed=seed, task=task,
@@ -51,13 +52,14 @@ class AutoInt(BaseModel):
         field_num = len(self.embedding_dict)
 
         embedding_size = self.embedding_size
+        attention_output_size = att_embedding_size * att_head_num
 
         if len(dnn_hidden_units) and att_layer_num > 0:
-            dnn_linear_in_feature = dnn_hidden_units[-1] + field_num * embedding_size
+            dnn_linear_in_feature = dnn_hidden_units[-1] + field_num * attention_output_size
         elif len(dnn_hidden_units) > 0:
             dnn_linear_in_feature = dnn_hidden_units[-1]
         elif att_layer_num > 0:
-            dnn_linear_in_feature = field_num * embedding_size
+            dnn_linear_in_feature = field_num * attention_output_size
         else:
             raise NotImplementedError
 
@@ -70,8 +72,13 @@ class AutoInt(BaseModel):
                            init_std=init_std, device=device)
             self.add_regularization_weight(
                 filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2=l2_reg_dnn)
-        self.int_layers = nn.ModuleList(
-            [InteractingLayer(embedding_size, att_head_num, att_res, device=device) for _ in range(att_layer_num)])
+        attention_input_size = embedding_size
+        self.int_layers = nn.ModuleList()
+        for _ in range(att_layer_num):
+            self.int_layers.append(InteractingLayer(
+                attention_input_size, att_head_num, att_res, device=device,
+                att_embedding_size=att_embedding_size))
+            attention_input_size = attention_output_size
 
         self.to(device)
 

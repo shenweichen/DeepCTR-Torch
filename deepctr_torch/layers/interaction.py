@@ -347,24 +347,30 @@ class InteractingLayer(nn.Module):
             - [Song W, Shi C, Xiao Z, et al. AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks[J]. arXiv preprint arXiv:1810.11921, 2018.](https://arxiv.org/abs/1810.11921)
     """
 
-    def __init__(self, embedding_size, head_num=2, use_res=True, scaling=False, seed=1024, device='cpu'):
+    def __init__(self, embedding_size, head_num=2, use_res=True, scaling=False,
+                 seed=1024, device='cpu', att_embedding_size=None):
         super(InteractingLayer, self).__init__()
         if head_num <= 0:
             raise ValueError('head_num must be a int > 0')
-        if embedding_size % head_num != 0:
+        if att_embedding_size is None and embedding_size % head_num != 0:
             raise ValueError('embedding_size is not an integer multiple of head_num!')
-        self.att_embedding_size = embedding_size // head_num
+        self.att_embedding_size = (
+            embedding_size // head_num
+            if att_embedding_size is None
+            else att_embedding_size
+        )
+        output_size = self.att_embedding_size * head_num
         self.head_num = head_num
         self.use_res = use_res
         self.scaling = scaling
         self.seed = seed
 
-        self.W_Query = nn.Parameter(torch.Tensor(embedding_size, embedding_size))
-        self.W_key = nn.Parameter(torch.Tensor(embedding_size, embedding_size))
-        self.W_Value = nn.Parameter(torch.Tensor(embedding_size, embedding_size))
+        self.W_Query = nn.Parameter(torch.Tensor(embedding_size, output_size))
+        self.W_key = nn.Parameter(torch.Tensor(embedding_size, output_size))
+        self.W_Value = nn.Parameter(torch.Tensor(embedding_size, output_size))
 
         if self.use_res:
-            self.W_Res = nn.Parameter(torch.Tensor(embedding_size, embedding_size))
+            self.W_Res = nn.Parameter(torch.Tensor(embedding_size, output_size))
         for tensor in self.parameters():
             nn.init.trunc_normal_(tensor, mean=0.0, std=0.05,
                                   a=-0.1, b=0.1)

@@ -86,6 +86,15 @@ def test_autoint_exposes_and_applies_linear_l2():
     assert "dnn_linear.weight" not in registered
 
 
+def test_autoint_defaults_match_tf_attention_and_dnn_widths():
+    columns = _feature_columns()
+    model = AutoInt(columns, columns, device="cpu")
+    assert [linear.out_features for linear in model.dnn.linears] == [256, 128, 64]
+    assert model.int_layers[0].W_Query.shape == (model.embedding_size, 16)
+    assert model.int_layers[1].W_Query.shape == (16, 16)
+    assert model.dnn_linear.in_features == 64 + len(model.embedding_dict) * 16
+
+
 @pytest.mark.parametrize("model_type", [DeepFM, FiBiNET, NFM, ONN, WDL, xDeepFM])
 def test_dnn_l2_covers_hidden_kernels_but_not_output(model_type):
     columns = _feature_columns()
@@ -133,6 +142,14 @@ def test_difm_l2_only_covers_the_dnn_hidden_kernels():
     assert not any(name.startswith("vector_wise_net.") for name in registered)
     assert "transform_matrix_P_vec.weight" not in registered
     assert "transform_matrix_P_bit.weight" not in registered
+
+
+def test_difm_defaults_match_tf_attention_and_dnn_widths():
+    columns = _feature_columns()
+    model = DIFM(columns, columns, device="cpu")
+    assert [linear.out_features for linear in model.bit_wise_net.linears] == [256, 128, 64]
+    assert model.vector_wise_net.W_Query.shape == (model.embedding_size, 64)
+    assert model.transform_matrix_P_vec.in_features == model.sparse_feat_num * 64
 
 
 def test_din_l2_covers_hidden_kernels_but_not_output():

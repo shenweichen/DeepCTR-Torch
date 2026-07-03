@@ -84,3 +84,12 @@ def test_interacting_layer_uses_tf_truncated_normal_range():
     layer = InteractingLayer(embedding_size=8, head_num=2, use_res=True)
     for parameter in layer.parameters():
         assert torch.max(torch.abs(parameter)) <= 0.1
+
+
+def test_interacting_layer_supports_tf_per_head_width():
+    layer = InteractingLayer(
+        embedding_size=6, head_num=2, att_embedding_size=4, use_res=True)
+    output = layer(torch.randn(3, 5, 6))
+    assert output.shape == (3, 5, 8)
+    assert layer.W_Query.shape == (6, 8)
+    assert layer.W_Res.shape == (6, 8)
