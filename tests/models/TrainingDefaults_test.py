@@ -1,8 +1,39 @@
 # -*- coding: utf-8 -*-
 import torch
+import pytest
 
-from deepctr_torch.models import DeepFM
+from deepctr_torch.models import (
+    AutoInt,
+    DCN,
+    DCNMix,
+    DIFM,
+    DeepFM,
+    FiBiNET,
+    IFM,
+    NFM,
+    ONN,
+    WDL,
+    xDeepFM,
+)
+from deepctr_torch.models.din import DIN
+from .DIN_test import get_xy_fd
 from ..utils import get_test_data
+
+
+def _registered_l2(model):
+    names = {id(parameter): name for name, parameter in model.named_parameters()}
+    result = {}
+    for weights, _, l2_value in model.regularization_weight:
+        for item in weights:
+            parameter = item[1] if isinstance(item, tuple) else item
+            result[names[id(parameter)]] = l2_value
+    return result
+
+
+def _feature_columns():
+    return get_test_data(
+        16, sparse_feature_num=2, dense_feature_num=1, sequence_feature=[]
+    )[2]
 
 
 def test_compile_uses_mean_loss_and_native_adam():
@@ -13,3 +44,77 @@ def test_compile_uses_mean_loss_and_native_adam():
     model.compile("adam", "binary_crossentropy")
     assert isinstance(model.optim, torch.optim.Adam)
     assert model.loss_reduction == "mean"
+
+
+def test_autoint_exposes_and_applies_linear_l2():
+    columns = _feature_columns()
+    model = AutoInt(
+        columns, columns, dnn_hidden_units=(8,), att_layer_num=1,
+        l2_reg_linear=0.11, l2_reg_embedding=0.12, l2_reg_dnn=0.13,
+        device="cpu",
+    )
+    registered = _registered_l2(model)
+    assert registered["linear_model.embedding_dict.sparse_feature_0.weight"] == 0.11
+    assert registered["embedding_dict.sparse_feature_0.weight"] == 0.12
+    assert registered["dnn.linears.0.weight"] == 0.13
+    assert "dnn_linear.weight" not in registered
+
+
+@pytest.mark.parametrize("model_type", [DeepFM, FiBiNET, NFM, ONN, WDL, xDeepFM])
+def test_dnn_l2_covers_hidden_kernels_but_not_output(model_type):
+    columns = _feature_columns()
+    model = model_type(
+        columns, columns, dnn_hidden_units=(8,),
+        l2_reg_linear=0.11, l2_reg_embedding=0.12, l2_reg_dnn=0.13,
+        device="cpu",
+    )
+    registered = _registered_l2(model)
+    assert registered["dnn.linears.0.weight"] == 0.13
+    assert "dnn_linear.weight" not in registered
+
+
+@pytest.mark.parametrize("model_type", [DCN, DCNMix])
+def test_dcn_l2_routes_linear_dnn_and_cross_coefficients(model_type):
+    columns = _feature_columns()
+    model = model_type(
+        columns, columns, dnn_hidden_units=(8,), cross_num=1,
+        l2_reg_linear=0.11, l2_reg_embedding=0.12,
+        l2_reg_dnn=0.13, l2_reg_cross=0.14, device="cpu",
+    )
+    registered = _registered_l2(model)
+    assert registered["linear_model.embedding_dict.sparse_feature_0.weight"] == 0.11
+    assert registered["dnn.linears.0.weight"] == 0.13
+    assert "dnn_linear.weight" not in registered
+    cross_values = [
+        value for name, value in registered.items() if name.startswith("crossnet.")
+    ]
+    assert cross_values and all(value == 0.14 for value in cross_values)
+
+
+def test_ifm_l2_excludes_unregularized_output_projection():
+    columns = _feature_columns()
+    model = IFM(columns, columns, dnn_hidden_units=(8,), l2_reg_dnn=0.13)
+    registered = _registered_l2(model)
+    assert registered["factor_estimating_net.linears.0.weight"] == 0.13
+    assert "transform_weight_matrix_P.weight" not in registered
+
+
+def test_difm_l2_only_covers_the_dnn_hidden_kernels():
+    columns = _feature_columns()
+    model = DIFM(columns, columns, dnn_hidden_units=(8,), l2_reg_dnn=0.13)
+    registered = _registered_l2(model)
+    assert registered["bit_wise_net.linears.0.weight"] == 0.13
+    assert not any(name.startswith("vector_wise_net.") for name in registered)
+    assert "transform_matrix_P_vec.weight" not in registered
+    assert "transform_matrix_P_bit.weight" not in registered
+
+
+def test_din_l2_covers_hidden_kernels_but_not_output():
+    _, _, columns, behavior_features = get_xy_fd()
+    model = DIN(
+        columns, behavior_features, dnn_hidden_units=(8,),
+        l2_reg_embedding=0.12, l2_reg_dnn=0.13,
+    )
+    registered = _registered_l2(model)
+    assert registered["dnn.linears.0.weight"] == 0.13
+    assert "dnn_linear.weight" not in registered

@@ -23,6 +23,7 @@ class AutoInt(BaseModel):
     :param att_res: bool.Whether or not use standard residual connections before output.
     :param dnn_hidden_units: list,list of positive integer or empty list, the layer number and units in each layer of DNN
     :param dnn_activation: Activation function to use in DNN
+    :param l2_reg_linear: float. L2 regularizer strength applied to linear part
     :param l2_reg_dnn: float. L2 regularizer strength applied to DNN
     :param l2_reg_embedding: float. L2 regularizer strength applied to embedding vector
     :param dnn_use_bn:  bool. Whether use BatchNormalization before activation or not in DNN
@@ -38,10 +39,10 @@ class AutoInt(BaseModel):
 
     def __init__(self, linear_feature_columns, dnn_feature_columns, att_layer_num=3,
                  att_head_num=2, att_res=True, dnn_hidden_units=(256, 128), dnn_activation='relu',
-                 l2_reg_dnn=0, l2_reg_embedding=1e-5, dnn_use_bn=False, dnn_dropout=0, init_std=0.0001, seed=1024,
+                 l2_reg_linear=1e-5, l2_reg_dnn=0, l2_reg_embedding=1e-5, dnn_use_bn=False, dnn_dropout=0, init_std=0.0001, seed=1024,
                  task='binary', device='cpu', gpus=None):
 
-        super(AutoInt, self).__init__(linear_feature_columns, dnn_feature_columns, l2_reg_linear=0,
+        super(AutoInt, self).__init__(linear_feature_columns, dnn_feature_columns, l2_reg_linear=l2_reg_linear,
                                       l2_reg_embedding=l2_reg_embedding, init_std=init_std, seed=seed, task=task,
                                       device=device, gpus=gpus)
         if len(dnn_hidden_units) <= 0 and att_layer_num <= 0:

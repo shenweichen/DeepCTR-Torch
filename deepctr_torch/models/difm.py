@@ -68,13 +68,8 @@ class DIFM(BaseModel):
             dnn_hidden_units[-1], self.sparse_feat_num, bias=False).to(device)
 
         self.add_regularization_weight(
-            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.vector_wise_net.named_parameters()),
-            l2=l2_reg_dnn)
-        self.add_regularization_weight(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.bit_wise_net.named_parameters()),
             l2=l2_reg_dnn)
-        self.add_regularization_weight(self.transform_matrix_P_vec.weight, l2=l2_reg_dnn)
-        self.add_regularization_weight(self.transform_matrix_P_bit.weight, l2=l2_reg_dnn)
 
         self.to(device)
 

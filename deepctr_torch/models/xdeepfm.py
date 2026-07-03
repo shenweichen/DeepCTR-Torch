@@ -57,8 +57,6 @@ class xDeepFM(BaseModel):
             self.add_regularization_weight(
                 filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2=l2_reg_dnn)
 
-            self.add_regularization_weight(self.dnn_linear.weight, l2=l2_reg_dnn)
-
         self.cin_layer_size = cin_layer_size
         self.use_cin = len(self.cin_layer_size) > 0 and len(dnn_feature_columns) > 0
         if self.use_cin:

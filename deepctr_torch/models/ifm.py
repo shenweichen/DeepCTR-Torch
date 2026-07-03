@@ -61,7 +61,6 @@ class IFM(BaseModel):
         self.add_regularization_weight(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.factor_estimating_net.named_parameters()),
             l2=l2_reg_dnn)
-        self.add_regularization_weight(self.transform_weight_matrix_P.weight, l2=l2_reg_dnn)
 
         self.to(device)
 

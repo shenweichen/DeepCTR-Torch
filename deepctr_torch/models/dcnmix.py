@@ -49,7 +49,8 @@ class DCNMix(BaseModel):
                  dnn_activation='relu', dnn_use_bn=False, task='binary', device='cpu', gpus=None):
 
         super(DCNMix, self).__init__(linear_feature_columns=linear_feature_columns,
-                                     dnn_feature_columns=dnn_feature_columns, l2_reg_embedding=l2_reg_embedding,
+                                     dnn_feature_columns=dnn_feature_columns, l2_reg_linear=l2_reg_linear,
+                                     l2_reg_embedding=l2_reg_embedding,
                                      init_std=init_std, seed=seed, task=task, device=device, gpus=gpus)
         self.dnn_hidden_units = dnn_hidden_units
         self.cross_num = cross_num
@@ -70,7 +71,6 @@ class DCNMix(BaseModel):
                                     layer_num=cross_num, device=device)
         self.add_regularization_weight(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2=l2_reg_dnn)
-        self.add_regularization_weight(self.dnn_linear.weight, l2=l2_reg_linear)
         regularization_modules = [self.crossnet.U_list, self.crossnet.V_list, self.crossnet.C_list]
         for module in regularization_modules:
             self.add_regularization_weight(module, l2=l2_reg_cross)
