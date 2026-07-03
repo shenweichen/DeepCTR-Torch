@@ -10,7 +10,7 @@ import torch.nn as nn
 
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input, SparseFeat, VarLenSparseFeat
-from ..layers import FM, DNN, InteractingLayer, concat_fun
+from ..layers import FM, DNN, InteractingLayer, concat_fun, create_linear
 
 
 class DIFM(BaseModel):
@@ -62,10 +62,12 @@ class DIFM(BaseModel):
         self.sparse_feat_num = len(list(filter(lambda x: isinstance(x, SparseFeat) or isinstance(x, VarLenSparseFeat),
                                                dnn_feature_columns)))
 
-        self.transform_matrix_P_vec = nn.Linear(
-            self.sparse_feat_num * self.embedding_size, self.sparse_feat_num, bias=False).to(device)
-        self.transform_matrix_P_bit = nn.Linear(
-            dnn_hidden_units[-1], self.sparse_feat_num, bias=False).to(device)
+        self.transform_matrix_P_vec = create_linear(
+            self.sparse_feat_num * self.embedding_size, self.sparse_feat_num,
+            bias=False, device=device)
+        self.transform_matrix_P_bit = create_linear(
+            dnn_hidden_units[-1], self.sparse_feat_num,
+            bias=False, device=device)
 
         self.add_regularization_weight(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.bit_wise_net.named_parameters()),

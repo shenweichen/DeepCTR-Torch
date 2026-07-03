@@ -14,7 +14,7 @@ import torch.nn as nn
 
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
-from ..layers import CrossNet, DNN
+from ..layers import CrossNet, DNN, create_linear
 
 
 class DCN(BaseModel):
@@ -62,8 +62,8 @@ class DCN(BaseModel):
         elif self.cross_num > 0:
             dnn_linear_in_feature = self.compute_input_dim(dnn_feature_columns)
 
-        self.dnn_linear = nn.Linear(dnn_linear_in_feature, 1, bias=False).to(
-            device)
+        self.dnn_linear = create_linear(
+            dnn_linear_in_feature, 1, bias=False, device=device)
         self.crossnet = CrossNet(in_features=self.compute_input_dim(dnn_feature_columns),
                                  layer_num=cross_num, parameterization=cross_parameterization, device=device)
         self.add_regularization_weight(

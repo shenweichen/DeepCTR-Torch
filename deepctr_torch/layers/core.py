@@ -7,6 +7,21 @@ import torch.nn.functional as F
 from .activation import activation_layer
 
 
+def create_linear(in_features, out_features, bias=True,
+                  initializer='glorot_uniform', device='cpu'):
+    """Create a Linear layer with framework-neutral Glorot initialization."""
+    layer = nn.Linear(in_features, out_features, bias=bias)
+    if initializer == 'glorot_uniform':
+        nn.init.xavier_uniform_(layer.weight)
+    elif initializer == 'glorot_normal':
+        nn.init.xavier_normal_(layer.weight)
+    else:
+        raise ValueError("initializer must be glorot_uniform or glorot_normal")
+    if layer.bias is not None:
+        nn.init.zeros_(layer.bias)
+    return layer.to(device)
+
+
 class LocalActivationUnit(nn.Module):
     """The LocalActivationUnit used in DIN with which the representation of
         user interests varies adaptively given different candidate items.
@@ -46,7 +61,9 @@ class LocalActivationUnit(nn.Module):
                        dice_dim=dice_dim,
                        use_bn=use_bn)
 
-        self.dense = nn.Linear(hidden_units[-1], 1)
+        self.dense = create_linear(
+            hidden_units[-1], 1, initializer='glorot_normal'
+        )
 
     def forward(self, query, user_behavior):
         # query ad            : size -> batch_size * 1 * embedding_size
@@ -101,8 +118,13 @@ class DNN(nn.Module):
             raise ValueError("hidden_units is empty!!")
         hidden_units = [inputs_dim] + list(hidden_units)
 
-        self.linears = nn.ModuleList(
-            [nn.Linear(hidden_units[i], hidden_units[i + 1]) for i in range(len(hidden_units) - 1)])
+        self.linears = nn.ModuleList([
+            create_linear(
+                hidden_units[i], hidden_units[i + 1],
+                initializer='glorot_normal', device=device
+            )
+            for i in range(len(hidden_units) - 1)
+        ])
 
         if self.use_bn:
             self.bn = nn.ModuleList(
@@ -110,10 +132,6 @@ class DNN(nn.Module):
 
         self.activation_layers = nn.ModuleList(
             [activation_layer(activation, hidden_units[i + 1], dice_dim) for i in range(len(hidden_units) - 1)])
-
-        for name, tensor in self.linears.named_parameters():
-            if 'weight' in name:
-                nn.init.normal_(tensor, mean=0, std=init_std)
 
         self.to(device)
 

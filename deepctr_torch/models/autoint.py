@@ -10,7 +10,7 @@ import torch.nn as nn
 
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
-from ..layers import DNN, concat_fun, InteractingLayer
+from ..layers import DNN, concat_fun, InteractingLayer, create_linear
 
 
 class AutoInt(BaseModel):
@@ -61,7 +61,7 @@ class AutoInt(BaseModel):
         else:
             raise NotImplementedError
 
-        self.dnn_linear = nn.Linear(dnn_linear_in_feature, 1, bias=False).to(device)
+        self.dnn_linear = create_linear(dnn_linear_in_feature, 1, bias=False, device=device)
         self.dnn_hidden_units = dnn_hidden_units
         self.att_layer_num = att_layer_num
         if self.use_dnn:

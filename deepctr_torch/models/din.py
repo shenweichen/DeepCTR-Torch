@@ -76,7 +76,8 @@ class DIN(BaseModel):
                        dropout_rate=dnn_dropout,
                        l2_reg=l2_reg_dnn,
                        use_bn=dnn_use_bn)
-        self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False).to(device)
+        self.dnn_linear = create_linear(
+            dnn_hidden_units[-1], 1, bias=False, device=device)
         self.add_regularization_weight(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()),
             l2=l2_reg_dnn)

@@ -14,7 +14,7 @@ import torch.nn as nn
 
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
-from ..layers import CrossNetMix, DNN
+from ..layers import CrossNetMix, DNN, create_linear
 
 
 class DCNMix(BaseModel):
@@ -64,8 +64,8 @@ class DCNMix(BaseModel):
         elif self.cross_num > 0:
             dnn_linear_in_feature = self.compute_input_dim(dnn_feature_columns)
 
-        self.dnn_linear = nn.Linear(dnn_linear_in_feature, 1, bias=False).to(
-            device)
+        self.dnn_linear = create_linear(
+            dnn_linear_in_feature, 1, bias=False, device=device)
         self.crossnet = CrossNetMix(in_features=self.compute_input_dim(dnn_feature_columns),
                                     low_rank=low_rank, num_experts=num_experts,
                                     layer_num=cross_num, device=device)

@@ -10,7 +10,7 @@ import torch.nn as nn
 
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input, SparseFeat, VarLenSparseFeat
-from ..layers import FM, DNN
+from ..layers import FM, DNN, create_linear
 
 
 class IFM(BaseModel):
@@ -55,8 +55,9 @@ class IFM(BaseModel):
                                          use_bn=dnn_use_bn, init_std=init_std, device=device)
         self.sparse_feat_num = len(list(filter(lambda x: isinstance(x, SparseFeat) or isinstance(x, VarLenSparseFeat),
                                                dnn_feature_columns)))
-        self.transform_weight_matrix_P = nn.Linear(
-            dnn_hidden_units[-1], self.sparse_feat_num, bias=False).to(device)
+        self.transform_weight_matrix_P = create_linear(
+            dnn_hidden_units[-1], self.sparse_feat_num,
+            bias=False, device=device)
 
         self.add_regularization_weight(
             filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.factor_estimating_net.named_parameters()),

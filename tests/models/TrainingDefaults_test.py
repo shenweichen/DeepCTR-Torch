@@ -16,6 +16,7 @@ from deepctr_torch.models import (
     xDeepFM,
 )
 from deepctr_torch.models.din import DIN
+from deepctr_torch.layers import DNN, create_linear
 from .DIN_test import get_xy_fd
 from ..utils import get_test_data
 
@@ -44,6 +45,31 @@ def test_compile_uses_mean_loss_and_native_adam():
     model.compile("adam", "binary_crossentropy")
     assert isinstance(model.optim, torch.optim.Adam)
     assert model.loss_reduction == "mean"
+
+
+def test_dnn_uses_glorot_normal_weights_and_zero_bias():
+    torch.manual_seed(2026)
+    layer = DNN(100, (80,), device="cpu")
+    weight = layer.linears[0].weight.detach()
+    expected_std = (2.0 / (100 + 80)) ** 0.5
+    assert abs(weight.std().item() - expected_std) < expected_std * 0.1
+    assert torch.equal(
+        layer.linears[0].bias.detach(),
+        torch.zeros_like(layer.linears[0].bias),
+    )
+
+
+def test_output_projection_uses_glorot_uniform_and_zero_bias():
+    torch.manual_seed(2026)
+    layer = create_linear(100, 80, bias=True)
+    bound = (6.0 / (100 + 80)) ** 0.5
+    assert layer.weight.detach().abs().max().item() <= bound
+    assert torch.equal(layer.bias.detach(), torch.zeros_like(layer.bias))
+
+
+def test_linear_rejects_unknown_initializer():
+    with pytest.raises(ValueError, match="initializer"):
+        create_linear(4, 2, initializer="unknown")
 
 
 def test_autoint_exposes_and_applies_linear_l2():
