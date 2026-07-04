@@ -48,12 +48,12 @@ class Linear(nn.Module):
         #         )
         # .to("cuda:1")
         for tensor in self.embedding_dict.values():
-            nn.init.zeros_(tensor.weight)
+            nn.init.normal_(tensor.weight, mean=0, std=init_std)
 
         if len(self.dense_feature_columns) > 0:
             self.weight = nn.Parameter(torch.Tensor(sum(fc.dimension for fc in self.dense_feature_columns), 1).to(
                 device))
-            nn.init.xavier_normal_(self.weight)
+            torch.nn.init.normal_(self.weight, mean=0, std=init_std)
 
     def forward(self, X, sparse_feat_refine_weight=None):
 

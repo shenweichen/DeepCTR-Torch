@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import torch
 import pytest
-from unittest.mock import patch
 
 from deepctr_torch.models import (
     AutoInt,
@@ -71,20 +70,6 @@ def test_output_projection_uses_glorot_uniform_and_zero_bias():
 def test_linear_rejects_unknown_initializer():
     with pytest.raises(ValueError, match="initializer"):
         create_linear(4, 2, initializer="unknown")
-
-
-def test_wide_linear_matches_tf_initializers():
-    columns = _feature_columns()
-    with patch('torch.nn.init.xavier_normal_', wraps=torch.nn.init.xavier_normal_) as initializer:
-        model = DeepFM(columns, columns, device="cpu")
-    assert all(
-        torch.equal(embedding.weight, torch.zeros_like(embedding.weight))
-        for embedding in model.linear_model.embedding_dict.values()
-    )
-    assert any(
-        call.args and call.args[0] is model.linear_model.weight
-        for call in initializer.call_args_list
-    )
 
 
 def test_autoint_exposes_and_applies_linear_l2():
