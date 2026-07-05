@@ -6,11 +6,9 @@ Reference:
     [1] Guo H, Tang R, Ye Y, et al. Deepfm: a factorization-machine based neural network for ctr prediction[J]. arXiv preprint arXiv:1703.04247, 2017.(https://arxiv.org/abs/1703.04247)
 """
 import torch
-import torch.nn as nn
-
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
-from ..layers import FM, DNN, create_linear
+from ..layers import FM
 
 
 class DeepFM(BaseModel):
@@ -53,14 +51,12 @@ class DeepFM(BaseModel):
             self.fm = FM()
 
         if self.use_dnn:
-            self.dnn = DNN(self.compute_input_dim(dnn_feature_columns), dnn_hidden_units,
-                           activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
-                           init_std=init_std, device=device)
-            self.dnn_linear = create_linear(
-                dnn_hidden_units[-1], 1, bias=False, device=device)
-
-            self.add_regularization_weight(
-                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2=l2_reg_dnn)
+            self.dnn, self.dnn_linear = self._create_dnn_and_output(
+                self.compute_input_dim(dnn_feature_columns), dnn_hidden_units,
+                dnn_hidden_units[-1],
+                activation=dnn_activation, l2_reg=l2_reg_dnn,
+                dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
+                init_std=init_std, device=device)
         self.to(device)
 
     def forward(self, X):

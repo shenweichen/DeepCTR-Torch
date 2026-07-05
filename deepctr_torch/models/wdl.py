@@ -6,11 +6,8 @@ Reference:
     [1] Cheng H T, Koc L, Harmsen J, et al. Wide & deep learning for recommender systems[C]//Proceedings of the 1st Workshop on Deep Learning for Recommender Systems. ACM, 2016: 7-10.(https://arxiv.org/pdf/1606.07792.pdf)
 """
 
-import torch.nn as nn
-
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
-from ..layers import DNN, create_linear
 
 
 class WDL(BaseModel):
@@ -47,13 +44,12 @@ class WDL(BaseModel):
         self.use_dnn = len(dnn_feature_columns) > 0 and len(
             dnn_hidden_units) > 0
         if self.use_dnn:
-            self.dnn = DNN(self.compute_input_dim(dnn_feature_columns), dnn_hidden_units,
-                           activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
-                           init_std=init_std, device=device)
-            self.dnn_linear = create_linear(
-                dnn_hidden_units[-1], 1, bias=False, device=device)
-            self.add_regularization_weight(
-                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2=l2_reg_dnn)
+            self.dnn, self.dnn_linear = self._create_dnn_and_output(
+                self.compute_input_dim(dnn_feature_columns), dnn_hidden_units,
+                dnn_hidden_units[-1],
+                activation=dnn_activation, l2_reg=l2_reg_dnn,
+                dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
+                init_std=init_std, device=device)
 
         self.to(device)
 

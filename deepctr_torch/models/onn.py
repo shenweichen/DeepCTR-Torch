@@ -8,7 +8,6 @@ Reference:
 
 from .basemodel import *
 from ..inputs import combined_dnn_input
-from ..layers import DNN, create_linear
 
 
 class Interac(nn.Module):
@@ -74,15 +73,11 @@ class ONN(BaseModel):
 
         dim = self.__compute_nffm_dnn_dim(
             feature_columns=dnn_feature_columns, embedding_size=embedding_size)
-        self.dnn = DNN(inputs_dim=dim,
-                       hidden_units=dnn_hidden_units,
-                       activation=dnn_activation, l2_reg=l2_reg_dnn,
-                       dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
-                       init_std=init_std, device=device)
-        self.dnn_linear = create_linear(
-            dnn_hidden_units[-1], 1, bias=False, device=device)
-        self.add_regularization_weight(
-            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2=l2_reg_dnn)
+        self.dnn, self.dnn_linear = self._create_dnn_and_output(
+            dim, dnn_hidden_units, dnn_hidden_units[-1],
+            activation=dnn_activation,
+            l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout,
+            use_bn=dnn_use_bn, init_std=init_std, device=device)
         self.to(device)
 
     def __compute_nffm_dnn_dim(self, feature_columns, embedding_size):

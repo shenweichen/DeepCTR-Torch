@@ -6,8 +6,6 @@ Reference:
     [1] Lu W, Yu Y, Chang Y, et al. A Dual Input-aware Factorization Machine for CTR Prediction[C]//IJCAI. 2020: 3139-3145.(https://www.ijcai.org/Proceedings/2020/0434.pdf)
 """
 import torch
-import torch.nn as nn
-
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input, SparseFeat, VarLenSparseFeat
 from ..layers import FM, DNN, InteractingLayer, concat_fun, create_linear

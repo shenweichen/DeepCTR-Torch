@@ -21,7 +21,7 @@ from tqdm import tqdm
 
 from ..inputs import build_input_features, SparseFeat, DenseFeat, VarLenSparseFeat, get_varlen_pooling_list, \
     create_embedding_matrix, varlen_embedding_lookup
-from ..layers import PredictionLayer
+from ..layers import DNN, PredictionLayer, create_linear
 from ..layers.utils import slice_arrays
 from ..callbacks import CallbackList, History
 
@@ -386,6 +386,22 @@ class BaseModel(nn.Module):
                             dense_feature_columns]
 
         return sparse_embedding_list + varlen_sparse_embedding_list, dense_value_list
+
+    def _create_dnn_and_output(self, input_dim, hidden_units, output_input_dim,
+                               output_dim=1, activation='relu', l2_reg=0,
+                               dropout_rate=0, use_bn=False,
+                               init_std=0.0001, device='cpu'):
+        dnn = DNN(
+            input_dim, hidden_units, activation=activation, l2_reg=l2_reg,
+            dropout_rate=dropout_rate, use_bn=use_bn, init_std=init_std,
+            device=device)
+        output = create_linear(
+            output_input_dim, output_dim, bias=False, device=device)
+        self.add_regularization_weight(
+            filter(lambda item: 'weight' in item[0] and 'bn' not in item[0],
+                   dnn.named_parameters()),
+            l2=l2_reg)
+        return dnn, output
 
     def compute_input_dim(self, feature_columns, include_sparse=True, include_dense=True, feature_group=False):
         sparse_feature_columns = list(

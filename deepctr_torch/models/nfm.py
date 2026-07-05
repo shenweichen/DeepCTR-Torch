@@ -10,7 +10,7 @@ import torch.nn as nn
 
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input
-from ..layers import DNN, BiInteractionPooling, create_linear
+from ..layers import BiInteractionPooling
 
 
 class NFM(BaseModel):
@@ -42,14 +42,13 @@ class NFM(BaseModel):
                                   l2_reg_embedding=l2_reg_embedding, init_std=init_std, seed=seed, task=task,
                                   device=device, gpus=gpus)
 
-        self.dnn = DNN(self.compute_input_dim(dnn_feature_columns, include_sparse=False) + self.embedding_size,
-                       dnn_hidden_units,
-                       activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=False,
-                       init_std=init_std, device=device)
-        self.dnn_linear = create_linear(
-            dnn_hidden_units[-1], 1, bias=False, device=device)
-        self.add_regularization_weight(
-            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2=l2_reg_dnn)
+        self.dnn, self.dnn_linear = self._create_dnn_and_output(
+            self.compute_input_dim(
+                dnn_feature_columns, include_sparse=False) + self.embedding_size,
+            dnn_hidden_units, dnn_hidden_units[-1],
+            activation=dnn_activation, l2_reg=l2_reg_dnn,
+            dropout_rate=dnn_dropout, use_bn=False,
+            init_std=init_std, device=device)
         self.bi_pooling = BiInteractionPooling()
         self.bi_dropout = bi_dropout
         if self.bi_dropout > 0:
