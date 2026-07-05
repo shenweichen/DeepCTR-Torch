@@ -8,7 +8,7 @@ Reference:
 import torch
 from .basemodel import BaseModel
 from ..inputs import combined_dnn_input, SparseFeat, VarLenSparseFeat
-from ..layers import FM
+from ..layers import FM, DNN, create_linear
 
 
 class IFM(BaseModel):
@@ -47,16 +47,19 @@ class IFM(BaseModel):
 
         self.fm = FM()
 
+        self.factor_estimating_net = DNN(self.compute_input_dim(dnn_feature_columns, include_dense=False),
+                                         dnn_hidden_units, activation=dnn_activation, l2_reg=l2_reg_dnn,
+                                         dropout_rate=dnn_dropout,
+                                         use_bn=dnn_use_bn, init_std=init_std, device=device)
         self.sparse_feat_num = len(list(filter(lambda x: isinstance(x, SparseFeat) or isinstance(x, VarLenSparseFeat),
                                                dnn_feature_columns)))
-        self.factor_estimating_net, self.transform_weight_matrix_P = \
-            self._create_dnn_and_output(
-                self.compute_input_dim(
-                    dnn_feature_columns, include_dense=False),
-                dnn_hidden_units, dnn_hidden_units[-1],
-                output_dim=self.sparse_feat_num, activation=dnn_activation,
-                l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout,
-                use_bn=dnn_use_bn, init_std=init_std, device=device)
+        self.transform_weight_matrix_P = create_linear(
+            dnn_hidden_units[-1], self.sparse_feat_num,
+            bias=False, device=device)
+
+        self.add_regularization_weight(
+            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.factor_estimating_net.named_parameters()),
+            l2=l2_reg_dnn)
 
         self.to(device)
 
