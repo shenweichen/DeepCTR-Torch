@@ -372,8 +372,8 @@ class InteractingLayer(nn.Module):
         if self.use_res:
             self.W_Res = nn.Parameter(torch.Tensor(embedding_size, output_size))
         for tensor in self.parameters():
-            nn.init.trunc_normal_(tensor, mean=0.0, std=0.05,
-                                  a=-0.1, b=0.1)
+            nn.init.trunc_normal_(tensor, mean=0.0, std=1.0,
+                                  a=-2.0, b=2.0)
 
         self.to(device)
 

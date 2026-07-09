@@ -76,7 +76,8 @@ def test_other_interaction_layers_match_tf():
 
     layer = InteractingLayer(embedding_size=8, head_num=2, use_res=True)
     for parameter in layer.parameters():
-        assert torch.max(torch.abs(parameter)) <= 0.1
+        assert torch.max(torch.abs(parameter)) <= 2.0
+        assert parameter.std() > 0.1
 
     layer = InteractingLayer(
         embedding_size=6, head_num=2, att_embedding_size=4, use_res=True)
